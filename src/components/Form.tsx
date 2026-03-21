@@ -153,7 +153,7 @@ export function Form() {
 	const [probCost, setProbCost] = useState<[number, ComponentChild] | undefined>();
 	const [avgRV, setAvgRV] = useState<number | undefined>();
 	const [bars, setBars] = useState<[number, boolean][]>([]);
-	const [simulatedProb, setSimulatedProb] = useState<number | undefined>();
+	const [simulatedProb, setSimulatedProb] = useState<[number, number] | undefined>();
 	const [simulationWorker, setSimulationWorker] = useState<Worker | undefined>();
 	const [selectedStatsInvalid, setSelectedStatsInvalid] = useState(false);
 
@@ -373,7 +373,7 @@ export function Form() {
 				guaranteedRollsCount
 			});
 
-			worker.addEventListener("message", (event: MessageEvent<number>) => {
+			worker.addEventListener("message", (event: MessageEvent<[number, number]>) => {
 				setSimulatedProb(event.data);
 			});
 
@@ -562,7 +562,7 @@ export function Form() {
 							<tr>
 								<th scope="row">Simulated probability:</th>
 								<td>
-									<Percentage value={simulatedProb} />
+									<Percentage value={simulatedProb[0]} /> ({simulatedProb[1].toLocaleString()} runs)
 									{simulationWorker &&<button class="link ml-2" onClick={() => {
 										setSimulationWorker(prev => {
 											prev?.terminate();

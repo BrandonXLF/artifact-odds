@@ -1,6 +1,6 @@
 import { SubStat } from "../logic/data";
 import { StatData } from "../logic/StatData";
-import { runSimulator } from "./main";
+import { runSimulator, SIMULATIONS_PER_RUN } from "./main";
 
 export interface EstimatorWorkerData {
 	statData: StatData;
@@ -21,6 +21,6 @@ addEventListener("message", (e: MessageEvent<EstimatorWorkerData>) => {
 	while (true) {
 		resultSum += runSimulator(statData, goal, allLinesProb, fixedStats, guaranteedRollsStats, guaranteedRollsCount);
 		times++;
-		postMessage(resultSum / times);
+		postMessage([resultSum / times, times * SIMULATIONS_PER_RUN]);
 	}
 });

@@ -1,6 +1,8 @@
 import { rollValues, SubStat } from "../logic/data";
 import { StatData } from "../logic/StatData";
 
+export const SIMULATIONS_PER_RUN = 100000;
+
 const randomInt = (max: number) => Math.floor(Math.random() * max);
 
 const getStats = (number: number, stats: SubStat[], statData: StatData): SubStat[] => {
@@ -80,7 +82,7 @@ const populateArtifact = (rolls: number, stats: SubStat[], statData: StatData, g
 };
 
 export const runSimulator = (statData: StatData, goal: number, allLinesProb: number, fixedStats?: SubStat[], guaranteedRollsStats?: Set<SubStat>, guaranteedRollsCount?: number): number => {
-	const tot = 100000;
+	const tot = SIMULATIONS_PER_RUN;
 	let valid = 0;
 
 	for (let i = 0; i < tot; i++) {
