@@ -3,7 +3,7 @@ import { DistMain } from './DistMain';
 import { Form } from './Form';
 
 export const App = () => {
-	const distKey = new URLSearchParams(window.location.search).get("dist");
+	const distKey = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("dist");
 	const dist = distKey ? distributions[distKey] : undefined;
 
 	return (
