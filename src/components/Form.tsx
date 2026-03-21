@@ -36,7 +36,7 @@ type BaseMode = {
 type UnfixedMode = BaseMode & {
 	fixedArtifact: false;
 	mainStatUnknown: boolean;
-	allLineProb: number;
+	allLinesProb: number;
 	fromDomain: boolean;
 }
 
@@ -51,7 +51,7 @@ const modes: Mode[] = [
 		name: "Artifact Domain",
 		fixedArtifact: false,
 		mainStatUnknown: true,
-		allLineProb: allLinesDomainProb,
+		allLinesProb: allLinesDomainProb,
 		fromDomain: true,
 		selectedStatCount: 0,
 		output: {
@@ -64,7 +64,7 @@ const modes: Mode[] = [
 		name: "Artifact Strongbox",
 		fixedArtifact: false,
 		mainStatUnknown: true,
-		allLineProb: allLinesCraftedProb,
+		allLinesProb: allLinesCraftedProb,
 		fromDomain: false,
 		selectedStatCount: 0,
 		output: { unit: "strongboxes" }
@@ -73,7 +73,7 @@ const modes: Mode[] = [
 		name: "Artifact Definition",
 		fixedArtifact: false,
 		mainStatUnknown: false,
-		allLineProb: allLinesCraftedProb,
+		allLinesProb: allLinesCraftedProb,
 		fromDomain: false,
 		selectedStatCount: 2,
 		selectedStatOptimizer: "bestStats",
@@ -158,7 +158,7 @@ export function Form() {
 	const [selectedStatsInvalid, setSelectedStatsInvalid] = useState(false);
 
 	const mode = modes[modeNum];
-	const allLineProb = mode.fixedArtifact ? Number(isFiveRoller) : mode.allLineProb;
+	const allLinesProb = mode.fixedArtifact ? Number(isFiveRoller) : mode.allLinesProb;
 
 	const validStats = mode.fixedArtifact
 		? currentStats
@@ -232,7 +232,7 @@ export function Form() {
 					.make();
 
 				const [subStatProb, validCombos] = computeSubProb(statData);
-				const rollProb = computeRollProb(statData, validCombos, logicGoal, allLineProb)[0];
+				const rollProb = computeRollProb(statData, validCombos, logicGoal, allLinesProb)[0];
 				const prob = subStatProb * rollProb;
 
 				if (prob > maxProb) {
@@ -278,7 +278,7 @@ export function Form() {
 				}
 
 				const statData = statDataConfig.make();
-				const [rollProb, avg] = computeRollProb(statData, [[[...currentStats], 1]], logicGoal, allLineProb, new Set(stats), guaranteedRollsCount);
+				const [rollProb, avg] = computeRollProb(statData, [[[...currentStats], 1]], logicGoal, allLinesProb, new Set(stats), guaranteedRollsCount);
 
 				if (rollProb > maxProb || (rollProb === maxProb && avg > maxAvg)) {
 					maxStats = stats as [SubStat, SubStat];
@@ -348,7 +348,7 @@ export function Form() {
 		const [newSubProb, validCombos] = computeSubProb(statData);
 		setSubProb(newSubProb);
 
-		const [newRollProb, avg, buckets] = computeRollProb(statData, validCombos, logicGoal, allLineProb, guaranteedRollsStats, guaranteedRollsCount);
+		const [newRollProb, avg, buckets] = computeRollProb(statData, validCombos, logicGoal, allLinesProb, guaranteedRollsStats, guaranteedRollsCount);
 		setRollProb(newRollProb);
 		setAvgRV(avg);
 
@@ -367,7 +367,7 @@ export function Form() {
 			worker.postMessage({
 				statData,
 				goal: logicGoal,
-				allLinesProb: allLineProb,
+				allLinesProb,
 				fixedStats: mode.fixedArtifact ? currentStats : undefined,
 				guaranteedRollsStats,
 				guaranteedRollsCount
@@ -562,7 +562,7 @@ export function Form() {
 							<tr>
 								<th scope="row">Simulated probability:</th>
 								<td>
-									<Percentage value={simulatedProb[0]} /> ({simulatedProb[1].toLocaleString()} runs)
+									<Percentage value={(mainProb ?? 1) * simulatedProb[0]} /> ({simulatedProb[1].toLocaleString()} runs)
 									{simulationWorker &&<button class="link ml-2" onClick={() => {
 										setSimulationWorker(prev => {
 											prev?.terminate();
