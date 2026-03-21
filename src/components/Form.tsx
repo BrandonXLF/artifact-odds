@@ -17,6 +17,7 @@ import { DocumentLink } from './DocumentLink';
 import { distributions } from '../distributions';
 import { round2, roundMaxPrecision } from '../utils/round';
 import { Percentage } from './Percentage';
+import { Button } from './Button';
 
 type StatOptimizers = "bestStats" | "bestRolls";
 
@@ -363,7 +364,7 @@ export function Form() {
 					onChange={setModeNum}
 				/>
 				<div class="flex flex-1 w-full justify-end">
-					<button onClick={() => resetTrigger.reset()}>Reset</button>
+					<Button onClick={() => resetTrigger.reset()}>Reset</Button>
 				</div>
 			</div>
 			<h2 class="text-xl font-bold my-5">Input</h2>
@@ -419,7 +420,7 @@ export function Form() {
 						Selected: <StatNamesInput stats={selectedStats} count={mode.selectedStatCount} onChange={setSelectedStats} validStats={validStats} />
 					</div>
 					{mode.selectedStatOptimizer && (
-						<button onClick={() => optimizers[mode.selectedStatOptimizer!]()}>Optimize</button>
+						<Button onClick={() => optimizers[mode.selectedStatOptimizer!]()}>Optimize</Button>
 					)}
 					{mode.selectedStatOptimizer === "bestRolls" && <DocumentLink name="selecting-useless-stats.pdf">Selecting worse substats may be optimal</DocumentLink>}
 				</div>
@@ -490,7 +491,7 @@ export function Form() {
 					<label>
 						<Checkbox label="Include equal" checked={includeEqual} onChange={setIncludeEqual} />
 					</label>
-					<button onClick={() => calculate()}>Calculate</button>
+					<Button onClick={() => calculate()}>Calculate</Button>
 				</div>
 			</Section>
 			<h2 class="text-xl font-bold my-5">Result</h2>

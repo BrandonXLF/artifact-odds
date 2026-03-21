@@ -1,3 +1,5 @@
+import { Button } from "./Button";
+
 export const ToggleButtons = (props: Readonly<{
 	options: readonly string[];
 	value: number;
@@ -6,13 +8,13 @@ export const ToggleButtons = (props: Readonly<{
 	return (
 		<div class="inline-flex gap-2">
 			{props.options.map((option, index) => (
-				<button
+				<Button
 					key={option}
 					onClick={() => props.onChange(index)}
 					class={props.value === index ? "bg-primary-dark" : "bg-neutral-700"}
 				>
 					{option}
-				</button>
+				</Button>
 			))}
 		</div>
 	);

@@ -2,6 +2,7 @@ import { useRef, useState } from "preact/hooks";
 import { statRollValues, SubStat } from "../../logic/data";
 import { Checkbox } from "./Checkbox";
 import { round2, roundMaxPrecision } from "../utils/round";
+import { Button } from "./Button";
 
 export interface SingleStatDataInput {
 	weight?: number;
@@ -48,8 +49,8 @@ export function StatDataInput(props: Readonly<{
 												weight: value === undefined ? value : round2(value)
 											})}
 										/>
-										<button onClick={() => props.onChange(stat, { ...entry, weight: 0 })}>0</button>
-										<button onClick={() => props.onChange(stat, { ...entry, weight: 1 })}>1</button>
+										<Button onClick={() => props.onChange(stat, { ...entry, weight: 0 })}>0</Button>
+										<Button onClick={() => props.onChange(stat, { ...entry, weight: 1 })}>1</Button>
 									</td>
 									<td>
 										<StatValueInput

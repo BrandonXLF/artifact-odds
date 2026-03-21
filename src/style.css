@@ -12,23 +12,16 @@
 	}
 
 	#app button {
-		@apply border bg-neutral-700 rounded p-1 min-w-10;
-	}
-
-	#app button:hover {
-		@apply bg-neutral-600 cursor-pointer;
+		@apply hover:cursor-pointer;
 	}
 
 	#app input,
 	#app select {
-		@apply border border-neutral-400 rounded p-1 bg-neutral-700;
+		@apply border border-neutral-400 rounded p-1 bg-neutral-700 disabled:bg-neutral-700 disabled:text-neutral-400 disabled:cursor-not-allowed;
 	}
 
-	#app input:disabled {
-		@apply bg-neutral-700 text-neutral-400 cursor-not-allowed;
-	}
-
-	#app a {
+	#app a,
+	#app button.link {
 		@apply text-primary-light underline;
 	}
 }
