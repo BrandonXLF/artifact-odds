@@ -335,13 +335,13 @@ export function Form() {
 
 		const statData = statDataConfig.make();
 
-		setMainProb(!mode.fixedArtifact && mode.mainStatUnknown
+		const newMainProb = !mode.fixedArtifact && mode.mainStatUnknown
 			? computeMainStatProb(artifactType, mainStat, mode.fromDomain && !acceptEither)
-			: undefined
-		);
+			: undefined;
+		setMainProb(newMainProb);
 
-		const [subStatProb, validCombos] = computeSubProb(statData);
-		setSubProb(subStatProb);
+		const [newSubProb, validCombos] = computeSubProb(statData);
+		setSubProb(newSubProb);
 
 		const [newRollProb, avg, buckets] = computeRollProb(statData, validCombos, logicGoal, allLineProb, guaranteedRollsStats, guaranteedRollsCount);
 		setRollProb(newRollProb);
