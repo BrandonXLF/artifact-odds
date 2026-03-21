@@ -20,16 +20,16 @@ const permuteProb = memoize((remainingWeights: number[], totalWeight: number): n
 	return p;
 });
 
+export interface RollWeightHolder<T> {
+	getRollWeight(stat: T): number;
+}
+
 /**
  * Calculate the combined probability of all permutations for the given combination
  */
 const getSetProbability = <T>(rollWeights: RollWeightHolder<T>, combination: T[], totalRollWeight: number): number => {
 	const weights = combination.map((stat) => rollWeights.getRollWeight(stat));
 	return permuteProb(weights, totalRollWeight);
-}
-
-export interface RollWeightHolder<T> {
-	getRollWeight(stat: T): number;
 }
 
 /**

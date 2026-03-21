@@ -1,7 +1,7 @@
 import { AnyStat, statWeights, SubStat } from "./data.js";
 
 export class StatData {
-	requiredByMin: SubStat[] = [];
+	private readonly requiredByMin: SubStat[] = [];
 
 	constructor(
 		private readonly _random: SubStat[],
@@ -37,15 +37,15 @@ export class StatData {
 	}
 
 	getRollWeight(stat: SubStat): number {
-		return statWeights[stat] || 0;
+		return statWeights[stat] ?? 0;
 	}
 
 	getUsefulness(stat: SubStat): number {
-		return this.weights[stat] || 0;
+		return this.weights[stat] ?? 0;
 	}
 
 	getMin(stat: SubStat): number {
-		return this.mins[stat] || 0;
+		return this.mins[stat] ?? 0;
 	}
 
 	getLimit(stat: SubStat): number {
