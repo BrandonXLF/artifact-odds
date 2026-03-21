@@ -18,6 +18,7 @@ import { distributions } from '../distributions';
 import { round2, roundMaxPrecision } from '../utils/round';
 import { Percentage } from './Percentage';
 import { Button } from './Button';
+import SimulationWorker from '../../simulator/worker?worker';
 
 type StatOptimizers = "bestStats" | "bestRolls";
 
@@ -151,6 +152,9 @@ export function Form() {
 	const [probCost, setProbCost] = useState<[number, ComponentChild] | undefined>();
 	const [avgRV, setAvgRV] = useState<number | undefined>();
 	const [bars, setBars] = useState<[number, boolean][]>([]);
+	const [doSimulate, setDoSimulate] = useState(false);
+	const [simulatedProb, setSimulatedProb] = useState<number | undefined>();
+	const [simulationWorker, setSimulationWorker] = useState<Worker | undefined>();
 
 	const mode = modes[modeNum];
 	const allLineProb = mode.fixedArtifact ? Number(isFiveRoller) : mode.allLineProb;
@@ -353,6 +357,29 @@ export function Form() {
 		relativeBars[goalBucket] = relativeBars[goalBucket] ?? [0, false];
 		relativeBars[goalBucket][1] = true;
 		setBars(relativeBars);
+
+		setSimulationWorker(prev => {
+			prev?.terminate();
+			if (!doSimulate) return;
+
+			const worker = new SimulationWorker();
+			worker.postMessage({
+				statData,
+				goal: logicGoal,
+				allLinesProb: allLineProb,
+				fixedStats: mode.fixedArtifact ? currentStats : undefined,
+				guaranteedRollsStats,
+				guaranteedRollsCount
+			});
+
+			worker.addEventListener("message", (event: MessageEvent<number>) => {
+				setSimulatedProb(event.data);
+			});
+
+			return worker;
+		});
+
+		setSimulatedProb(undefined);
 	};
 
 	return (
@@ -488,10 +515,13 @@ export function Form() {
 			</Section>}
 			<Section>
 				<div class="flex gap-2 items-center">
+					<Button onClick={() => calculate()}>Calculate</Button>
 					<label>
 						<Checkbox label="Include equal" checked={includeEqual} onChange={setIncludeEqual} />
 					</label>
-					<Button onClick={() => calculate()}>Calculate</Button>
+					<label>
+						<Checkbox label="Run a Monte Carlo simulation" checked={doSimulate} onChange={setDoSimulate} />
+					</label>
 				</div>
 			</Section>
 			<h2 class="text-xl font-bold my-5">Result</h2>
@@ -518,6 +548,22 @@ export function Form() {
 							<tr>
 								<th scope="row">Total probability:</th>
 								<td><Percentage value={totalProb} />{probCost && <span> &#8776; {probCost[0].toLocaleString()} {probCost[1]}</span>}</td>
+							</tr>
+						)}
+						{simulatedProb !== undefined && (
+							<tr>
+								<th scope="row">Simulated probability:</th>
+								<td>
+									<Percentage value={simulatedProb} />
+									{simulationWorker &&<button class="link ml-2" onClick={() => {
+										setSimulationWorker(prev => {
+											prev?.terminate();
+											return undefined;
+										});
+									}}>
+										Stop
+									</button>}
+								</td>
 							</tr>
 						)}
 						{[mainProb, subProb, rollProb, totalProb].every(prob => prob === undefined) && (
