@@ -142,6 +142,7 @@ export function Form() {
 	const [isFiveRoller, setIsFiveRoller] = useStoredState<boolean>(resetTrigger, "isFiveRoller", false);
 	const [useAutoGoal, setUseAutoGoal] = useStoredState<boolean>(resetTrigger, "useAutoGoal", true);
 	const [includeEqual, setIncludeEqual] = useStoredState<boolean>(resetTrigger, "includeEqual", false);
+	const [doSimulate, setDoSimulate] = useStoredState<boolean>(resetTrigger, "runMonteCarlo", false);
 
 	const [, setCustomGoalVer] = useState(0);
 	const [bestValue, setBestValue] = useState<number | undefined>();
@@ -152,7 +153,6 @@ export function Form() {
 	const [probCost, setProbCost] = useState<[number, ComponentChild] | undefined>();
 	const [avgRV, setAvgRV] = useState<number | undefined>();
 	const [bars, setBars] = useState<[number, boolean][]>([]);
-	const [doSimulate, setDoSimulate] = useState(false);
 	const [simulatedProb, setSimulatedProb] = useState<number | undefined>();
 	const [simulationWorker, setSimulationWorker] = useState<Worker | undefined>();
 
