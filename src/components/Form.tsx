@@ -155,6 +155,7 @@ export function Form() {
 	const [bars, setBars] = useState<[number, boolean][]>([]);
 	const [simulatedProb, setSimulatedProb] = useState<number | undefined>();
 	const [simulationWorker, setSimulationWorker] = useState<Worker | undefined>();
+	const [selectedStatsInvalid, setSelectedStatsInvalid] = useState(false);
 
 	const mode = modes[modeNum];
 	const allLineProb = mode.fixedArtifact ? Number(isFiveRoller) : mode.allLineProb;
@@ -444,7 +445,14 @@ export function Form() {
 				<div class="mb-2">Tip: Run optimize after completing the table below.</div>
 				<div class="flex gap-2 items-center flex-wrap">
 					<div>
-						Selected: <StatNamesInput stats={selectedStats} count={mode.selectedStatCount} onChange={setSelectedStats} validStats={validStats} />
+						Selected: <StatNamesInput
+							stats={selectedStats}
+							count={mode.selectedStatCount}
+							onChange={setSelectedStats}
+							validStats={validStats}
+							hasKnownError={selectedStatsInvalid}
+							onErrorChange={(hasError) => setSelectedStatsInvalid(hasError)}
+						/>
 					</div>
 					{mode.selectedStatOptimizer && (
 						<Button onClick={() => optimizers[mode.selectedStatOptimizer!]()}>Optimize</Button>
@@ -510,12 +518,12 @@ export function Form() {
 						class="w-20"
 					/>
 					<span>of</span>
-					<StatNamesInput stats={required} count={4} onChange={setRequired} validStats={validStats} clearable />
+					<StatNamesInput clearable stats={required} count={4} onChange={setRequired} validStats={validStats} />
 				</div>
 			</Section>}
 			<Section>
 				<div class="flex gap-2 items-center">
-					<Button onClick={() => calculate()}>Calculate</Button>
+					<Button onClick={() => calculate()} disabled={mode.selectedStatCount > 0 && selectedStatsInvalid}>Calculate</Button>
 					<label>
 						<Checkbox label="Include equal" checked={includeEqual} onChange={setIncludeEqual} />
 					</label>
