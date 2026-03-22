@@ -207,7 +207,7 @@ export function Form() {
 		weights.sort((a, b) => b - a);
 
 		const top4 = weights.slice(0, 4).reduce((a, b) => a + b, 0) * 100;
-		const best = weights[0] * 100;
+		const best = (weights[0] ?? 0) * 100;
 
 		setBestValue(top4 + best * 5);
 
@@ -433,16 +433,14 @@ export function Form() {
 				</div>}
 			</Section>
 			{mode.fixedArtifact && mode.selectedStatCount > 0 && <Section>
-				Guaranteed rolls: <input
-					type="number"
-					value={guaranteedRollsCount}
-					onChange={(e) => setGuaranteedRollsCount(Number((e.target as HTMLInputElement).value))}
-					min={2}
-					max={4}
+				Guaranteed rolls: <ToggleButtons
+					options={["2", "3", "4"]}
+					value={guaranteedRollsCount - 2}
+					onChange={(value) => setGuaranteedRollsCount(value + 2)}
 				/>
 			</Section>}
 			{mode.selectedStatCount > 0 && <Section>
-				<div class="mb-2">Tip: Run optimize after completing the table below.</div>
+				<div class="mb-2">Tip: Run optimize after completing the table below to find the best subsets to select.</div>
 				<div class="flex gap-2 items-center flex-wrap">
 					<div>
 						Selected: <StatNamesInput
@@ -466,7 +464,7 @@ export function Form() {
 						<summary class="cursor-pointer">Column Meanings</summary>
 						<ul class="list-disc pl-5 ml-4 my-2">
 							<li>
-								<b>Weight</b>: Relative worth of each stat. (The "substat priority" %'s from <a href="https://akasha.cv" target="_blank">akasha.cv</a> provide a reasonable estimate.)
+								<b>Weight</b>: Relative worth of each stat. <b>Tip</b>: The "substat priority" %'s from <a href="https://akasha.cv" target="_blank">akasha.cv</a> provide a reasonable estimate.
 							</li>
 							<li>
 								<b>Current</b>: Current value of the stat.
@@ -484,7 +482,7 @@ export function Form() {
 					setStatWeights(prev => ({ ...prev, [stat]: entry }));
 				}} />
 				{bestValue === undefined ? null : <div class="mt-2">
-					Current sub-stat & roll quality: <Percentage value={currentValue / bestValue} />
+					Current sub-stat & roll quality: {bestValue === 0 ? "N/A" : <Percentage value={currentValue / bestValue} />}
 					{maxValue !== undefined && <> (Max: <Percentage value={maxValue / bestValue} />, started with 3 lines)</>}
 				</div>}
 			</Section>
@@ -507,7 +505,7 @@ export function Form() {
 			</Section>
 			{!mode.fixedArtifact && <Section>
 				<div class="mb-2">
-					Only roll artifacts that meet these requirements.
+					Only consider rolling artifacts with these stats.
 				</div>
 				<div class="flex gap-2 items-center">
 					<span>Require</span>
@@ -522,13 +520,16 @@ export function Form() {
 				</div>
 			</Section>}
 			<Section>
-				<div class="flex gap-2 items-center">
-					<Button onClick={() => calculate()} disabled={mode.selectedStatCount > 0 && selectedStatsInvalid}>Calculate</Button>
+				<div class="flex gap-4 items-center flex-wrap">
+					<Button primary onClick={() => calculate()} disabled={mode.selectedStatCount > 0 && selectedStatsInvalid}>Calculate</Button>
 					<label>
-						<Checkbox label="Include equal" checked={includeEqual} onChange={setIncludeEqual} />
+						<Checkbox label={`Include artifacts equal to ${useAutoGoal ? 'current' : 'goal'}`} checked={includeEqual} onChange={setIncludeEqual} />
 					</label>
+					<div>
+						<strong>Advanced:</strong>
+					</div>
 					<label>
-						<Checkbox label="Run a Monte Carlo simulation" checked={doSimulate} onChange={setDoSimulate} />
+						<Checkbox label="Run a Monte Carlo simulation as well" checked={doSimulate} onChange={setDoSimulate} />
 					</label>
 				</div>
 			</Section>
@@ -583,7 +584,7 @@ export function Form() {
 				</table>
 			</Section>
 			{(avgRV !== undefined || bars.length > 0) && <Section>
-				{avgRV !== undefined && <div>Average weighted RV of rolled artifacts: {Math.round(avgRV).toLocaleString()}</div>}
+				{avgRV !== undefined && <div>Average weighted RV of rolled artifacts: {Math.round(avgRV / 100).toLocaleString()}%</div>}
 				{bars.length > 0 && <>
 					<div class="flex h-40 items-end mt-5">
 						{bars.map(([b, isGoal], index) => (
@@ -593,8 +594,8 @@ export function Form() {
 						))}
 					</div>
 					<div class="flex">
-						<div class="flex-1">0</div>
-						<div>{bucketsLimit(bars).toLocaleString()}</div>
+						<div class="flex-1">0%</div>
+						<div>{(bucketsLimit(bars) / 100).toLocaleString()}%</div>
 					</div>
 				</>}
 			</Section>}

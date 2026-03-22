@@ -11,7 +11,8 @@ export const ToggleButtons = (props: Readonly<{
 				<Button
 					key={option}
 					onClick={() => props.onChange(index)}
-					class={props.value === index ? "bg-primary-dark" : "bg-neutral-700"}
+					primary={props.value === index}
+					class="not-disabled:hover:bg-primary"
 				>
 					{option}
 				</Button>

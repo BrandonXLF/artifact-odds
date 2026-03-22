@@ -27,7 +27,7 @@ export const RollValueDist = () => {
 			</div>
 			<DistributionView entries={distribution} />
 			<div class="mt-2">
-				Total: {distribution.reduce((sum, [, prob]) => sum + prob, 0)}
+				Total: {distribution.reduce((sum, [, prob]) => sum + prob, 0).toLocaleString()}
 			</div>
 		</div>
 	);

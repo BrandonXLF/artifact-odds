@@ -17,13 +17,13 @@ export function StatDataInput(props: Readonly<{
 	onChange: (stat: SubStat, entry: SingleStatDataInput) => void;
 }>) {
 	const [useRV, setUseRV] = useState(false);
-	const unit = useRV ? "RV%" : "Val";
+	const unit = useRV ? "RV%" : "Stat";
 
 	return (
 		<div>
 			<Checkbox label="Input roll value (RV) instead of stats" checked={useRV} onChange={setUseRV} />
 			<div class="overflow-x-auto">
-				<table class="mt-2 [&_td,&_th]:px-2 [&_td,&_th]:py-1 [&_td,&_th]:align-top [&_td,&_th]:first:pl-0 [&_td,&_th]:last:pr-0">
+				<table class="mt-2 [&_td,&_th]:px-2 [&_td,&_th]:py-1 [&_td,&_th]:first:pl-0 [&_td,&_th]:last:pr-0">
 					<thead class="text-left">
 						<tr>
 							<th>Stat</th>
@@ -49,8 +49,8 @@ export function StatDataInput(props: Readonly<{
 												weight: value === undefined ? value : round2(value)
 											})}
 										/>
-										<Button onClick={() => props.onChange(stat, { ...entry, weight: 0 })}>0</Button>
-										<Button onClick={() => props.onChange(stat, { ...entry, weight: 1 })}>1</Button>
+										<Button class="bg-red-900" onClick={() => props.onChange(stat, { ...entry, weight: 0 })}>0</Button>
+										<Button class="bg-green-900" onClick={() => props.onChange(stat, { ...entry, weight: 10 })}>10</Button>
 									</td>
 									<td>
 										<StatValueInput
