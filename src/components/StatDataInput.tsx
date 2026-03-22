@@ -1,10 +1,10 @@
-import { useRef, useState } from "preact/hooks";
-import { statRollValues, SubStat } from "../../logic/data";
-import { Checkbox } from "./Checkbox";
-import { round2, roundMaxPrecision } from "../utils/round";
+import { useState } from "preact/hooks";
+import { SubStat } from "../../logic/data";
+import { round2 } from "../utils/round";
 import { Button } from "./Button";
+import { OptionalNumberInput, StatValueInput } from "./NumberInput";
 
-export interface SingleStatDataInput {
+export interface StatDataInputEntry {
 	weight?: number;
 	currentRV?: number;
 	minRV?: number;
@@ -12,29 +12,29 @@ export interface SingleStatDataInput {
 }
 
 export function StatDataInput(props: Readonly<{
-	entries: Record<SubStat, SingleStatDataInput>;
+	entries: Record<SubStat, StatDataInputEntry>;
 	validStats: SubStat[];
-	onChange: (stat: SubStat, entry: SingleStatDataInput) => void;
+	showCurrentRV?: boolean;
+	onChange: (stat: SubStat, entry: StatDataInputEntry) => void;
+	useRV?: boolean;
 }>) {
-	const [useRV, setUseRV] = useState(false);
-	const unit = useRV ? "RV%" : "Stat";
+	const unit = props.useRV ? "RV%" : "Stat";
 
 	return (
 		<div>
-			<Checkbox label="Input roll value (RV) instead of stats" checked={useRV} onChange={setUseRV} />
 			<div class="overflow-x-auto">
 				<table class="mt-2 [&_td,&_th]:px-2 [&_td,&_th]:py-1 [&_td,&_th]:first:pl-0 [&_td,&_th]:last:pr-0">
 					<thead class="text-left">
 						<tr>
 							<th>Stat</th>
 							<th>Weight</th>
-							<th>Current {unit}</th>
+							{props.showCurrentRV && <th>Current {unit}</th>}
 							<th>Min {unit}</th>
 							<th>Max {unit}</th>
 						</tr>
 					</thead>
 					<tbody>
-						{(Object.entries(props.entries) as [SubStat, SingleStatDataInput][])
+						{(Object.entries(props.entries) as [SubStat, StatDataInputEntry][])
 							.filter(([stat]) => props.validStats.includes(stat))
 							.map(([stat, entry]) => (
 								<tr key={stat}>
@@ -49,21 +49,26 @@ export function StatDataInput(props: Readonly<{
 												weight: value === undefined ? value : round2(value)
 											})}
 										/>
-										<Button class="bg-red-900" onClick={() => props.onChange(stat, { ...entry, weight: 0 })}>0</Button>
-										<Button class="bg-green-900" onClick={() => props.onChange(stat, { ...entry, weight: 10 })}>10</Button>
+										<Button class="bg-red-900 min-w-auto w-6 h-6" title="Set weight to min" onClick={() => props.onChange(stat, { ...entry, weight: 0 })}></Button>
+										<Button class="bg-green-900 min-w-auto w-6 h-6" title="Set weight to max" onClick={() => {
+											const maxWeight = Math.max(...Object.values(props.entries).map(e => e.weight || 0), 1);
+											props.onChange(stat, { ...entry, weight: maxWeight });
+										}}></Button>
 									</td>
+									{props.showCurrentRV && (
+										<td>
+											<StatValueInput
+												useRV={props.useRV ?? false}
+												stat={stat}
+												value={entry.currentRV}
+												placeholder="0"
+												onChange={(value) => props.onChange(stat, { ...entry, currentRV: value })}
+											/>
+										</td>
+									)}
 									<td>
 										<StatValueInput
-											useRV={useRV}
-											stat={stat}
-											value={entry.currentRV}
-											placeholder="0"
-											onChange={(value) => props.onChange(stat, { ...entry, currentRV: value })}
-										/>
-									</td>
-									<td>
-										<StatValueInput
-											useRV={useRV}
+											useRV={props.useRV ?? false}
 											stat={stat}
 											value={entry.minRV}
 											placeholder="0"
@@ -72,7 +77,7 @@ export function StatDataInput(props: Readonly<{
 									</td>
 									<td>
 										<StatValueInput
-											useRV={useRV}
+											useRV={props.useRV ?? false}
 											stat={stat}
 											value={entry.maxRV}
 											placeholder="Infinity"
@@ -88,64 +93,3 @@ export function StatDataInput(props: Readonly<{
 	);
 }
 
-function StatValueInput(props: Readonly<{
-	value: number | undefined;
-	useRV: boolean;
-	stat?: SubStat;
-	placeholder?: string;
-	onChange: (value: number | undefined) => void;
-}>) {
-	let value = props.value;
-
-	if (value !== undefined && !props.useRV && props.stat !== undefined) {
-		value *= statRollValues[props.stat];
-	}
-
-	if (value !== undefined) {
-		value = roundMaxPrecision(value);
-	}
-
-	const onChange = (newVal: number | undefined) => {
-		if (newVal !== undefined && !props.useRV && props.stat !== undefined) {
-			newVal /= statRollValues[props.stat];
-		}
-
-		props.onChange(newVal === undefined ? undefined : Math.round(newVal / 10) * 10);
-	}
-
-	return (
-		<OptionalNumberInput
-			value={value}
-			placeholder={props.placeholder}
-			onChange={onChange}
-			step={props.useRV ? 10 : undefined}
-		/>
-	);
-}
-
-function OptionalNumberInput(props: Readonly<{
-	small?: boolean;
-	value: number | undefined;
-	placeholder?: string;
-	step?: number;
-	onChange: (value: number | undefined) => void;
-}>) {
-	const ref = useRef<HTMLInputElement>(null);
-
-	const onChange = () => {
-		let newVal = (ref.current === null || ref.current.value === "") ? undefined : +ref.current.value;
-		props.onChange(newVal);
-	};
-
-	return (
-		<input
-			ref={ref}
-			type="number"
-			value={props.value ?? ""}
-			placeholder={props.placeholder}
-			onChange={onChange}
-			class={props.small ? "w-20" : "w-24"}
-			step={props.step ?? "any"}
-		/>
-	);
-}

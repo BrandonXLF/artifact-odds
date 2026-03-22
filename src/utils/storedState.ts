@@ -8,7 +8,7 @@ export class ResetTrigger extends EventTarget {
 	}
 }
 
-export const useStoredState = <T>(resetTrigger: ResetTrigger, name: string, defaultValue: T | (() => T), mergeDefault = false) => {
+export const useStoredState = <T>(resetTrigger: ResetTrigger | undefined, name: string, defaultValue: T | (() => T), mergeDefault = false) => {
 	const getDefault = () => typeof defaultValue === "function" ? (defaultValue as () => T)() : defaultValue;
 
 	const [value, setValue] = useState<T>(() => {
@@ -27,7 +27,7 @@ export const useStoredState = <T>(resetTrigger: ResetTrigger, name: string, defa
 		}
 	}, [name, value]);
 
-	resetTrigger.addEventListener('reset', () => {
+	resetTrigger?.addEventListener('reset', () => {
 		setValue(getDefault());
 	});
 
