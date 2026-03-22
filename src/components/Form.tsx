@@ -10,7 +10,6 @@ import { computeSubProb } from '../../logic/subStatProb';
 import { Section } from './Section';
 import { ToggleButtons } from './ToggleButtonts';
 import { Checkbox } from './Checkbox';
-import { ResetTrigger, useStoredState } from '../utils/storedState';
 import { ComponentChild } from 'preact';
 import { bucketsLimit, toBucket } from '../utils/barChart';
 import { DocumentLink } from './DocumentLink';
@@ -19,6 +18,7 @@ import { round2, roundMaxPrecision } from '../utils/round';
 import { Percentage } from './Percentage';
 import { Button } from './Button';
 import SimulationWorker from '../../simulator/worker?worker';
+import { ResetTrigger, useResettableState, useStoredState } from '../utils/resettableState';
 
 type StatOptimizers = "bestStats" | "bestRolls";
 
@@ -123,59 +123,67 @@ const modes: Mode[] = [
 export function Form() {
 	const resetTrigger = useRef(new ResetTrigger()).current;
 
-	const [modeNum, setModeNum] = useStoredState(undefined, "mode", 0);
-	const [artifactType, setArtifactType] = useStoredState(resetTrigger, "artifactType", 0);
-	const [mainStat, setMainStat] = useStoredState<AnyStat>(resetTrigger, "mainStat", "HP");
-	const [currentStats, setCurrentStats] = useStoredState<SubStat[]>(resetTrigger, "currentStats", []);
-	const [selectedStats, setSelectedStats] = useStoredState<SubStat[]>(resetTrigger, "selectedStats", []);
-	const [guaranteedRollsCount, setGuaranteedRollsCount] = useStoredState<number>(resetTrigger, "guaranteedRollsCount", 2);
-	const [customGoal, setCustomGoal] = useStoredState<number>(resetTrigger, "customGoal", 0);
-	const [requireCount, setRequireCount] = useStoredState<number>(resetTrigger, "requireCount", 0);
-	const [required, setRequired] = useStoredState<SubStat[]>(resetTrigger, "required", []);
-	const [statWeights, setStatWeights] = useStoredState(resetTrigger, "statWeights", () => Object.fromEntries(allSubStats.map(stat => [stat, {}])) as Record<SubStat, StatDataInputEntry>, true);
-	const [acceptEither, setAcceptEither] = useStoredState<boolean>(resetTrigger, "acceptEither", false);
-	const [isFiveRoller, setIsFiveRoller] = useStoredState<boolean>(resetTrigger, "isFiveRoller", false);
-	const [useAutoGoal, setUseAutoGoal] = useStoredState<boolean>(resetTrigger, "useAutoGoal", true);
-	const [includeEqual, setIncludeEqual] = useStoredState<boolean>(resetTrigger, "includeEqual", false);
-	const [doSimulate, setDoSimulate] = useStoredState<boolean>(resetTrigger, "runMonteCarlo", false);
-	const [useRV, setUseRV] = useStoredState<boolean>(resetTrigger, "useRV", false);
+	const [modeNum, setModeNum] = useStoredState<number>("mode", 0);
+	const [artifactType, setArtifactType] = useStoredState<number>("artifactType", 0, resetTrigger);
+	const [mainStat, setMainStat] = useStoredState<AnyStat>("mainStat", "HP", resetTrigger);
+	const [currentStats, setCurrentStats] = useStoredState<SubStat[]>("currentStats", [], resetTrigger);
+	const [selectedStats, setSelectedStats] = useStoredState<SubStat[]>("selectedStats", [], resetTrigger);
+	const [guaranteedRollsCount, setGuaranteedRollsCount] = useStoredState<number>("guaranteedRollsCount", 2, resetTrigger);
+	const [customGoal, setCustomGoal] = useStoredState<number>("customGoal", 0, resetTrigger);
+	const [requireCount, setRequireCount] = useStoredState<number>("requireCount", 0, resetTrigger);
+	const [required, setRequired] = useStoredState<SubStat[]>("required", [], resetTrigger);
+	const [statWeights, setStatWeights] = useStoredState(
+		"statWeights",
+		() => Object.fromEntries(allSubStats.map(stat => [stat, {}])) as Record<SubStat, StatDataInputEntry>,
+		resetTrigger,
+		true
+	);
+	const [acceptEither, setAcceptEither] = useStoredState<boolean>("acceptEither", false, resetTrigger);
+	const [isFiveRoller, setIsFiveRoller] = useStoredState<boolean>("isFiveRoller", false, resetTrigger);
+	const [useAutoGoal, setUseAutoGoal] = useStoredState<boolean>("useAutoGoal", true, resetTrigger);
+	const [includeEqual, setIncludeEqual] = useStoredState<boolean>("includeEqual", false, resetTrigger);
+	const [doSimulate, setDoSimulate] = useStoredState<boolean>("runMonteCarlo", false, resetTrigger);
+	const [useRV, setUseRV] = useStoredState<boolean>("useRV", false, resetTrigger);
+
+	const [bestValue, setBestValue] = useResettableState<number | undefined>(undefined, resetTrigger);
+	const [maxValue, setMaxValue] = useResettableState<number | undefined>(undefined, resetTrigger);
+	const [mainProb, setMainProb] = useResettableState<number | undefined>(undefined, resetTrigger);
+	const [subProb, setSubProb] = useResettableState<number | undefined>(undefined, resetTrigger);
+	const [rollProb, setRollProb] = useResettableState<number | undefined>(undefined, resetTrigger);
+	const [probCost, setProbCost] = useResettableState<[number, ComponentChild] | undefined>(undefined, resetTrigger);
+	const [totalProbQualityFactor, setTotalProbQualityFactor] = useResettableState<number>(1, resetTrigger);
+	const [avgRV, setAvgRV] = useResettableState<number | undefined>(undefined, resetTrigger);
+	const [bars, setBars] = useResettableState<[number, boolean][]>([], resetTrigger);
+	const [simulatedProb, setSimulatedProb] = useResettableState<[number, number] | undefined>(undefined, resetTrigger);
+	const [simulationWorker, setSimulationWorker] = useResettableState<Worker | undefined>(undefined, resetTrigger);
+	const [selectedStatsInvalid, setSelectedStatsInvalid] = useResettableState<boolean | undefined>(undefined, resetTrigger);
 
 	const [, setCustomGoalVer] = useState(0);
-	const [bestValue, setBestValue] = useState<number | undefined>();
-	const [maxValue, setMaxValue] = useState<number | undefined>();
-	const [mainProb, setMainProb] = useState<number | undefined>();
-	const [subProb, setSubProb] = useState<number | undefined>();
-	const [rollProb, setRollProb] = useState<number | undefined>();
-	const [probCost, setProbCost] = useState<[number, ComponentChild] | undefined>();
-	const [avgRV, setAvgRV] = useState<number | undefined>();
-	const [bars, setBars] = useState<[number, boolean][]>([]);
-	const [simulatedProb, setSimulatedProb] = useState<[number, number] | undefined>();
-	const [simulationWorker, setSimulationWorker] = useState<Worker | undefined>();
-	const [selectedStatsInvalid, setSelectedStatsInvalid] = useState(false);
 
 	const mode = modes[modeNum];
 	const allLinesProb = mode.fixedArtifact ? Number(isFiveRoller) : mode.allLinesProb;
-
 	const validStats = mode.fixedArtifact
 		? currentStats
 		: allSubStats.filter(stat => stat !== mainStat);
 
 	const currentValue = useMemo(() => {
 		return roundMaxPrecision(Object.entries(statWeights)
-			.filter(([stat]) => validStats.includes(stat as SubStat))
+			.filter(([stat]) => currentStats.includes(stat as SubStat))
 			.reduce((acc, [, { currentRV, weight }]) => acc + (currentRV ?? 0) * (weight ?? 0), 0));
 	}, [statWeights, validStats]);
 
-	const calculateRollProb = useMemo(
-		() => Object.values(statWeights).some(w => w.weight || w.minRV),
-		[statWeights]
+	const showMainProb = !mode.fixedArtifact && mode.mainStatUnknown;
+	const showSubProb = !mode.fixedArtifact;
+	const calcRollProb = useMemo(
+		() => mode.fixedArtifact || Object.values(statWeights).some(w => w.weight || w.minRV),
+		[statWeights, mode.fixedArtifact]
 	);
-	const logicCurrent = Math.round((useAutoGoal ? currentValue : customGoal) * 100);
-	const logicGoal = calculateRollProb ? logicCurrent - (Number(includeEqual) / 10) : -Infinity;
-
 	const totalProb = subProb !== undefined || rollProb !== undefined || mainProb !== undefined
 		? (mainProb ?? 1) * (subProb ?? 1) * (rollProb ?? 1)
 		: undefined;
+
+	const logicCurrent = Math.round((useAutoGoal ? currentValue : customGoal) * 100);
+	const logicGoal = calcRollProb ? logicCurrent - (Number(includeEqual) / 10) : -Infinity;
 
 	useEffect(() => {
 		if (useAutoGoal) {
@@ -200,6 +208,8 @@ export function Form() {
 			Math.round(odds * mult),
 			mode.output.desc ? <abbr title={mode.output.desc}>{mode.output.unit}</abbr> : <span>{mode.output.unit}</span>
 		]);
+
+		setTotalProbQualityFactor(!mode.fixedArtifact && mode.mainStatUnknown ? 25 : 1)
 	}, [Number.isNaN(totalProb) ? false : totalProb]);
 
 	useEffect(() => {
@@ -222,6 +232,14 @@ export function Form() {
 		const statDataConfig = new StatDataConfig();
 		statDataConfig.exclude(mainStat);
 
+		if (!mode.fixedArtifact && requireCount > 0) {
+			statDataConfig.require(requireCount).of(...required);
+		}
+
+		if (mode.fixedArtifact) {
+			statDataConfig.onlyInclude(currentStats);
+		}
+
 		for (const [stat, data] of Object.entries(statWeights) as [SubStat, StatDataInputEntry][]) {
 			if (data.weight !== undefined) {
 				statDataConfig.setWeight(stat, Math.round(data.weight * 100));
@@ -234,14 +252,6 @@ export function Form() {
 			if (data.maxRV !== undefined) {
 				statDataConfig.setLimit(stat, data.maxRV);
 			}
-		}
-
-		if (!mode.fixedArtifact && requireCount > 0) {
-			statDataConfig.require(requireCount).of(...required);
-		}
-
-		if (mode.fixedArtifact) {
-			statDataConfig.onlyInclude(currentStats);
 		}
 
 		return statDataConfig;
@@ -326,15 +336,15 @@ export function Form() {
 
 		const statData = statDataConfig.make();
 
-		const newMainProb = !mode.fixedArtifact && mode.mainStatUnknown
+		const newMainProb = showMainProb
 			? computeMainStatProb(artifactType, mainStat, mode.fromDomain && !acceptEither)
 			: undefined;
 		setMainProb(newMainProb);
 
 		const [newSubProb, validCombos] = computeSubProb(statData);
-		setSubProb(mode.fixedArtifact ? undefined : newSubProb);
+		setSubProb(showSubProb ? newSubProb : undefined);
 
-		if (calculateRollProb) {
+		if (calcRollProb) {
 			const [newRollProb, avg, buckets] = computeRollProb(
 				statData,
 				validCombos,
@@ -487,20 +497,9 @@ export function Form() {
 					<Checkbox label="Input roll value (RV) instead of stat value" checked={useRV} onChange={setUseRV} />
 				</div>
 				<Section>
-					<details>
-						<summary class="cursor-pointer">Column Meanings</summary>
-						<ul class="list-disc pl-5 ml-4 my-2">
-							<li>
-								<strong>Weight</strong>: Relative worth of each stat. <em>Tip</em>: The "substat priority" %'s from <a href="https://akasha.cv" target="_blank">akasha.cv</a> provide a reasonable estimate.
-							</li>
-							<li>
-								<strong>Min Stat</strong>: Require at least this much of stat. Implies that the stat is <em>required</em>.
-							</li>
-							<li>
-								<strong>Max Stat</strong>: Only count up to this much of the stat.
-							</li>
-						</ul>
-					</details>
+					<div>
+						<strong>Weight</strong> is the relative worth of each stat. Press <span class="inline-block w-3 h-3 bg-green-900 border rounded"></span> to set it to max, and <span class="inline-block w-3 h-3 bg-red-900 border rounded"></span> to set it to none. For example, the "substat priority" %'s from <a href="https://akasha.cv" target="_blank">akasha.cv</a> provide a reasonable estimate.
+					</div>
 					<StatDataInput
 						entries={statWeights}
 						validStats={validStats}
@@ -509,7 +508,7 @@ export function Form() {
 						useRV={useRV}
 					/>
 					{bestValue === undefined ? null : <div class="mt-2">
-						Current sub-stat & roll quality: {bestValue === 0 ? "N/A" : <Percentage value={currentValue / bestValue} />}
+						Current sub-stat & roll quality: <Percentage value={currentValue / bestValue} />
 						{maxValue !== undefined && <> (Max: <Percentage value={maxValue / bestValue} />, started with 3 lines)</>}
 					</div>}
 				</Section>
@@ -560,53 +559,43 @@ export function Form() {
 				<Section>
 					<table class="text-left [&_th]:font-normal [&_th]:pr-2">
 						<tbody>
-							{mainProb !== undefined && <tr>
+							{showMainProb && <tr>
 								<th scope="row">Main stat probability:</th>
 								<td><Percentage value={mainProb} /></td>
 							</tr>}
-							{subProb !== undefined && (
-								<tr>
-									<th scope="row">Sub-stat probability:</th>
-									<td><Percentage value={subProb} /></td>
-								</tr>
-							)}
-							{rollProb !== undefined && (
-								<tr>
-									<th scope="row">Roll probability:</th>
-									<td><Percentage value={rollProb} /></td>
-								</tr>
-							)}
-							{totalProb !== undefined && (
-								<tr>
-									<th scope="row">Total probability:</th>
-									<td>
-										<span class="px-1 py-px" style={{ background: `color-mix(in lab, var(--color-red-700), var(--color-green-700) ${Math.round(totalProb * (!mode.fixedArtifact && mode.mainStatUnknown ? 25 : 1) * 100)}%)` }}>
-											<Percentage value={totalProb} />
-										</span>{probCost && <span> &#8776; {probCost[0].toLocaleString()} {probCost[1]}</span>}
-									</td>
-								</tr>
-							)}
-							{simulatedProb !== undefined && (
-								<tr>
-									<th scope="row">Simulated probability:</th>
-									<td>
-										<Percentage value={(mainProb ?? 1) * simulatedProb[0]} /> ({simulatedProb[1].toLocaleString()} runs)
-										{simulationWorker &&<button class="link ml-2" onClick={() => {
-											setSimulationWorker(prev => {
-												prev?.terminate();
-												return undefined;
-											});
-										}}>
-											Stop
-										</button>}
-									</td>
-								</tr>
-							)}
-							{[mainProb, subProb, rollProb, totalProb].every(prob => prob === undefined) && (
-								<tr>
-									<td>Click calculate above to see results!</td>
-								</tr>
-							)}
+							{showSubProb && <tr>
+								<th scope="row">Sub-stat probability:</th>
+								<td><Percentage value={subProb} /></td>
+							</tr>}
+							{calcRollProb && <tr>
+								<th scope="row">Roll probability:</th>
+								<td><Percentage value={rollProb} /></td>
+							</tr>}
+							<tr>
+								<th scope="row">Total probability:</th>
+								<td>
+									<Percentage
+										value={totalProb}
+										showQuality={totalProbQualityFactor}
+									/>{probCost && <span> &#8776; {probCost[0].toLocaleString()} {probCost[1]}</span>}
+								</td>
+							</tr>
+							{(simulatedProb !== undefined || simulationWorker) && <tr>
+								<th scope="row">Simulated probability:</th>
+								<td>
+									{simulatedProb
+										? <><Percentage value={(mainProb ?? 1) * simulatedProb[0]} /> ({simulatedProb[1].toLocaleString()} runs)</>
+										: <>Running...</>}
+									{simulationWorker &&<button class="link ml-2" onClick={() => {
+										setSimulationWorker(prev => {
+											prev?.terminate();
+											return undefined;
+										});
+									}}>
+										Stop
+									</button>}
+								</td>
+							</tr>}
 						</tbody>
 					</table>
 				</Section>

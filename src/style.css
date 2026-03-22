@@ -17,7 +17,15 @@
 
 	#app input,
 	#app select {
-		@apply border border-neutral-400 rounded p-1 bg-neutral-700 disabled:bg-neutral-700 disabled:text-neutral-400 disabled:cursor-not-allowed;
+		@apply border border-neutral-400 rounded p-1 bg-[#333] disabled:bg-[#3a3a3a] disabled:text-neutral-400 disabled:cursor-not-allowed;
+	}
+
+	#app select:has(option:checked):not(:has(option:checked[value=""])) {
+		@apply bg-primary-dark;
+	}
+
+	#app option {
+		@apply not-checked:bg-[#333] checked:bg-primary-dark;
 	}
 
 	#app a,

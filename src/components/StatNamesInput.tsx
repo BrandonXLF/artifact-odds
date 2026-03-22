@@ -36,6 +36,10 @@ export function StatNamesInput(props: Readonly<{
 					error = !validStats.includes(value);
 				}
 
+				if (!value && !props.clearable) {
+					error = true;
+				}
+
 				anyError = anyError || error;
 
 				return (
