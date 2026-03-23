@@ -2,9 +2,9 @@ import { allLinesCraftedProb, allLinesDomainProb, allSubStats, AnyStat, mainStat
 import { computeMainStatProb } from '../../logic/mainStatProb';
 import { StatDataConfig } from '../../logic/StatData';
 import { computeRollProb } from '../../logic/subStatDistribution';
-import { StatDataInputEntry, StatDataInput } from './StatDataInput';
+import { StatParamInputEntry, StatParamInput } from './StatParamInput';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { StatNamesInput } from './StatNamesInput';
+import { StatListInput, StatListInputEntry } from './StatListInput';
 import { getSubStatCombinations } from '../../logic/combinations/subStatCombinations';
 import { computeSubProb } from '../../logic/subStatProb';
 import { Section } from './Section';
@@ -122,6 +122,8 @@ const modes: Mode[] = [
 	}
 ];
 
+type StatParams = StatParamInputEntry & StatListInputEntry;
+
 export function Form() {
 	const resetTrigger = useRef(new ResetTrigger()).current;
 
@@ -136,7 +138,7 @@ export function Form() {
 	const [required, setRequired] = useStoredState<SubStat[]>("required", [], resetTrigger);
 	const [statWeights, setStatWeights] = useStoredState(
 		"statWeights",
-		() => Object.fromEntries(allSubStats.map(stat => [stat, {}])) as Record<SubStat, StatDataInputEntry>,
+		() => Object.fromEntries(allSubStats.map(stat => [stat, {}])) as Record<SubStat, StatParams>,
 		resetTrigger,
 		true
 	);
@@ -242,7 +244,7 @@ export function Form() {
 			statDataConfig.onlyInclude(currentStats);
 		}
 
-		for (const [stat, data] of Object.entries(statWeights) as [SubStat, StatDataInputEntry][]) {
+		for (const [stat, data] of Object.entries(statWeights) as [SubStat, StatParamInputEntry][]) {
 			if (data.weight !== undefined) {
 				statDataConfig.setWeight(stat, Math.round(data.weight * 100));
 			}
@@ -434,22 +436,23 @@ export function Form() {
 								</select>
 							</label>
 							{!mode.fixedArtifact && mode.fromDomain && <Checkbox label="Accept either set from the domain" checked={acceptEither} onChange={setAcceptEither} />}
+							{mode.fixedArtifact && <Checkbox label="Started with 4 lines" checked={isFiveRoller} onChange={setIsFiveRoller} />}
 						</div>
 					</div>
 					{mode.fixedArtifact && <div>
 						<div>
 							Sub-stats:
 						</div>
-						<div class="flex flex-wrap gap-x-4 gap-y-2">
-							<StatNamesInput
+						<div class="flex flex-col gap-2">
+							<StatListInput
 								clearable={!mode.fixedArtifact}
 								stats={currentStats}
 								count={4}
 								onChange={setCurrentStats}
 								validStats={allSubStats.filter(stat => stat !== mainStat)}
+								statValues={mode.fixedArtifact && useAutoGoal ? statWeights : undefined}
 								onValueChange={(stat, value) => setStatWeights(prev => ({ ...prev, [stat]: { ...prev[stat], currentRV: value } }))}
 							/>
-							<Checkbox label="Started with 4 lines" checked={isFiveRoller} onChange={setIsFiveRoller} />
 						</div>
 					</div>}
 				</LabelGrid>
@@ -474,7 +477,7 @@ export function Form() {
 							Selected stats:
 						</div>
 						<div class="flex gap-2 items-center flex-wrap">
-							<StatNamesInput
+							<StatListInput
 								stats={selectedStats}
 								count={mode.selectedStatCount}
 								onChange={setSelectedStats}
@@ -505,7 +508,7 @@ export function Form() {
 							class="w-20"
 						/>
 						<span>of</span>
-						<StatNamesInput clearable stats={required} count={4} onChange={setRequired} validStats={validStats} />
+						<StatListInput clearable stats={required} count={4} onChange={setRequired} validStats={validStats} />
 					</div>
 				</Section>
 			</section>}
@@ -521,10 +524,9 @@ export function Form() {
 					<div>
 						<strong>Weight</strong> is the relative worth of each stat. Press <span class="inline-block w-3 h-3 bg-green-900 border rounded"></span> to set it to max, and <span class="inline-block w-3 h-3 bg-red-900 border rounded"></span> to set it to none. For example, the "substat priority" %'s from <a href="https://akasha.cv" target="_blank">akasha.cv</a> provide a reasonable estimate.
 					</div>
-					<StatDataInput
+					<StatParamInput
 						entries={statWeights}
 						validStats={validStats}
-						showCurrentRV={mode.fixedArtifact && useAutoGoal}
 						onChange={(stat, entry) => setStatWeights(prev => ({ ...prev, [stat]: entry }))}
 						useRV={useRV}
 					/>
@@ -541,14 +543,14 @@ export function Form() {
 					<LabelGrid>
 						{useAutoGoal && !mode.fixedArtifact && <div>
 							<div>Current sub-stats:</div>
-							<StatNamesInput
+							<StatListInput
 								clearable={!mode.fixedArtifact}
 								stats={currentStats}
 								count={4}
 								onChange={setCurrentStats}
 								validStats={allSubStats.filter(stat => stat !== mainStat)}
-								statValues={mode.fixedArtifact ? undefined : statWeights}
 								useRV={useRV}
+								statValues={mode.fixedArtifact ? undefined : statWeights}
 								onValueChange={(stat, value) => setStatWeights(prev => ({ ...prev, [stat]: { ...prev[stat], currentRV: value } }))}
 							/>
 						</div>}

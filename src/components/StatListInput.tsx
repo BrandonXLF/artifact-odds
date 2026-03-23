@@ -1,7 +1,11 @@
 import { allSubStats, SubStat } from "../../logic/data";
 import { StatValueInput } from "./NumberInput";
 
-export function StatNamesInput(props: Readonly<{
+export interface StatListInputEntry {
+	currentRV?: number;
+}
+
+export function StatListInput(props: Readonly<{
 	stats: SubStat[];
 	count: number;
 	validStats?: SubStat[];

@@ -1,21 +1,18 @@
-import { useState } from "preact/hooks";
 import { SubStat } from "../../logic/data";
 import { round2 } from "../utils/round";
 import { Button } from "./Button";
 import { OptionalNumberInput, StatValueInput } from "./NumberInput";
 
-export interface StatDataInputEntry {
+export interface StatParamInputEntry {
 	weight?: number;
-	currentRV?: number;
 	minRV?: number;
 	maxRV?: number;
 }
 
-export function StatDataInput(props: Readonly<{
-	entries: Record<SubStat, StatDataInputEntry>;
+export function StatParamInput(props: Readonly<{
+	entries: Record<SubStat, StatParamInputEntry>;
 	validStats: SubStat[];
-	showCurrentRV?: boolean;
-	onChange: (stat: SubStat, entry: StatDataInputEntry) => void;
+	onChange: (stat: SubStat, entry: StatParamInputEntry) => void;
 	useRV?: boolean;
 }>) {
 	const unit = props.useRV ? "RV%" : "Stat";
@@ -29,7 +26,6 @@ export function StatDataInput(props: Readonly<{
 						<tr>
 							<th>Stat</th>
 							<th><abbr title="Relative worth of each stat.">Weight</abbr></th>
-							{props.showCurrentRV && <th>Current {unit}</th>}
 							<th><abbr title="Require at least this much of the stat. Implies that it is required.">Min {unit}</abbr></th>
 							<th><abbr title="Only count up to this much of the stat.">Max {unit}</abbr></th>
 						</tr>
@@ -37,7 +33,7 @@ export function StatDataInput(props: Readonly<{
 					<tbody>
 						{entries.length === 0 && (
 							<tr>
-								<td colSpan={props.showCurrentRV ? 5 : 4} class="text-neutral-400">Input sub-stats names above first.</td>
+								<td colSpan={4} class="text-neutral-400">Input sub-stats above first.</td>
 							</tr>
 						)}
 						{entries.map(([stat, entry]) => (
@@ -59,17 +55,6 @@ export function StatDataInput(props: Readonly<{
 									}}></Button>
 									<Button class="bg-red-900 not-disabled:hover:bg-red-800 min-w-auto w-6 h-6" title="Set weight to min" onClick={() => props.onChange(stat, { ...entry, weight: 0 })}></Button>
 								</td>
-								{props.showCurrentRV && (
-									<td>
-										<StatValueInput
-											useRV={props.useRV ?? false}
-											stat={stat}
-											value={entry.currentRV}
-											placeholder="0"
-											onChange={(value) => props.onChange(stat, { ...entry, currentRV: value })}
-										/>
-									</td>
-								)}
 								<td>
 									<StatValueInput
 										useRV={props.useRV ?? false}
