@@ -19,6 +19,7 @@ import { Percentage } from './Percentage';
 import { Button } from './Button';
 import SimulationWorker from '../../simulator/worker?worker';
 import { ResetTrigger, useResettableState, useStoredState } from '../utils/resettableState';
+import { SimulationOutput } from './SimulationOutput';
 
 type StatOptimizers = "bestStats" | "bestRolls";
 
@@ -154,8 +155,8 @@ export function Form() {
 	const [totalProbQualityFactor, setTotalProbQualityFactor] = useResettableState<number>(1, resetTrigger);
 	const [avgRV, setAvgRV] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [bars, setBars] = useResettableState<[number, boolean][]>([], resetTrigger);
-	const [simulatedProb, setSimulatedProb] = useResettableState<[number, number] | undefined>(undefined, resetTrigger);
 	const [simulationWorker, setSimulationWorker] = useResettableState<Worker | undefined>(undefined, resetTrigger);
+	const [simulationVer, setSimulationVer] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [selectedStatsInvalid, setSelectedStatsInvalid] = useResettableState<boolean | undefined>(undefined, resetTrigger);
 
 	const [, setCustomGoalVer] = useState(0);
@@ -368,28 +369,27 @@ export function Form() {
 			setBars([]);
 		}
 
-		setSimulationWorker(prev => {
-			prev?.terminate();
-			if (!doSimulate) return;
+		if (doSimulate) {
+			setSimulationVer(prev => (prev ?? 0) + 1);
+			setSimulationWorker(prev => {
+				prev?.terminate();
 
-			const worker = new SimulationWorker();
-			worker.postMessage({
-				statData,
-				goal: logicGoal,
-				allLinesProb,
-				fixedStats: mode.fixedArtifact ? currentStats : undefined,
-				guaranteedRollsStats,
-				guaranteedRollsCount
+				const worker = new SimulationWorker();
+				worker.postMessage({
+					statData,
+					goal: logicGoal,
+					allLinesProb,
+					fixedStats: mode.fixedArtifact ? currentStats : undefined,
+					guaranteedRollsStats,
+					guaranteedRollsCount
+				});
+
+				return worker;
 			});
-
-			worker.addEventListener("message", (event: MessageEvent<[number, number]>) => {
-				setSimulatedProb(event.data);
-			});
-
-			return worker;
-		});
-
-		setSimulatedProb(undefined);
+		} else {
+			setSimulationVer(undefined);
+			setSimulationWorker(undefined);
+		}
 	};
 
 	return (
@@ -580,20 +580,18 @@ export function Form() {
 									/>{probCost && <span> &#8776; {probCost[0].toLocaleString()} {probCost[1]}</span>}
 								</td>
 							</tr>
-							{(simulatedProb !== undefined || simulationWorker) && <tr>
+							{simulationVer !== undefined && <tr>
 								<th scope="row">Simulated probability:</th>
 								<td>
-									{simulatedProb
-										? <><Percentage value={(mainProb ?? 1) * simulatedProb[0]} /> ({simulatedProb[1].toLocaleString()} runs)</>
-										: <>Running...</>}
-									{simulationWorker &&<button class="link ml-2" onClick={() => {
-										setSimulationWorker(prev => {
+									<SimulationOutput
+										key={simulationVer}
+										mainProb={mainProb}
+										worker={simulationWorker}
+										onTerminate={() => setSimulationWorker(prev => {
 											prev?.terminate();
 											return undefined;
-										});
-									}}>
-										Stop
-									</button>}
+										})}
+									/>
 								</td>
 							</tr>}
 						</tbody>

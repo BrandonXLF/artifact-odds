@@ -5,29 +5,47 @@ export const SIMULATIONS_PER_RUN = 100000;
 
 const randomInt = (max: number) => Math.floor(Math.random() * max);
 
-const getStats = (number: number, stats: SubStat[], statData: StatData): SubStat[] => {
-	if (number === 0) return [];
+type StatOption = {
+	stat: SubStat;
+	relBlockStart: number;
+	blockSize: number;
+};
 
-	const totalWeight = stats.reduce((sum, stat) => sum + statData.getRollWeight(stat), 0);
-	const statDistribution: SubStat[] = [];
+/**
+ * Array where each stat has a number of entries equal to its weight, allowing stats
+ * to be randomly selected according to their weights by picking a random index in the array.
+ */
+const makeStatOptionsArray = (stats: SubStat[], statData: StatData): StatOption[] => {
+	const statDistribution: StatOption[] = [];
 
 	for (const stat of stats) {
 		const weight = statData.getRollWeight(stat);
 
 		for (let j = 0; j < weight; j++) {
-			statDistribution.push(stat);
+			statDistribution.push({ stat, relBlockStart: j, blockSize: weight });
 		}
 	}
 
-	const stat = statDistribution[randomInt(totalWeight)];
+	return statDistribution;
+}
 
-	return [stat, ...getStats(number - 1, stats.filter((s) => s !== stat), statData)];
+const getStats = (number: number, statOptions: StatOption[]): SubStat[] => {
+	if (number === 0) return [];
+
+	const i = randomInt(statOptions.length);
+	const { stat, relBlockStart, blockSize } = statOptions[i];
+
+	// Remove all entries for the selected stat.
+	const newStats = [...statOptions];
+	newStats.splice(i - relBlockStart, blockSize);
+
+	return [stat, ...getStats(number - 1, newStats)];
 };
 
 type RollRecord = Partial<Record<SubStat, number>>;
 
 /**
- * Add a role to rollRecord for the given stat, randomly choosing a roll value.
+ * Add a roll to rollRecord for the given stat, randomly choosing a roll value.
  */
 const addRoll = (rollRecord: RollRecord, stat: SubStat): void => {
 	const chosenRollValue = rollValues[randomInt(rollValues.length)];
@@ -41,7 +59,6 @@ const rollArtifact = (rollRecord: RollRecord, rollsLeft: number, stats: SubStat[
 	if (rollsLeft === 0) return;
 
 	let stat;
-
 	if (guaranteedRollsCount >= rollsLeft) {
 		stat = [...guaranteedRollsStats][randomInt(guaranteedRollsStats.size)];
 	} else {
@@ -49,6 +66,7 @@ const rollArtifact = (rollRecord: RollRecord, rollsLeft: number, stats: SubStat[
 	}
 
 	addRoll(rollRecord, stat);
+
 	rollArtifact(rollRecord, rollsLeft - 1, stats, statData, guaranteedRollsStats, guaranteedRollsCount - (guaranteedRollsStats.has(stat) ? 1 : 0));
 };
 
@@ -84,16 +102,22 @@ const populateArtifact = (rolls: number, stats: SubStat[], statData: StatData, g
 export const runSimulator = (statData: StatData, goal: number, allLinesProb: number, fixedStats?: SubStat[], guaranteedRollsStats?: Set<SubStat>, guaranteedRollsCount?: number): number => {
 	const tot = SIMULATIONS_PER_RUN;
 	let valid = 0;
+	const statOptions = makeStatOptionsArray(statData.random, statData);
 
 	for (let i = 0; i < tot; i++) {
-		const stats = fixedStats ?? [...statData.guaranteed, ...getStats(4 - statData.guaranteed.length, statData.random, statData)];
+		const stats = fixedStats ?? [...statData.guaranteed, ...getStats(4 - statData.guaranteed.length, statOptions)];
 		if (!statData.meetsRequirements(stats)) continue;
+
+		if (goal === -Infinity) {
+			// -infinity means goal is always reached.
+			valid++;
+			continue;
+		}
 
 		const rolls = Math.random() < allLinesProb ? 5 : 4;
 		const value = populateArtifact(rolls, stats, statData, guaranteedRollsStats, guaranteedRollsCount);
-		if (goal !== -Infinity && value <= goal) continue;
-		
-		valid++;
+
+		if (value > goal) valid++;
 	}
 
 	return valid / tot;
