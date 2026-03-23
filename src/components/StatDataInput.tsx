@@ -58,6 +58,7 @@ export function StatDataInput(props: Readonly<{
 										const maxWeight = Math.max(...Object.values(props.entries).map(e => e.weight || 0), 1);
 										props.onChange(stat, { ...entry, weight: maxWeight });
 									}}></Button>
+									<Button class="bg-red-900 not-disabled:hover:bg-red-800 min-w-auto w-6 h-6" title="Set weight to min" onClick={() => props.onChange(stat, { ...entry, weight: 0 })}></Button>
 								</td>
 								{props.showCurrentRV && (
 									<td>
