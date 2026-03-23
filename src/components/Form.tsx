@@ -571,7 +571,7 @@ export function Form() {
 									}}
 									disabled={useAutoGoal}
 									step="any"
-								/> % weighted RV (Max: {bestValue === undefined ? "?" : <Percentage value={bestValue / 100} />})
+								/> % weighted RV (Max: {maxValue === undefined && bestValue === undefined ? "?" : <Percentage value={(maxValue ?? bestValue!) / 100} />})
 							</div>
 						</div>
 					</LabelGrid>
