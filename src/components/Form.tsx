@@ -20,6 +20,7 @@ import { Button } from './Button';
 import SimulationWorker from '../../simulator/worker?worker';
 import { ResetTrigger, useResettableState, useStoredState } from '../utils/resettableState';
 import { SimulationOutput } from './SimulationOutput';
+import { LabelGrid } from './LabelGrid';
 
 type StatOptimizers = "bestStats" | "bestRolls";
 
@@ -401,73 +402,93 @@ export function Form() {
 				</div>
 			</div>
 			<Section class="mt-6">
-				<div class="flex gap-4 flex-wrap">
-					<label>
-						Artifact Type: <select value={artifactType} onChange={(e) => {
-							setArtifactType(Number((e.target as HTMLSelectElement).value));
-
-							const newMainStats = Object.keys(mainStats[+(e.target as HTMLSelectElement).value].stats);
-							if (!newMainStats.includes(mainStat)) {
-								setMainStat(newMainStats[0] as AnyStat);
-							}
-						}}>
-							{Object.entries(mainStats).map(([key, { name }]) => (
-								<option key={key} value={key}>
-									{name}
-								</option>
-							))}
-						</select>
-					</label>
-					<label>
-						Main Stat: <select value={mainStat} onChange={(e) => setMainStat((e.target as HTMLSelectElement).value as AnyStat)}>
-							{Object.keys(mainStats[artifactType].stats).map(stat => (
-								<option key={stat} value={stat}>
-									{stat}
-								</option>
-							))}
-						</select>
-					</label>
-					{!mode.fixedArtifact && mode.fromDomain && <Checkbox label="Accept either set from the domain" checked={acceptEither} onChange={setAcceptEither} />}
-				</div>
-				{mode.fixedArtifact && <div class="flex flex-wrap gap-4 mt-4">
+				<LabelGrid>
 					<div>
-						Sub-stats: <StatNamesInput
-							clearable={!mode.fixedArtifact}
-							stats={currentStats}
-							count={4}
-							onChange={setCurrentStats}
-							validStats={allSubStats.filter(stat => stat !== mainStat)}
-							onValueChange={(stat, value) => setStatWeights(prev => ({ ...prev, [stat]: { ...prev[stat], currentRV: value } }))}
-						/>
+						<div>
+							Artifact Type:
+						</div>
+						<div class="inline-flex gap-4 flex-wrap">
+							<label>
+								<select value={artifactType} onChange={(e) => {
+									setArtifactType(Number((e.target as HTMLSelectElement).value));
+
+									const newMainStats = Object.keys(mainStats[+(e.target as HTMLSelectElement).value].stats);
+									if (!newMainStats.includes(mainStat)) {
+										setMainStat(newMainStats[0] as AnyStat);
+									}
+								}}>
+									{Object.entries(mainStats).map(([key, { name }]) => (
+										<option key={key} value={key}>
+											{name}
+										</option>
+									))}
+								</select>
+							</label>
+							<label>
+								Main Stat: <select value={mainStat} onChange={(e) => setMainStat((e.target as HTMLSelectElement).value as AnyStat)}>
+									{Object.keys(mainStats[artifactType].stats).map(stat => (
+										<option key={stat} value={stat}>
+											{stat}
+										</option>
+									))}
+								</select>
+							</label>
+							{!mode.fixedArtifact && mode.fromDomain && <Checkbox label="Accept either set from the domain" checked={acceptEither} onChange={setAcceptEither} />}
+						</div>
 					</div>
-					<Checkbox label="Started with 4 lines" checked={isFiveRoller} onChange={setIsFiveRoller} />
-				</div>}
+					{mode.fixedArtifact && <div>
+						<div>
+							Sub-stats:
+						</div>
+						<div class="flex flex-wrap gap-x-4 gap-y-2">
+							<StatNamesInput
+								clearable={!mode.fixedArtifact}
+								stats={currentStats}
+								count={4}
+								onChange={setCurrentStats}
+								validStats={allSubStats.filter(stat => stat !== mainStat)}
+								onValueChange={(stat, value) => setStatWeights(prev => ({ ...prev, [stat]: { ...prev[stat], currentRV: value } }))}
+							/>
+							<Checkbox label="Started with 4 lines" checked={isFiveRoller} onChange={setIsFiveRoller} />
+						</div>
+					</div>}
+				</LabelGrid>
 			</Section>
 			{mode.selectedStatCount > 0 && <Section>
 				<div class="mb-2"><strong>Tip</strong>: Run optimize after completing the sections below to find the best subsets to select.</div>
-				{mode.fixedArtifact && <div class="mt-2 mb-3">
-					Guaranteed rolls: <ToggleButtons
-						options={["2", "3", "4"]}
-						value={guaranteedRollsCount - 2}
-						onChange={(value) => setGuaranteedRollsCount(value + 2)}
-					/>
-				</div>}
-				<div class="flex gap-2 items-center flex-wrap">
+				<LabelGrid>
+					{mode.fixedArtifact && <div>
+						<div>
+							Guaranteed rolls:
+						</div>
+						<div>
+							<ToggleButtons
+								options={["2", "3", "4"]}
+								value={guaranteedRollsCount - 2}
+								onChange={(value) => setGuaranteedRollsCount(value + 2)}
+							/>
+						</div>
+					</div>}
 					<div>
-						Selected stats: <StatNamesInput
-							stats={selectedStats}
-							count={mode.selectedStatCount}
-							onChange={setSelectedStats}
-							validStats={validStats}
-							hasKnownError={selectedStatsInvalid}
-							onErrorChange={(hasError) => setSelectedStatsInvalid(hasError)}
-						/>
+						<div>
+							Selected stats:
+						</div>
+						<div class="flex gap-2 items-center flex-wrap">
+							<StatNamesInput
+								stats={selectedStats}
+								count={mode.selectedStatCount}
+								onChange={setSelectedStats}
+								validStats={validStats}
+								hasKnownError={selectedStatsInvalid}
+								onErrorChange={(hasError) => setSelectedStatsInvalid(hasError)}
+							/>
+							{mode.selectedStatOptimizer && (
+								<Button onClick={() => optimizers[mode.selectedStatOptimizer!]()}>Optimize</Button>
+							)}
+							{mode.selectedStatOptimizer === "bestRolls" && <DocumentLink name="selecting-useless-stats.pdf">Selecting worse substats may be optimal</DocumentLink>}
+						</div>
 					</div>
-					{mode.selectedStatOptimizer && (
-						<Button onClick={() => optimizers[mode.selectedStatOptimizer!]()}>Optimize</Button>
-					)}
-					{mode.selectedStatOptimizer === "bestRolls" && <DocumentLink name="selecting-useless-stats.pdf">Selecting worse substats may be optimal</DocumentLink>}
-				</div>
+				</LabelGrid>
 			</Section>}
 			{!mode.fixedArtifact && <section>
 				<h2 class="text-xl font-bold mt-5">Stat Requirements</h2>
@@ -513,34 +534,42 @@ export function Form() {
 					</div>}
 				</Section>
 				<Section>
-					<div class="flex gap-4 flex-wrap">
+					<div class="flex gap-x-5 gap-y-2 flex-wrap mb-4">
 						<Checkbox label="Use current sub-stats for goal" checked={useAutoGoal} onChange={setUseAutoGoal} />
 						<Checkbox label="Include artifacts equal to goal" checked={includeEqual} onChange={setIncludeEqual} />
 					</div>
-					{useAutoGoal && !mode.fixedArtifact && <div class="mt-4">Current sub-stats: <StatNamesInput
-						clearable={!mode.fixedArtifact}
-						stats={currentStats}
-						count={4}
-						onChange={setCurrentStats}
-						validStats={allSubStats.filter(stat => stat !== mainStat)}
-						statValues={mode.fixedArtifact ? undefined : statWeights}
-						useRV={useRV}
-						onValueChange={(stat, value) => setStatWeights(prev => ({ ...prev, [stat]: { ...prev[stat], currentRV: value } }))}
-					/></div>}
-					<div class="mt-4">
-						Goal: <input
-							type="number"
-							class="w-25"
-							value={customGoal}
-							onChange={(e) => {
-								setCustomGoal(round2(+(e.target as HTMLInputElement).value));
-								// Update input if value was rounded back to the current value
-								setCustomGoalVer(v => v + 1);
-							}}
-							disabled={useAutoGoal}
-							step="any"
-						/> % weighted RV
-					</div>
+					<LabelGrid>
+						{useAutoGoal && !mode.fixedArtifact && <div>
+							<div>Current sub-stats:</div>
+							<StatNamesInput
+								clearable={!mode.fixedArtifact}
+								stats={currentStats}
+								count={4}
+								onChange={setCurrentStats}
+								validStats={allSubStats.filter(stat => stat !== mainStat)}
+								statValues={mode.fixedArtifact ? undefined : statWeights}
+								useRV={useRV}
+								onValueChange={(stat, value) => setStatWeights(prev => ({ ...prev, [stat]: { ...prev[stat], currentRV: value } }))}
+							/>
+						</div>}
+						<div>
+							<div>Goal:</div>
+							<div>
+								<input
+									type="number"
+									class="w-25"
+									value={customGoal}
+									onChange={(e) => {
+										setCustomGoal(round2(+(e.target as HTMLInputElement).value));
+										// Update input if value was rounded back to the current value
+										setCustomGoalVer(v => v + 1);
+									}}
+									disabled={useAutoGoal}
+									step="any"
+								/> % weighted RV
+							</div>
+						</div>
+					</LabelGrid>
 				</Section>
 			</section>
 			<section>
@@ -557,50 +586,48 @@ export function Form() {
 					</div>
 				</Section>
 				<Section>
-					<table class="text-left [&_th]:font-normal [&_th]:pr-2">
-						<tbody>
-							{showMainProb && <tr>
-								<th scope="row">Main stat probability:</th>
-								<td><Percentage value={mainProb} /></td>
-							</tr>}
-							{showSubProb && <tr>
-								<th scope="row">Sub-stat probability:</th>
-								<td><Percentage value={subProb} /></td>
-							</tr>}
-							{calcRollProb && <tr>
-								<th scope="row">Roll probability:</th>
-								<td><Percentage value={rollProb} /></td>
-							</tr>}
-							<tr>
-								<th scope="row">Total probability:</th>
-								<td>
-									<Percentage
-										value={totalProb}
-										showQuality={totalProbQualityFactor}
-									/>{probCost && <span> &#8776; {probCost[0].toLocaleString()} {probCost[1]}</span>}
-								</td>
-							</tr>
-							{simulationVer !== undefined && <tr>
-								<th scope="row">Simulated probability:</th>
-								<td>
-									<SimulationOutput
-										key={simulationVer}
-										mainProb={mainProb}
-										worker={simulationWorker}
-										onTerminate={() => setSimulationWorker(prev => {
-											prev?.terminate();
-											return undefined;
-										})}
-									/>
-								</td>
-							</tr>}
-						</tbody>
-					</table>
+					<LabelGrid tight>
+						{showMainProb && <div>
+							<div>Main stat probability:</div>
+							<div><Percentage value={mainProb} /></div>
+						</div>}
+						{showSubProb && <div>
+							<div>Sub-stat probability:</div>
+							<div><Percentage value={subProb} /></div>
+						</div>}
+						{calcRollProb && <div>
+							<div>Roll probability:</div>
+							<div><Percentage value={rollProb} /></div>
+						</div>}
+						<div>
+							<div>Total probability:</div>
+							<div>
+								<Percentage
+									value={totalProb}
+									showQuality={totalProbQualityFactor}
+								/>{probCost && <span> &#8776; {probCost[0].toLocaleString()} {probCost[1]}</span>}
+							</div>
+						</div>
+						{simulationVer !== undefined && <div>
+							<div>Simulated probability:</div>
+							<div>
+								<SimulationOutput
+									key={simulationVer}
+									mainProb={mainProb}
+									worker={simulationWorker}
+									onTerminate={() => setSimulationWorker(prev => {
+										prev?.terminate();
+										return undefined;
+									})}
+								/>
+							</div>
+						</div>}
+					</LabelGrid>
 				</Section>
 				{(avgRV !== undefined || bars.length > 0) && <Section>
 					{avgRV !== undefined && <div>Average weighted RV of rolled artifacts: {Math.round(avgRV / 100).toLocaleString()}%</div>}
 					{bars.length > 0 && <>
-						<div class="flex h-40 items-end mt-5">
+						<div class="flex h-40 items-end mt-5 max-h-[30vw]">
 							{bars.map(([b, isGoal], index) => (
 								<div class={`flex h-full flex-1 items-end ${isGoal ? "outline-2 outline-red-600 z-10" : ""}`} key={index}>
 									<div class="bg-primary flex-1" style={{ height: `${b * 100}%` }}></div>
@@ -614,14 +641,22 @@ export function Form() {
 					</>}
 				</Section>}
 				<Section>
-					<div>
-						Logic: <DocumentLink name="calculating-artifact-roll-outcomes.pdf">Overview of Logic</DocumentLink>
-					</div>
-					<div class="mt-2">
-						Distribution viewers: {Object.entries(distributions).map(([key, { name }], i) => (
-							<>{i === 0 ? "" : ", "}<a key={key} href={`./?dist=${key}`} target="arp-dist">{name}</a></>
-						))}
-					</div>
+					<LabelGrid tight>
+						<div>
+							<div>Logic:</div>
+							<div>
+								<DocumentLink name="calculating-artifact-roll-outcomes.pdf">Overview of Logic</DocumentLink>
+							</div>
+						</div>
+						<div>
+							<div>Distribution viewers:</div>
+							<div>
+								{Object.entries(distributions).map(([key, { name }], i) => (
+									<>{i === 0 ? "" : ", "}<a key={key} href={`./?dist=${key}`} target="arp-dist">{name}</a></>
+								))}
+							</div>
+						</div>
+					</LabelGrid>
 				</Section>
 			</section>
 		</div>
