@@ -16,6 +16,6 @@ export const Percentage = (props: {
 	}
 
 	return <span class={className} style={style}>
-		{valid ? (props.value! * 100).toPrecision(4) : "??"}%
+		{valid ? (props.value! * 100).toPrecision(Math.max(4, Math.floor(Math.log10(props.value! * 100)) + 3)) : "??"}%
 	</span>;
 }

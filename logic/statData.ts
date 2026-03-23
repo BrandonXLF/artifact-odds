@@ -2,6 +2,7 @@ import { AnyStat, statWeights, SubStat } from "./data.js";
 
 export class StatData {
 	private readonly requiredByMin: SubStat[] = [];
+	private readonly _maxWeight: number;
 
 	constructor(
 		private readonly _random: SubStat[],
@@ -15,6 +16,8 @@ export class StatData {
 		for (const [stat, min] of Object.entries(mins)) {
 			if (min > 0) this.requiredByMin.push(stat as SubStat);
 		}
+
+		this._maxWeight = Math.max(...Object.values(weights));
 	}
 
 	get random(): SubStat[] {
@@ -23,6 +26,10 @@ export class StatData {
 
 	get guaranteed(): SubStat[] {
 		return this._guaranteed;
+	}
+
+	get maxWeight(): number {
+		return this._maxWeight;
 	}
 
 	meetsRequirements(combo: SubStat[]): boolean {

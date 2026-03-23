@@ -158,6 +158,7 @@ export function Form() {
 	const [totalProbQualityFactor, setTotalProbQualityFactor] = useResettableState<number>(1, resetTrigger);
 	const [avgRV, setAvgRV] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [bars, setBars] = useResettableState<[number, boolean][]>([], resetTrigger);
+	const [barsBound, setBarsBound] = useResettableState<number>(0, resetTrigger);
 	const [simulationWorker, setSimulationWorker] = useResettableState<Worker | undefined>(undefined, resetTrigger);
 	const [simulationVer, setSimulationVer] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [selectedStatsInvalid, setSelectedStatsInvalid] = useResettableState<boolean | undefined>(undefined, resetTrigger);
@@ -362,14 +363,16 @@ export function Form() {
 
 			const maxBar = Math.max(...buckets);
 			const relativeBars = buckets.map(b => [b / maxBar, false] as [number, boolean]);
-			const goalBucket = toBucket(logicCurrent);
+			const goalBucket = Math.min(buckets.length - 1, toBucket(logicCurrent, statData.maxWeight));
 			relativeBars[goalBucket] = relativeBars[goalBucket] ?? [0, false];
 			relativeBars[goalBucket][1] = true;
 			setBars(relativeBars);
+			setBarsBound(bucketsLimit(buckets, statData.maxWeight) / 100);
 		} else {
 			setRollProb(undefined);
 			setAvgRV(undefined);
 			setBars([]);
+			setBarsBound(0);
 		}
 
 		if (doSimulate) {
@@ -568,7 +571,7 @@ export function Form() {
 									}}
 									disabled={useAutoGoal}
 									step="any"
-								/> % weighted RV
+								/> % weighted RV (Max: {bestValue === undefined ? "?" : <Percentage value={bestValue / 100} />})
 							</div>
 						</div>
 					</LabelGrid>
@@ -638,7 +641,7 @@ export function Form() {
 						</div>
 						<div class="flex">
 							<div class="flex-1">0%</div>
-							<div>{(bucketsLimit(bars) / 100).toLocaleString()}%</div>
+							<div>{barsBound.toLocaleString()}%</div>
 						</div>
 					</>}
 				</Section>}

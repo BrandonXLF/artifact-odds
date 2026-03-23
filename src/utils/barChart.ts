@@ -1,7 +1,7 @@
-export const bucketSize = 400;
+export const bucketSize = 4;
 
-export const toBucket = (value: number) => Math.floor(value / bucketSize);
+export const toBucket = (value: number, maxWeight: number) => Math.floor(value / (bucketSize * maxWeight));
 
-export const bucketsLimit = (buckets: unknown[]) => {
-	return (buckets.length - 1) * bucketSize;
+export const bucketsLimit = (buckets: unknown[], maxWeight: number) => {
+	return (buckets.length - 1) * (bucketSize * maxWeight);
 };
