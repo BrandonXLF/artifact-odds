@@ -1,4 +1,4 @@
-import { allLinesCraftedProb, allLinesDomainProb, allSubStats, AnyStat, mainStats, SubStat } from '../../logic/data';
+import { allLinesCraftedProb, allLinesDomainProb, allSubStats, AnyStat, mainStats, rollValues, statWeights, SubStat } from '../../logic/data';
 import { computeMainStatProb } from '../../logic/mainStatProb';
 import { StatDataConfig } from '../../logic/StatData';
 import { computeRollProb } from '../../logic/subStatDistribution';
@@ -136,7 +136,7 @@ export function Form() {
 	const [customGoal, setCustomGoal] = useStoredState<number>("customGoal", 0, resetTrigger);
 	const [requireCount, setRequireCount] = useStoredState<number>("requireCount", 0, resetTrigger);
 	const [required, setRequired] = useStoredState<SubStat[]>("required", [], resetTrigger);
-	const [statWeights, setStatWeights] = useStoredState(
+	const [statParams, setStatParams] = useStoredState(
 		"statWeights",
 		() => Object.fromEntries(allSubStats.map(stat => [stat, {}])) as Record<SubStat, StatParams>,
 		resetTrigger,
@@ -156,6 +156,7 @@ export function Form() {
 	const [rollProb, setRollProb] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [probCost, setProbCost] = useResettableState<[number, ComponentChild] | undefined>(undefined, resetTrigger);
 	const [totalProbQualityFactor, setTotalProbQualityFactor] = useResettableState<number>(1, resetTrigger);
+	const [overwhelminglyLikely, setOverwhelminglyLikely] = useResettableState<boolean>(false, resetTrigger);
 	const [avgRV, setAvgRV] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [bars, setBars] = useResettableState<[number, boolean][]>([], resetTrigger);
 	const [barsBound, setBarsBound] = useResettableState<number>(0, resetTrigger);
@@ -172,16 +173,16 @@ export function Form() {
 		: allSubStats.filter(stat => stat !== mainStat);
 
 	const currentValue = useMemo(() => {
-		return roundMaxPrecision(Object.entries(statWeights)
+		return roundMaxPrecision(Object.entries(statParams)
 			.filter(([stat]) => currentStats.includes(stat as SubStat))
 			.reduce((acc, [, { currentRV, weight }]) => acc + (currentRV ?? 0) * (weight ?? 0), 0));
-	}, [statWeights, validStats]);
+	}, [statParams, validStats]);
 
 	const showMainProb = !mode.fixedArtifact && mode.mainStatUnknown;
 	const showSubProb = !mode.fixedArtifact;
 	const calcRollProb = useMemo(
-		() => mode.fixedArtifact || Object.values(statWeights).some(w => w.weight || w.minRV),
-		[statWeights, mode.fixedArtifact]
+		() => mode.fixedArtifact || Object.values(statParams).some(w => w.weight || w.minRV),
+		[statParams, mode.fixedArtifact]
 	);
 	const totalProb = subProb !== undefined || rollProb !== undefined || mainProb !== undefined
 		? (mainProb ?? 1) * (subProb ?? 1) * (rollProb ?? 1)
@@ -189,6 +190,14 @@ export function Form() {
 
 	const logicCurrent = Math.round((useAutoGoal ? currentValue : customGoal) * 100);
 	const logicGoal = calcRollProb ? logicCurrent - (Number(includeEqual) / 10) : -Infinity;
+
+	const sortedValidWeights = useMemo(
+		() => Object.entries(statParams)
+			.filter(([stat]) => validStats.includes(stat as SubStat))
+			.map(([stat, w]) => [stat, w.weight ?? 0] as [SubStat, number])
+			.sort((a, b) => (b[1] - a[1])),
+		[statParams, validStats]
+	);
 
 	useEffect(() => {
 		if (useAutoGoal) {
@@ -218,11 +227,8 @@ export function Form() {
 	}, [Number.isNaN(totalProb) ? false : totalProb]);
 
 	useEffect(() => {
-		const weights = Object.values(statWeights).filter(w => w.weight !== undefined).map(w => w.weight!);
-		weights.sort((a, b) => b - a);
-
-		const top4 = weights.slice(0, 4).reduce((a, b) => a + b, 0) * 100;
-		const best = (weights[0] ?? 0) * 100;
+		const top4 = sortedValidWeights.slice(0, 4).reduce((acc, [_, w]) => acc + w, 0) * 100;
+		const best = (sortedValidWeights[0]?.[1] ?? 0) * 100;
 
 		setBestValue(top4 + best * 5);
 
@@ -231,7 +237,7 @@ export function Form() {
 		} else {
 			setMaxValue(undefined);
 		}
-	}, [statWeights, isFiveRoller, mode.fixedArtifact]);
+	}, [sortedValidWeights, isFiveRoller, mode.fixedArtifact]);
 
 	const getBaseConfig = () => {
 		const statDataConfig = new StatDataConfig();
@@ -245,7 +251,7 @@ export function Form() {
 			statDataConfig.onlyInclude(currentStats);
 		}
 
-		for (const [stat, data] of Object.entries(statWeights) as [SubStat, StatParamInputEntry][]) {
+		for (const [stat, data] of Object.entries(statParams) as [SubStat, StatParamInputEntry][]) {
 			if (data.weight !== undefined) {
 				statDataConfig.setWeight(stat, Math.round(data.weight * 100));
 			}
@@ -396,6 +402,36 @@ export function Form() {
 			setSimulationVer(undefined);
 			setSimulationWorker(undefined);
 		}
+
+		checkIfOverwhelminglyLikely();
+	};
+
+	const checkIfOverwhelminglyLikely = () => {
+		// - No other stat can replace max stat rolls
+		// - No other stat can replace top 4 as defaults
+		if (
+			(maxValue ?? bestValue) !== undefined &&
+			sortedValidWeights[0][1] > sortedValidWeights[1][1] &&
+			(sortedValidWeights.length < 5 || sortedValidWeights[3][1] > sortedValidWeights[4][1])
+		) {
+			const secondBest = (maxValue ?? bestValue!) - (
+				sortedValidWeights[3][1] *
+					(rollValues[rollValues.length - 1] - rollValues[rollValues.length - 2])
+			);
+
+			// - Goal is better than the second best possibility
+			// - Weights are as small as possible
+			if (
+				secondBest * 100 <= logicGoal &&
+				sortedValidWeights.slice(0, 4).reduce((acc, [_, w]) => acc + w, 0) <=
+					Object.values(statWeights).sort((a, b) => b - a).slice(0, 4).reduce((acc, w) => acc + w, 0)
+			) {
+				setOverwhelminglyLikely(true);
+				return;
+			}
+		}
+
+		setOverwhelminglyLikely(false);
 	};
 
 	return (
@@ -453,8 +489,8 @@ export function Form() {
 								count={4}
 								onChange={setCurrentStats}
 								validStats={allSubStats.filter(stat => stat !== mainStat)}
-								statValues={mode.fixedArtifact && useAutoGoal ? statWeights : undefined}
-								onValueChange={(stat, value) => setStatWeights(prev => ({ ...prev, [stat]: { ...prev[stat], currentRV: value } }))}
+								statValues={mode.fixedArtifact && useAutoGoal ? statParams : undefined}
+								onValueChange={(stat, value) => setStatParams(prev => ({ ...prev, [stat]: { ...prev[stat], currentRV: value } }))}
 							/>
 						</div>
 					</div>}
@@ -525,9 +561,9 @@ export function Form() {
 				</div>
 				<Section>
 					<StatParamInput
-						entries={statWeights}
+						entries={statParams}
 						validStats={validStats}
-						onChange={(stat, entry) => setStatWeights(prev => ({ ...prev, [stat]: entry }))}
+						onChange={(stat, entry) => setStatParams(prev => ({ ...prev, [stat]: entry }))}
 						useRV={useRV}
 					/>
 					{bestValue === undefined ? null : <div class="mt-2">
@@ -550,8 +586,8 @@ export function Form() {
 								onChange={setCurrentStats}
 								validStats={allSubStats.filter(stat => stat !== mainStat)}
 								useRV={useRV}
-								statValues={mode.fixedArtifact ? undefined : statWeights}
-								onValueChange={(stat, value) => setStatWeights(prev => ({ ...prev, [stat]: { ...prev[stat], currentRV: value } }))}
+								statValues={mode.fixedArtifact ? undefined : statParams}
+								onValueChange={(stat, value) => setStatParams(prev => ({ ...prev, [stat]: { ...prev[stat], currentRV: value } }))}
 							/>
 						</div>}
 						<div>
@@ -607,9 +643,17 @@ export function Form() {
 								<Percentage
 									value={totalProb}
 									showQuality={totalProbQualityFactor}
-								/>{probCost && <span> &#8776; {probCost[0].toLocaleString()} {probCost[1]}</span>}
+								/>{
+									probCost && <span> &#8776; {probCost[0].toLocaleString()} {probCost[1]}</span>
+								}
 							</div>
 						</div>
+						{totalProb !== undefined && totalProb !== 0 && overwhelminglyLikely && <div>
+							<div></div>
+							<div class="flex gap-2 items-center">
+								<img src="./nah-id-win.png" class="h-4" /> Nah, I'd win
+							</div>
+						</div>}
 						{simulationVer !== undefined && <div>
 							<div>Simulated probability:</div>
 							<div>
