@@ -159,7 +159,6 @@ export function Form() {
 	const [overwhelminglyLikely, setOverwhelminglyLikely] = useResettableState<boolean>(false, resetTrigger);
 	const [avgRV, setAvgRV] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [bars, setBars] = useResettableState<[number, boolean][]>([], resetTrigger);
-	const [barsBound, setBarsBound] = useResettableState<number>(0, resetTrigger);
 	const [simulationWorker, setSimulationWorker] = useResettableState<Worker | undefined>(undefined, resetTrigger);
 	const [simulationVer, setSimulationVer] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [selectedStatsInvalid, setSelectedStatsInvalid] = useResettableState<boolean | undefined>(undefined, resetTrigger);
@@ -227,6 +226,12 @@ export function Form() {
 	}, [Number.isNaN(totalProb) ? false : totalProb]);
 
 	useEffect(() => {
+		if (sortedValidWeights.length === 0 || sortedValidWeights[0]?.[1] === 0) {
+			setBestValue(undefined);
+			setMaxValue(undefined);
+			return;
+		}
+
 		const top4 = sortedValidWeights.slice(0, 4).reduce((acc, [_, w]) => acc + w, 0) * 100;
 		const best = (sortedValidWeights[0]?.[1] ?? 0) * 100;
 
@@ -373,12 +378,10 @@ export function Form() {
 			relativeBars[goalBucket] = relativeBars[goalBucket] ?? [0, false];
 			relativeBars[goalBucket][1] = true;
 			setBars(relativeBars);
-			setBarsBound(bucketsLimit(buckets, statData.maxWeight) / 100);
 		} else {
 			setRollProb(undefined);
 			setAvgRV(undefined);
 			setBars([]);
-			setBarsBound(0);
 		}
 
 		if (doSimulate) {
@@ -424,7 +427,7 @@ export function Form() {
 			if (
 				secondBest * 100 <= logicGoal &&
 				sortedValidWeights.slice(0, 4).reduce((acc, [_, w]) => acc + w, 0) <=
-					Object.values(statWeights).sort((a, b) => b - a).slice(0, 4).reduce((acc, w) => acc + w, 0)
+					validStats.map(s => statWeights[s]).sort((a, b) => b - a).slice(0, 4).reduce((acc, w) => acc + w, 0)
 			) {
 				setOverwhelminglyLikely(true);
 				return;
@@ -682,7 +685,7 @@ export function Form() {
 						</div>
 						<div class="flex">
 							<div class="flex-1">0%</div>
-							<div>{barsBound.toLocaleString()}%</div>
+							<div>{(maxValue ?? bestValue ?? 0).toLocaleString()}%</div>
 						</div>
 					</>}
 				</Section>}
