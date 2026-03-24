@@ -214,7 +214,7 @@ export function Form() {
 			mode.output.desc ? <abbr title={mode.output.desc}>{mode.output.unit}</abbr> : <span>{mode.output.unit}</span>
 		]);
 
-		setTotalProbQualityFactor(!mode.fixedArtifact && mode.mainStatUnknown ? 25 : 1)
+		setTotalProbQualityFactor(!mode.fixedArtifact && mode.mainStatUnknown ? 35 : 1)
 	}, [Number.isNaN(totalProb) ? false : totalProb]);
 
 	useEffect(() => {
