@@ -1,3 +1,4 @@
+import { twMerge } from "tailwind-merge";
 import { SubStat } from "../../logic/data";
 import { round2 } from "../utils/round";
 import { Button } from "./Button";
@@ -9,6 +10,49 @@ export interface StatParamInputEntry {
 	maxRV?: number;
 }
 
+interface WeightButtonAttrs {
+	short: string;
+	name: string;
+	scale: number;
+	class: string;
+	hoverClass: string;
+}
+
+export const weightButtons = [
+	{
+		short: "1",
+		name: "max",
+		scale: 1,
+		class: "bg-green-800",
+		hoverClass: "not-disabled:hover:bg-green-700"
+	},
+	{
+		short: "½",
+		name: "half",
+		scale: 0.5,
+		class: "bg-amber-700",
+		hoverClass: "not-disabled:hover:bg-amber-600"
+	},
+	{
+		short: "0",
+		name: "0",
+		scale: 0,
+		class: "bg-red-800",
+		hoverClass: "not-disabled:hover:bg-red-700"
+	}
+];
+
+const WeightButton = (props: Readonly<{
+	attrs: WeightButtonAttrs;
+	onClick: () => void;
+}>) => (
+	<Button
+		title={`Set weight to ${props.attrs.name}`}
+		class={twMerge(`min-w-auto w-6 h-6 flex items-center justify-center`, props.attrs.class, props.attrs.hoverClass)}
+		onClick={() => props.onClick()}
+	>{props.attrs.short}</Button>
+);
+
 export function StatParamInput(props: Readonly<{
 	entries: Record<SubStat, StatParamInputEntry>;
 	validStats: SubStat[];
@@ -16,10 +60,20 @@ export function StatParamInput(props: Readonly<{
 	useRV?: boolean;
 }>) {
 	const unit = props.useRV ? "RV%" : "Stat";
-	const entries = (Object.entries(props.entries) as [SubStat, StatDataInputEntry][]).filter(([stat]) => props.validStats.includes(stat));
+	const entries = (Object.entries(props.entries) as [SubStat, StatParamInputEntry][]).filter(([stat]) => props.validStats.includes(stat));
+
+	const setRelWeight = (stat: SubStat, entry: StatParamInputEntry, scale: number) => {
+		const newWeight = scale === 0 ? 0 : Math.max(...Object.values(props.entries).map(e => e.weight || 0), 1) * scale;
+		props.onChange(stat, { ...entry, weight: newWeight });
+	};
 
 	return (
 		<div>
+		<div>
+			<strong>Weight</strong> is the relative worth of each stat. Use the {weightButtons.map(btn => 
+				<><span class={`inline-block w-3 h-3 border rounded ${btn.class}`}></span>{' '}</>
+			)}buttons to quickly set weights, or enter custom weights (which can be more than 1). A reasonable source for more granular weights is the "substat priority" %'s from <a href="https://akasha.cv" target="_blank">akasha.cv</a>.
+		</div>
 			<div class="overflow-x-auto">
 				<table class="mt-2 [&_td,&_th]:px-2 [&_td,&_th]:py-1 [&_td,&_th]:first:pl-0 [&_td,&_th]:last:pr-0">
 					<thead class="text-left">
@@ -49,11 +103,9 @@ export function StatParamInput(props: Readonly<{
 											weight: value === undefined ? value : round2(value)
 										})}
 									/>
-									<Button class="bg-green-900 not-disabled:hover:bg-green-800 min-w-auto w-6 h-6" title="Set weight to max" onClick={() => {
-										const maxWeight = Math.max(...Object.values(props.entries).map(e => e.weight || 0), 1);
-										props.onChange(stat, { ...entry, weight: maxWeight });
-									}}></Button>
-									<Button class="bg-red-900 not-disabled:hover:bg-red-800 min-w-auto w-6 h-6" title="Set weight to 0" onClick={() => props.onChange(stat, { ...entry, weight: 0 })}></Button>
+									{weightButtons.map((btn) => (
+										<WeightButton key={btn.name} attrs={btn} onClick={() => setRelWeight(stat, entry, btn.scale)} />
+									))}
 								</td>
 								<td>
 									<StatValueInput
@@ -81,4 +133,3 @@ export function StatParamInput(props: Readonly<{
 		</div>
 	);
 }
-

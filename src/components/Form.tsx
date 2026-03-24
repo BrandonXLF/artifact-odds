@@ -524,9 +524,6 @@ export function Form() {
 					<Checkbox label="Input roll value (RV) instead of stat value" checked={useRV} onChange={setUseRV} />
 				</div>
 				<Section>
-					<div>
-						<strong>Weight</strong> is the relative worth of each stat. Press <span class="inline-block w-3 h-3 bg-green-900 border rounded"></span> to set it to max, and <span class="inline-block w-3 h-3 bg-red-900 border rounded"></span> to set it to 0. A reasonable source for more granular weights is the "substat priority" %'s from <a href="https://akasha.cv" target="_blank">akasha.cv</a>.
-					</div>
 					<StatParamInput
 						entries={statWeights}
 						validStats={validStats}
