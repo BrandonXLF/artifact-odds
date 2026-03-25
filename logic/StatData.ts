@@ -1,4 +1,4 @@
-import { AnyStat, statWeights, SubStat } from "./data.js";
+import { allSubStats, AnyStat, statWeights, SubStat } from "./data.js";
 
 export class StatData {
 	private readonly requiredByMin: SubStat[] = [];
@@ -7,9 +7,9 @@ export class StatData {
 	constructor(
 		private readonly _random: SubStat[],
 		private readonly _guaranteed: SubStat[],
-		private readonly weights: { [key: string]: number },
-		private readonly mins: { [key: string]: number },
-		private readonly limits: { [key: string]: number },
+		private readonly weights: Partial<Record<SubStat, number>>,
+		private readonly mins: Partial<Record<SubStat, number>>,
+		private readonly limits: Partial<Record<SubStat, number>>,
 		private readonly required: SubStat[],
 		private readonly requiredCount: number,
 	) {
@@ -61,20 +61,9 @@ export class StatData {
 }
 
 export class StatDataConfig {
-	random: SubStat[] = [
-		"HP",
-		"ATK",
-		"DEF",
-		"HP%",
-		"ATK%",
-		"DEF%",
-		"EM",
-		"ER%",
-		"CRIT Rate%",
-		"CRIT DMG%"
-	];
+	random: SubStat[] = [...allSubStats];
 
-	weights: { [key: string]: number } = {
+	weights: Record<SubStat, number> = {
 		"HP": 0,
 		"ATK": 0,
 		"DEF": 0,
@@ -87,7 +76,7 @@ export class StatDataConfig {
 		"CRIT DMG%": 0,
 	};
 
-	mins: { [key: string]: number } = {
+	mins: Record<SubStat, number> = {
 		"HP": 0,
 		"ATK": 0,
 		"DEF": 0,
@@ -100,7 +89,7 @@ export class StatDataConfig {
 		"CRIT DMG%": 0,
 	};
 
-	limits: { [key: string]: number } = {
+	limits: Record<SubStat, number> = {
 		"HP": Infinity,
 		"ATK": Infinity,
 		"DEF": Infinity,
@@ -159,9 +148,9 @@ export class StatDataConfig {
 	}
 
 	make(): StatData {
-		const weights: { [key: string]: number } = {};
-		const mins: { [key: string]: number } = {};
-		const limits: { [key: string]: number } = {};
+		const weights: Partial<Record<SubStat, number>> = {};
+		const mins: Partial<Record<SubStat, number>> = {};
+		const limits: Partial<Record<SubStat, number>> = {};
 
 		for (const stat of [...this.random, ...this.guaranteed]) {
 			weights[stat] = this.weights[stat];

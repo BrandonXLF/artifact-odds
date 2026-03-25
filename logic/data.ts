@@ -1,7 +1,19 @@
 export type SubStat = "HP" | "ATK" | "DEF" | "HP%" | "ATK%" | "DEF%" | "ER%" | "EM" | "CRIT Rate%" | "CRIT DMG%";
 export type AnyStat = SubStat | "Pyro DMG Bonus%" | "Hydro DMG Bonus%" | "Anemo DMG Bonus%" | "Electro DMG Bonus%" | "Dendro DMG Bonus%" | "Cryo DMG Bonus%" | "Physical DMG Bonus%" | "Geo DMG Bonus%" | "Healing Bonus%";
 
-export const allSubStats: SubStat[] = ["CRIT Rate%", "CRIT DMG%", "ATK%", "HP%", "DEF%", "ER%", "EM", "ATK", "HP", "DEF"];
+// Ordered from (typically) best to worse
+export const allSubStats: SubStat[] = [
+	"CRIT Rate%",
+	"CRIT DMG%",
+	"ATK%",
+	"HP%",
+	"DEF%",
+	"ER%",
+	"EM",
+	"ATK",
+	"HP",
+	"DEF"
+];
 
 export const statWeights: Record<SubStat, number> = {
 	"HP": 6,

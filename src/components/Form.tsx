@@ -11,7 +11,7 @@ import { Section } from './Section';
 import { ToggleButtons } from './ToggleButtonts';
 import { Checkbox } from './Checkbox';
 import { ComponentChild } from 'preact';
-import { bucketsLimit, toBucket } from '../utils/barChart';
+import { toBucket } from '../utils/barChart';
 import { DocumentLink } from './DocumentLink';
 import { distributions } from '../distributions';
 import { round2, roundMaxPrecision } from '../utils/round';
@@ -130,12 +130,12 @@ export function Form() {
 	const [modeNum, setModeNum] = useStoredState<number>("mode", 0);
 	const [artifactType, setArtifactType] = useStoredState<number>("artifactType", 0, resetTrigger);
 	const [mainStat, setMainStat] = useStoredState<AnyStat>("mainStat", "HP", resetTrigger);
-	const [currentStats, setCurrentStats] = useStoredState<SubStat[]>("currentStats", [], resetTrigger);
-	const [selectedStats, setSelectedStats] = useStoredState<SubStat[]>("selectedStats", [], resetTrigger);
+	const [currentStats, setCurrentStats] = useStoredState<SubStat[]>("currentStats", () => [], resetTrigger);
+	const [selectedStats, setSelectedStats] = useStoredState<SubStat[]>("selectedStats", () => [], resetTrigger);
 	const [guaranteedRollsCount, setGuaranteedRollsCount] = useStoredState<number>("guaranteedRollsCount", 2, resetTrigger);
 	const [customGoal, setCustomGoal] = useStoredState<number>("customGoal", 0, resetTrigger);
 	const [requireCount, setRequireCount] = useStoredState<number>("requireCount", 0, resetTrigger);
-	const [required, setRequired] = useStoredState<SubStat[]>("required", [], resetTrigger);
+	const [required, setRequired] = useStoredState<SubStat[]>("required", () => [], resetTrigger);
 	const [statParams, setStatParams] = useStoredState(
 		"statWeights",
 		() => Object.fromEntries(allSubStats.map(stat => [stat, {}])) as Record<SubStat, StatParams>,
@@ -149,6 +149,7 @@ export function Form() {
 	const [doSimulate, setDoSimulate] = useStoredState<boolean>("runMonteCarlo", false, resetTrigger);
 	const [useRV, setUseRV] = useStoredState<boolean>("useRV", false, resetTrigger);
 
+	const [allOptimalPairs, setAllOptimalPairs] = useResettableState<[SubStat, SubStat][]>(() => [], resetTrigger);
 	const [bestValue, setBestValue] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [maxValue, setMaxValue] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [mainProb, setMainProb] = useResettableState<number | undefined>(undefined, resetTrigger);
@@ -244,6 +245,24 @@ export function Form() {
 		}
 	}, [sortedValidWeights, isFiveRoller, mode.fixedArtifact]);
 
+	useEffect(
+		() => setAllOptimalPairs([]),
+		// All dependencies of calculate() besides selectedStats
+		[
+			mainStat,
+			mode,
+			required,
+			requireCount,
+			currentStats,
+			statParams,
+			artifactType,
+			acceptEither,
+			allLinesProb,
+			logicGoal,
+			guaranteedRollsCount
+		]
+	);
+
 	const getBaseConfig = () => {
 		const statDataConfig = new StatDataConfig();
 		statDataConfig.exclude(mainStat);
@@ -277,7 +296,7 @@ export function Form() {
 		bestStats: () => {
 			const baseStatData = getBaseConfig().make();
 
-			let maxStats: null | [SubStat, SubStat] = null;
+			let maxStats: [SubStat, SubStat][] = [];
 			let maxProb = -1;
 
 			for (const [stats] of getSubStatCombinations(baseStatData, 2)) {
@@ -290,22 +309,25 @@ export function Form() {
 				const rollProb = computeRollProb(statData, validCombos, logicGoal, allLinesProb)[0];
 				const prob = subStatProb * rollProb;
 
-				if (prob > maxProb) {
-					maxStats = stats as [SubStat, SubStat];
+				// Note: This is far larger than the minimum difference between actual probabilities
+				if (prob - maxProb > 4 * Number.EPSILON) {
+					maxStats = [stats as [SubStat, SubStat]];
 					maxProb = prob;
+				} else if (Math.abs(prob - maxProb) <= 4 * Number.EPSILON) {
+					maxStats.push(stats as [SubStat, SubStat]);
 				}
 			}
 
-			if (maxStats !== null) {
-				setSelectedStats(maxStats);
+			if (maxStats.length) {
+				setSelectedStats(maxStats[0]);
+				setAllOptimalPairs(maxStats);
 			}
 		},
 		bestRolls: () => {
 			const baseStatData = getBaseConfig().make();
 
-			let maxStats: null | [SubStat, SubStat] = null;
+			let maxStatsAndAvg: [SubStat, SubStat, number][] = [];
 			let maxProb = -1;
-			let maxAvg = -1;
 
 			for (const [stats] of getSubStatCombinations(baseStatData, 2)) {
 				const statData = getBaseConfig().make();
@@ -319,15 +341,21 @@ export function Form() {
 					guaranteedRollsCount
 				);
 
-				if (rollProb > maxProb || (rollProb === maxProb && avg > maxAvg)) {
-					maxStats = stats as [SubStat, SubStat];
+				// Note: This is far larger than the minimum difference between actual probabilities
+				if (rollProb - maxProb > 4 * Number.EPSILON) {
+					maxStatsAndAvg = [[...stats, avg] as [SubStat, SubStat, number]];
 					maxProb = rollProb;
-					maxAvg = avg;
+				} else if (Math.abs(rollProb - maxProb) <= 4 * Number.EPSILON) {
+					maxStatsAndAvg.push([...stats, avg] as [SubStat, SubStat, number]);
 				}
 			}
 
-			if (maxStats !== null) {
-				setSelectedStats(maxStats);
+			maxStatsAndAvg.sort((a, b) => b[2] - a[2]); // Sort by average RV descending
+			const maxStats = maxStatsAndAvg.map(([s1, s2]) => [s1, s2] as [SubStat, SubStat]);
+
+			if (maxStats.length) {
+				setSelectedStats(maxStats[0]);
+				setAllOptimalPairs(maxStats);
 			}
 		}
 	};
@@ -533,6 +561,18 @@ export function Form() {
 							{mode.selectedStatOptimizer === "bestRolls" && <DocumentLink name="selecting-useless-stats.pdf">Selecting worse substats may be optimal</DocumentLink>}
 						</div>
 					</div>
+					{allOptimalPairs.length > 1 && <div>
+						<div>
+							All optimal pairs:
+						</div>
+						<div class="flex gap-x-4 gap-y-1 items-center overflow-auto">
+							{allOptimalPairs.map(([s1, s2], i) => (
+								<button key={i} onClick={() => setSelectedStats([s1, s2])} class="shrink-0 underline">
+									{s1} + {s2}
+								</button>
+							))}
+						</div>
+					</div>}
 				</LabelGrid>
 			</Section>}
 			{!mode.fixedArtifact && <section>
