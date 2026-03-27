@@ -1,4 +1,4 @@
-import { allLinesCraftedProb, allLinesDomainProb, allSubStats, AnyStat, mainStats, rollValues, statWeights, SubStat } from '../../logic/data';
+import { allSubStats, AnyStat, mainStats, rollValues, statWeights, SubStat } from '../../logic/data';
 import { computeMainStatProb } from '../../logic/mainStatProb';
 import { StatDataConfig } from '../../logic/StatData';
 import { computeRollProb } from '../../logic/subStatDistribution';
@@ -10,10 +10,8 @@ import { computeSubProb } from '../../logic/subStatProb';
 import { Section } from './Section';
 import { ToggleButtons } from './ToggleButtonts';
 import { Checkbox } from './Checkbox';
-import { ComponentChild } from 'preact';
 import { toBucket } from '../utils/barChart';
 import { DocumentLink } from './DocumentLink';
-import { distributions } from '../distributions';
 import { round2, roundMaxPrecision } from '../utils/round';
 import { Percentage } from './Percentage';
 import { Button } from './Button';
@@ -21,106 +19,9 @@ import SimulationWorker from '../../simulator/worker?worker';
 import { ResetTrigger, useResettableState, useStoredState } from '../utils/resettableState';
 import { SimulationOutput } from './SimulationOutput';
 import { LabelGrid } from './LabelGrid';
-
-type StatOptimizers = "bestStats" | "bestRolls";
-
-type BaseMode = {
-	name: string;
-	selectedStatCount: number;
-	selectedStatOptimizer?: StatOptimizers;
-	output?: {
-		unit: string;
-		perArtifact?: number | ((artifactType: number) => number);
-		desc?: string;
-	}
-}
-
-type UnfixedMode = BaseMode & {
-	fixedArtifact: false;
-	mainStatUnknown: boolean;
-	allLinesProb: number;
-	fromDomain: boolean;
-}
-
-type FixedMode = BaseMode & {
-	fixedArtifact: true;
-}
-
-type Mode = UnfixedMode | FixedMode;
-
-const modes: Mode[] = [
-	{
-		name: "Artifact Domain",
-		fixedArtifact: false,
-		mainStatUnknown: true,
-		allLinesProb: allLinesDomainProb,
-		fromDomain: true,
-		selectedStatCount: 0,
-		output: {
-			unit: "days",
-			perArtifact: 1 / 8,
-			desc: "Average of 8 artifacts = 160 resin per day"
-		}
-	},
-	{
-		name: "Artifact Strongbox",
-		fixedArtifact: false,
-		mainStatUnknown: true,
-		allLinesProb: allLinesCraftedProb,
-		fromDomain: false,
-		selectedStatCount: 0,
-		output: { unit: "strongboxes" }
-	},
-	{
-		name: "Artifact Definition",
-		fixedArtifact: false,
-		mainStatUnknown: false,
-		allLinesProb: allLinesCraftedProb,
-		fromDomain: false,
-		selectedStatCount: 2,
-		selectedStatOptimizer: "bestStats",
-		output: {
-			unit: "Sanctifying Elixir",
-			perArtifact: (artifactType: number) => {
-				switch (artifactType) {
-					case 0:
-					case 1:
-						return 1;
-					case 2:
-						return 2;
-					case 3:
-						return 4;
-					case 4:
-						return 3;
-					default:
-						return Number.NaN;
-				}
-			}
-		}
-	},
-	{
-		name: "Artifact Reroll",
-		fixedArtifact: true,
-		selectedStatCount: 2,
-		selectedStatOptimizer: "bestRolls",
-		output: {
-			unit: "Dust of Enlightenment (with same # of guaranteed rolls)",
-			perArtifact: (artifactType: number) => {
-				switch (artifactType) {
-					case 0:
-					case 1:
-						return 1;
-					case 2:
-					case 3:
-					case 4:
-						return 2;
-					default:
-						return Number.NaN;
-				}
-			}
-		}
-	}
-];
+import { LogicSection } from './LogicSection';
+import { RVGraph } from './RVGraph';
+import { modes, StatOptimizers } from './modes';
 
 type StatParams = StatParamInputEntry & StatListInputEntry;
 
@@ -720,38 +621,9 @@ export function Form() {
 				</Section>
 				{(avgRV !== undefined || bars.length > 0) && <Section>
 					{avgRV !== undefined && <div>Average weighted RV of rolled artifacts: {Math.round(avgRV / 100).toLocaleString()}%</div>}
-					{bars.length > 0 && <>
-						<div class="flex h-40 items-end mt-5 max-h-[30vw]">
-							{bars.map(([b, isGoal], index) => (
-								<div class={`flex h-full flex-1 items-end ${isGoal ? "outline-2 outline-red-600 z-10" : ""}`} key={index}>
-									<div class="bg-primary flex-1" style={{ height: `${b * 100}%` }}></div>
-								</div>
-							))}
-						</div>
-						<div class="flex">
-							<div class="flex-1">0%</div>
-							<div>{(maxAttainable ?? 0).toLocaleString()}%</div>
-						</div>
-					</>}
+					{bars.length > 0 && <RVGraph bars={bars} max={maxAttainable} />}
 				</Section>}
-				<Section>
-					<LabelGrid tight>
-						<div>
-							<div>Logic:</div>
-							<div>
-								<DocumentLink name="calculating-artifact-roll-outcomes.pdf">Overview of Logic</DocumentLink>
-							</div>
-						</div>
-						<div>
-							<div>Distribution viewers:</div>
-							<div>
-								{Object.entries(distributions).map(([key, { name }], i) => (
-									<>{i === 0 ? "" : ", "}<a key={key} href={`./?dist=${key}`} target="arp-dist">{name}</a></>
-								))}
-							</div>
-						</div>
-					</LabelGrid>
-				</Section>
+				<LogicSection />
 			</section>
 		</div>
 	);
