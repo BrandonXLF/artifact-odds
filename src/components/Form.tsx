@@ -127,6 +127,7 @@ type StatParams = StatParamInputEntry & StatListInputEntry;
 export function Form() {
 	const resetTrigger = useRef(new ResetTrigger()).current;
 
+	// User input
 	const [modeNum, setModeNum] = useStoredState<number>("mode", 0);
 	const [artifactType, setArtifactType] = useStoredState<number>("artifactType", 0, resetTrigger);
 	const [mainStat, setMainStat] = useStoredState<AnyStat>("mainStat", "HP", resetTrigger);
@@ -149,19 +150,21 @@ export function Form() {
 	const [doSimulate, setDoSimulate] = useStoredState<boolean>("runMonteCarlo", false, resetTrigger);
 	const [useRV, setUseRV] = useStoredState<boolean>("useRV", false, resetTrigger);
 
+	// Input feedback
+	const [selectedStatsInvalid, setSelectedStatsInvalid] = useResettableState<boolean | undefined>(undefined, resetTrigger);
 	const [allOptimalPairs, setAllOptimalPairs] = useResettableState<[SubStat, SubStat][]>(() => [], resetTrigger);
+
+	// Results
 	const [mainProb, setMainProb] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [subProb, setSubProb] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [rollProb, setRollProb] = useResettableState<number | undefined>(undefined, resetTrigger);
-	const [probCost, setProbCost] = useResettableState<[number, ComponentChild] | undefined>(undefined, resetTrigger);
-	const [totalProbQualityFactor, setTotalProbQualityFactor] = useResettableState<number>(1, resetTrigger);
 	const [overwhelminglyLikely, setOverwhelminglyLikely] = useResettableState<boolean>(false, resetTrigger);
 	const [avgRV, setAvgRV] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [bars, setBars] = useResettableState<[number, boolean][]>([], resetTrigger);
 	const [simulationWorker, setSimulationWorker] = useResettableState<Worker | undefined>(undefined, resetTrigger);
 	const [simulationVer, setSimulationVer] = useResettableState<number | undefined>(undefined, resetTrigger);
-	const [selectedStatsInvalid, setSelectedStatsInvalid] = useResettableState<boolean | undefined>(undefined, resetTrigger);
 
+	// Non-resettable
 	const [, setCustomGoalVer] = useState(0);
 
 	const mode = modes[modeNum];
@@ -197,16 +200,9 @@ export function Form() {
 		[statParams, validStats]
 	);
 
-	useEffect(() => {
-		if (useAutoGoal) {
-			setCustomGoal(currentValue);
-		}
-	}, [currentValue, useAutoGoal]);
-
-	useEffect(() => {
+	const probCost = useMemo(() => {
 		if (totalProb === undefined || mode.output === undefined) {
-			setProbCost(undefined);
-			return;
+			return undefined;
 		}
 
 		const odds = 1 / totalProb;
@@ -216,13 +212,8 @@ export function Form() {
 			mult = typeof mode.output.perArtifact === "function" ? mode.output.perArtifact(artifactType) : mode.output.perArtifact;
 		}
 
-		setProbCost([
-			Math.round(odds * mult),
-			mode.output.desc ? <abbr title={mode.output.desc}>{mode.output.unit}</abbr> : <span>{mode.output.unit}</span>
-		]);
-
-		setTotalProbQualityFactor(!mode.fixedArtifact && mode.mainStatUnknown ? 35 : 1)
-	}, [Number.isNaN(totalProb) ? false : totalProb]);
+		return Math.round(odds * mult);
+	}, [totalProb, mode]);
 
 	const [maxTheoretical, maxAttainable] = useMemo(() => {
 		if (sortedValidWeights.length === 0 || sortedValidWeights[0]?.[1] === 0) {
@@ -239,6 +230,23 @@ export function Form() {
 
 		return [max, max];
 	}, [sortedValidWeights, isFiveRoller, mode.fixedArtifact]);
+
+	useEffect(() => {
+		setMainProb(undefined);
+		setSubProb(undefined);
+		setRollProb(undefined);
+		setOverwhelminglyLikely(false);
+		setAvgRV(undefined);
+		setBars([]);
+		setSimulationWorker(undefined);
+		setSimulationVer(undefined);
+	}, [mode]);
+
+	useEffect(() => {
+		if (useAutoGoal) {
+			setCustomGoal(currentValue);
+		}
+	}, [currentValue, useAutoGoal]);
 
 	useEffect(
 		() => setAllOptimalPairs([]),
@@ -680,16 +688,18 @@ export function Form() {
 							<div>
 								<Percentage
 									value={totalProb}
-									showQuality={totalProbQualityFactor}
-								/>{
-									probCost && <span> &#8776; {probCost[0].toLocaleString()} {probCost[1]}</span>
-								}
+									showQuality={!mode.fixedArtifact && mode.mainStatUnknown ? 35 : 1}
+								/>{probCost !== undefined && mode.output !== undefined &&
+									<span> &#8776; {probCost.toLocaleString()} {mode.output.desc
+										? <abbr title={mode.output.desc}>{mode.output.unit}</abbr>
+										: <span>{mode.output.unit}</span>}
+									</span>}
 							</div>
 						</div>
 						{totalProb !== undefined && totalProb !== 0 && overwhelminglyLikely && <div>
 							<div></div>
 							<div class="flex gap-2 items-center">
-								<img src="./nah-id-win.png" class="h-4" /> Nah, I'd win
+								<img src="./nah-id-win.png" class="h-4" alt="Gojo" /> Nah, I'd win
 							</div>
 						</div>}
 						{simulationVer !== undefined && <div>
