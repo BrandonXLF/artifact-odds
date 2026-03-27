@@ -150,8 +150,6 @@ export function Form() {
 	const [useRV, setUseRV] = useStoredState<boolean>("useRV", false, resetTrigger);
 
 	const [allOptimalPairs, setAllOptimalPairs] = useResettableState<[SubStat, SubStat][]>(() => [], resetTrigger);
-	const [bestValue, setBestValue] = useResettableState<number | undefined>(undefined, resetTrigger);
-	const [maxValue, setMaxValue] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [mainProb, setMainProb] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [subProb, setSubProb] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [rollProb, setRollProb] = useResettableState<number | undefined>(undefined, resetTrigger);
@@ -226,23 +224,20 @@ export function Form() {
 		setTotalProbQualityFactor(!mode.fixedArtifact && mode.mainStatUnknown ? 35 : 1)
 	}, [Number.isNaN(totalProb) ? false : totalProb]);
 
-	useEffect(() => {
+	const [maxTheoretical, maxAttainable] = useMemo(() => {
 		if (sortedValidWeights.length === 0 || sortedValidWeights[0]?.[1] === 0) {
-			setBestValue(undefined);
-			setMaxValue(undefined);
-			return;
+			return [undefined, undefined];
 		}
 
 		const top4 = sortedValidWeights.slice(0, 4).reduce((acc, [_, w]) => acc + w, 0) * 100;
 		const best = (sortedValidWeights[0]?.[1] ?? 0) * 100;
-
-		setBestValue(top4 + best * 5);
+		const max = top4 + best * 5;
 
 		if (mode.fixedArtifact && !isFiveRoller) {
-			setMaxValue(top4 + best * 4);
-		} else {
-			setMaxValue(undefined);
+			return [max, top4 + best * 4];
 		}
+
+		return [max, max];
 	}, [sortedValidWeights, isFiveRoller, mode.fixedArtifact]);
 
 	useEffect(
@@ -441,11 +436,11 @@ export function Form() {
 		// - No other stat can replace max stat rolls
 		// - No other stat can replace top 4 as defaults
 		if (
-			(maxValue ?? bestValue) !== undefined &&
+			maxAttainable !== undefined &&
 			sortedValidWeights[0][1] > sortedValidWeights[1][1] &&
 			(sortedValidWeights.length < 5 || sortedValidWeights[3][1] > sortedValidWeights[4][1])
 		) {
-			const secondBest = (maxValue ?? bestValue!) - (
+			const secondBest = maxAttainable - (
 				sortedValidWeights[3][1] *
 					(rollValues[rollValues.length - 1] - rollValues[rollValues.length - 2])
 			);
@@ -609,9 +604,9 @@ export function Form() {
 						onChange={(stat, entry) => setStatParams(prev => ({ ...prev, [stat]: entry }))}
 						useRV={useRV}
 					/>
-					{bestValue === undefined ? null : <div class="mt-2">
-						Current sub-stat & roll quality: <Percentage value={currentValue / bestValue} />
-						{maxValue !== undefined && <> (Max: <Percentage value={maxValue / bestValue} />, started with 3 lines)</>}
+					{!useAutoGoal || maxTheoretical === undefined ? null : <div class="mt-2">
+						Current sub-stat & roll quality: <Percentage value={currentValue / maxTheoretical} />
+						{maxAttainable !== undefined && <> (Max: <Percentage value={maxAttainable / maxTheoretical} />, started with 3 lines)</>}
 					</div>}
 				</Section>
 				<Section>
@@ -647,7 +642,7 @@ export function Form() {
 									}}
 									disabled={useAutoGoal}
 									step="any"
-								/> % weighted RV (Max: {maxValue === undefined && bestValue === undefined ? "?" : <Percentage value={(maxValue ?? bestValue!) / 100} />})
+								/> % weighted RV (Max: {maxAttainable === undefined ? "?" : <Percentage value={maxAttainable / 100} />})
 							</div>
 						</div>
 					</LabelGrid>
@@ -725,7 +720,7 @@ export function Form() {
 						</div>
 						<div class="flex">
 							<div class="flex-1">0%</div>
-							<div>{(maxValue ?? bestValue ?? 0).toLocaleString()}%</div>
+							<div>{(maxAttainable ?? 0).toLocaleString()}%</div>
 						</div>
 					</>}
 				</Section>}
