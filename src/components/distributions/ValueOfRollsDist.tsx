@@ -1,5 +1,5 @@
 import { useMemo, useState } from "preact/hooks"
-import { computeRollValueDistribution } from "../../logic/subStatDistribution/valueDistribution";
+import { computeRollValueDistribution } from "../../../logic/subStatDistribution/valueDistribution";
 import { DistributionView } from "./DistributionView";
 
 export const RollValueDist = () => {

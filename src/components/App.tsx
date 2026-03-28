@@ -1,5 +1,5 @@
 import { distributions } from '../distributions';
-import { DistMain } from './DistMain';
+import { DistMain } from './distributions/DistMain';
 import { Form } from './Form';
 
 export const App = () => {

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "preact/hooks"
 import { DistributionView } from "./DistributionView";
-import { computeRollDistribution } from "../../logic/subStatDistribution/rollDistribution";
-import { Checkbox } from "./Checkbox";
+import { computeRollDistribution } from "../../../logic/subStatDistribution/rollDistribution";
+import { Checkbox } from "../Checkbox";
 
 export const RollDist = () => {
 	const [rolls, setRolls] = useState(4);

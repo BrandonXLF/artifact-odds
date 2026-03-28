@@ -1,4 +1,4 @@
-import { allSubStats, AnyStat, mainStats, rollValues, statWeights, SubStat } from '../../logic/data';
+import { allSubStats, AnyStat, mainStats, rollValues, statRollValues, statWeights, SubStat } from '../../logic/data';
 import { computeMainStatProb } from '../../logic/mainStatProb';
 import { StatDataConfig } from '../../logic/StatData';
 import { computeRollProb } from '../../logic/subStatDistribution';
@@ -22,14 +22,18 @@ import { LabelGrid } from './LabelGrid';
 import { LogicSection } from './LogicSection';
 import { RVGraph } from './RVGraph';
 import { modes, StatOptimizers } from './modes';
+import { Import } from './import/Import';
 
 type StatParams = StatParamInputEntry & StatListInputEntry;
 
 export function Form() {
 	const resetTrigger = useRef(new ResetTrigger()).current;
 
-	// User input
+	// Form state
 	const [modeNum, setModeNum] = useStoredState<number>("mode", 0);
+	const [showImport, setShowImport] = useState<boolean>(false);
+
+	// User input
 	const [artifactType, setArtifactType] = useStoredState<number>("artifactType", 0, resetTrigger);
 	const [mainStat, setMainStat] = useStoredState<AnyStat>("mainStat", "HP", resetTrigger);
 	const [currentStats, setCurrentStats] = useStoredState<SubStat[]>("currentStats", () => [], resetTrigger);
@@ -411,6 +415,11 @@ export function Form() {
 							</label>
 							{!mode.fixedArtifact && mode.fromDomain && <Checkbox label="Accept either set from the domain" checked={acceptEither} onChange={setAcceptEither} />}
 							{mode.fixedArtifact && <Checkbox label="Started with 4 lines" checked={isFiveRoller} onChange={setIsFiveRoller} />}
+							<div class="flex-1 text-right">
+								<Button onClick={() => setShowImport(!showImport)}>
+									{showImport ? "Cancel" : "Import"}
+								</Button>
+							</div>
 						</div>
 					</div>
 					{mode.fixedArtifact && <div>
@@ -419,6 +428,7 @@ export function Form() {
 						</div>
 						<div class="flex flex-col gap-2">
 							<StatListInput
+								useRV={useRV}
 								clearable={!mode.fixedArtifact}
 								stats={currentStats}
 								count={4}
@@ -431,6 +441,24 @@ export function Form() {
 					</div>}
 				</LabelGrid>
 			</Section>
+			{showImport && <Import import={art => {
+				setArtifactType(art.artifactType);
+				setMainStat(art.mainStat);
+				setCurrentStats(art.subStats.map(([stat]) => stat));
+				setStatParams(prev => {
+					const newParams = { ...prev };
+
+					for (const [stat, value] of art.subStats) {
+						newParams[stat] = {
+							...newParams[stat],
+							currentRV: Math.round((value / statRollValues[stat]) / 10) * 10
+						};
+					}
+
+					return newParams;
+				});
+				setShowImport(false);
+			}} />}
 			{mode.selectedStatCount > 0 && <Section>
 				<div class="mb-2"><strong>Tip</strong>: Run optimize after completing the sections below to find the best subsets to select.</div>
 				<LabelGrid>
