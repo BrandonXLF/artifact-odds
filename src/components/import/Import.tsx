@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "preact/hooks";
-import { importMap, typeMap } from "../../importMap";
+import { importMap, typeMap } from "../../data/importMap";
 import { ToggleButtons } from "../ToggleButtonts";
 import { Section } from "../Section";
 import { Button } from "../Button";

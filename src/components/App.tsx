@@ -1,4 +1,4 @@
-import { distributions } from '../distributions';
+import { distributions } from '../data/distributions';
 import { DistMain } from './distributions/DistMain';
 import { Form } from './Form';
 

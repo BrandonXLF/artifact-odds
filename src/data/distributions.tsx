@@ -1,6 +1,6 @@
 import { ComponentChildren } from "preact";
-import { RollDist } from "./components/distributions/RollCountDist";
-import { RollValueDist } from "./components/distributions/ValueOfRollsDist";
+import { RollDist } from "../components/distributions/RollCountDist";
+import { RollValueDist } from "../components/distributions/ValueOfRollsDist";
 
 export interface Distribution {
 	name: string;

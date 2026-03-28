@@ -21,7 +21,7 @@ import { SimulationOutput } from './SimulationOutput';
 import { LabelGrid } from './LabelGrid';
 import { LogicSection } from './LogicSection';
 import { RVGraph } from './RVGraph';
-import { modes, StatOptimizers } from './modes';
+import { modes, StatOptimizers } from '../data/modes';
 import { Import } from './import/Import';
 
 type StatParams = StatParamInputEntry & StatListInputEntry;

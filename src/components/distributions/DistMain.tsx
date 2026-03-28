@@ -1,4 +1,4 @@
-import { Distribution } from "../../distributions";
+import { Distribution } from "../../data/distributions";
 
 export const DistMain = ({ dist }: { dist: Distribution }) => {
 	return (

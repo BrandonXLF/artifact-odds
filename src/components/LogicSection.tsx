@@ -1,4 +1,4 @@
-import { distributions } from "../distributions";
+import { distributions } from "../data/distributions";
 import { DocumentLink } from "./DocumentLink";
 import { LabelGrid } from "./LabelGrid";
 import { Section } from "./Section";

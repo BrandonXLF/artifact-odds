@@ -1,4 +1,4 @@
-import { AnyStat, mainStats } from "../logic/data";
+import { AnyStat, mainStats } from "../../logic/data";
 
 export const importMap: Record<string, AnyStat> = {
 	"FIGHT_PROP_HP": "HP",
