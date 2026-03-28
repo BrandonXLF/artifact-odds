@@ -8,6 +8,7 @@ import { AnyStat, SubStat } from "../../../logic/data";
 import { ImportedCharacter } from "./ImportedCharacter";
 
 interface ImportedArtifact {
+	propIdCount: number;
 	artifactType: number;
 	mainStat: AnyStat;
 	subStats: [SubStat, number][];
@@ -74,7 +75,9 @@ export const Import = (props: { import: (art: ImportedArtifact) => void }) => {
 			avatarInfoList: {
 				avatarId: number;
 				equipList: {
-					reliquary?: unknown;
+					reliquary?: {
+						appendPropIdList: number[];
+					};
 					flat: {
 						equipType: number;
 						reliquaryMainstat: {
@@ -93,6 +96,7 @@ export const Import = (props: { import: (art: ImportedArtifact) => void }) => {
 		setLoaded(data.avatarInfoList.map(c => ({
 			id: c.avatarId,
 			artifacts: c.equipList.filter(x => x.reliquary).map(a => ({
+				propIdCount: a.reliquary!.appendPropIdList.length,
 				artifactType: typeMap[a.flat.equipType] as number,
 				mainStat: importMap[a.flat.reliquaryMainstat.mainPropId],
 				subStats: a.flat.reliquarySubstats.map(

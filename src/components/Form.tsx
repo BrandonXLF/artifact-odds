@@ -457,6 +457,7 @@ export function Form() {
 
 					return newParams;
 				});
+				setIsFiveRoller(art.propIdCount >= 9);
 				setShowImport(false);
 			}} />}
 			{mode.selectedStatCount > 0 && <Section>
