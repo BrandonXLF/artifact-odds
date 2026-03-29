@@ -64,7 +64,7 @@ export function StatParamInput(props: Readonly<{
 
 	const setRelWeight = (stat: SubStat, entry: StatParamInputEntry, scale: number) => {
 		const newWeight = scale === 0 ? 0 : Math.max(...Object.values(props.entries).map(e => e.weight || 0), 1) * scale;
-		props.onChange(stat, { ...entry, weight: newWeight });
+		props.onChange(stat, { ...entry, weight: round2(newWeight) });
 	};
 
 	return (
