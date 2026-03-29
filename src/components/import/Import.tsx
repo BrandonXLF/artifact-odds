@@ -9,6 +9,7 @@ import { ImportedCharacter } from "./ImportedCharacter";
 
 interface ImportedArtifact {
 	propIdCount: number;
+	icon: string;
 	artifactType: number;
 	mainStat: AnyStat;
 	subStats: [SubStat, number][];
@@ -80,6 +81,7 @@ export const Import = (props: { import: (art: ImportedArtifact) => void }) => {
 					};
 					flat: {
 						equipType: number;
+						icon: string;
 						reliquaryMainstat: {
 							mainPropId: string;
 						};
@@ -97,6 +99,7 @@ export const Import = (props: { import: (art: ImportedArtifact) => void }) => {
 			id: c.avatarId,
 			artifacts: c.equipList.filter(x => x.reliquary).map(a => ({
 				propIdCount: a.reliquary!.appendPropIdList.length,
+				icon: `https://enka.network/ui/${a.flat.icon}.png`,
 				artifactType: typeMap[a.flat.equipType] as number,
 				mainStat: importMap[a.flat.reliquaryMainstat.mainPropId],
 				subStats: a.flat.reliquarySubstats.map(
@@ -126,11 +129,10 @@ export const Import = (props: { import: (art: ImportedArtifact) => void }) => {
 		{loaded[characterIndex] && <div class="mt-4">
 			<div class="flex gap-4 flex-wrap shrink-0">
 				{loaded[characterIndex].artifacts.map((a, i) => (
-					<Button class="text-left min-w-30 px-3 py-1 flex items-start flex-col" onClick={() => props.import(a)}>
-						<p>
-							<strong>{a.mainStat}</strong>
-						</p>
-						<ul>
+					<Button class="text-left min-w-30 px-3 py-1 flex items-start flex-col relative" onClick={() => props.import(a)}>
+						<img src={a.icon} alt="" class="absolute right-0 top-0 w-12 mask-b-from-0" />
+						<p class="font-bold z-2 text-shadow-(color:--bg) text-shadow-lg">{a.mainStat}</p>
+						<ul class="z-2 text-shadow-(color:--bg) text-shadow-lg">
 							{a.subStats.map(s => <li>{s[0]}: {s[1]}</li>)}
 						</ul>
 					</Button>

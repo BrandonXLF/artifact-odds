@@ -10,7 +10,9 @@ export const Button = ({ children, primary, ...props }: Props) => {
 		<button
 			{...props}
 			class={twMerge(
-				"border bg-neutral-700 min-w-8 rounded p-1 not-disabled:hover:bg-neutral-600 not-disabled:hover:cursor-pointer disabled:cursor-not-allowed disabled:opacity-75",
+				"[--bg:var(--color-neutral-700)] bg-(--bg) border min-w-8 rounded p-1",
+				"not-disabled:hover:[--bg:var(--color-neutral-600)] not-disabled:hover:cursor-pointer",
+				"disabled:cursor-not-allowed disabled:opacity-75",
 				primary && "bg-primary-dark not-disabled:hover:bg-primary",
 				props.class as string
 			)}
