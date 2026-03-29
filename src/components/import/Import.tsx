@@ -95,17 +95,20 @@ export const Import = (props: { import: (art: ImportedArtifact) => void }) => {
 		};
 
 		setProfileName(data.playerInfo.nickname);
-		setLoaded(data.avatarInfoList.map(c => ({
-			id: c.avatarId,
-			artifacts: c.equipList.filter(x => x.reliquary).map(a => ({
-				propIdCount: a.reliquary!.appendPropIdList.length,
-				icon: `https://enka.network/ui/${a.flat.icon}.png`,
-				artifactType: typeMap[a.flat.equipType] as number,
-				mainStat: importMap[a.flat.reliquaryMainstat.mainPropId],
-				subStats: a.flat.reliquarySubstats.map(
-					s => [importMap[s.appendPropId], s.statValue] as [SubStat, number]
-				)
-			}))
+		setLoaded(data.avatarInfoList.map(avatar => ({
+			id: avatar.avatarId,
+			artifacts: avatar.equipList
+				.filter(equipment => equipment.reliquary)
+				.map(artifact => ({
+					propIdCount: artifact.reliquary!.appendPropIdList.length,
+					icon: `https://enka.network/ui/${artifact.flat.icon}.png`,
+					artifactType: typeMap[artifact.flat.equipType] as number,
+					mainStat: importMap[artifact.flat.reliquaryMainstat.mainPropId],
+					subStats: artifact.flat.reliquarySubstats.map(subStat => [
+						importMap[subStat.appendPropId],
+						subStat.statValue
+					] as [SubStat, number])
+				}))
 		})));
 	}
 
@@ -128,7 +131,7 @@ export const Import = (props: { import: (art: ImportedArtifact) => void }) => {
 		</div>}
 		{loaded[characterIndex] && <div class="mt-4">
 			<div class="flex gap-4 flex-wrap shrink-0">
-				{loaded[characterIndex].artifacts.map((a, i) => (
+				{loaded[characterIndex].artifacts.map(a => (
 					<Button class="text-left min-w-30 px-3 py-1 flex items-start flex-col relative" onClick={() => props.import(a)}>
 						<img src={a.icon} alt="" class="absolute right-0 top-0 w-12 mask-b-from-0" />
 						<p class="font-bold z-2 text-shadow-(color:--bg) text-shadow-lg">{a.mainStat}</p>
