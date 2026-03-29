@@ -78,11 +78,15 @@ export function Form() {
 		? currentStats
 		: allSubStats.filter(stat => stat !== mainStat);
 
-	const currentValue = useMemo(() => {
-		return roundMaxPrecision(Object.entries(statParams)
-			.filter(([stat]) => currentStats.includes(stat as SubStat))
-			.reduce((acc, [, { currentRV, weight }]) => acc + (currentRV ?? 0) * (weight ?? 0), 0));
-	}, [statParams, validStats]);
+	const currentValue = useMemo(
+		() => roundMaxPrecision(
+			Object.entries(statParams)
+				.filter(([stat]) => currentStats.includes(stat as SubStat))
+				.reduce((acc, [, { currentRV, weight }]) => acc + (currentRV ?? 0) * (weight ?? 0), 0)
+		),
+		[statParams, validStats]
+	);
+	const goalValue = useAutoGoal ? currentValue : customGoal;
 
 	const showMainProb = !mode.fixedArtifact && mode.mainStatUnknown;
 	const showSubProb = !mode.fixedArtifact;
@@ -94,8 +98,8 @@ export function Form() {
 		? (mainProb ?? 1) * (subProb ?? 1) * (rollProb ?? 1)
 		: undefined;
 
-	const logicCurrent = Math.round((useAutoGoal ? currentValue : customGoal) * 100);
-	const logicGoal = calcRollProb ? logicCurrent - (Number(includeEqual) / 10) : -Infinity;
+	const logicBaseGoal = Math.round(goalValue * 100);
+	const logicGoal = calcRollProb ? logicBaseGoal - (Number(includeEqual) / 10) : -Infinity;
 
 	const sortedValidWeights = useMemo(
 		() => Object.entries(statParams)
@@ -114,7 +118,9 @@ export function Form() {
 		let mult = 1;
 
 		if (mode.output.perArtifact !== undefined) {
-			mult = typeof mode.output.perArtifact === "function" ? mode.output.perArtifact(artifactType) : mode.output.perArtifact;
+			mult = typeof mode.output.perArtifact === "function"
+				? mode.output.perArtifact(artifactType)
+				: mode.output.perArtifact;
 		}
 
 		return Math.round(odds * mult);
@@ -310,7 +316,7 @@ export function Form() {
 
 			const maxBar = Math.max(...buckets);
 			const relativeBars = buckets.map(b => [b / maxBar, false] as [number, boolean]);
-			const goalBucket = Math.min(buckets.length - 1, toBucket(logicCurrent, statData.maxWeight));
+			const goalBucket = Math.min(buckets.length - 1, toBucket(logicBaseGoal, statData.maxWeight));
 			relativeBars[goalBucket] = relativeBars[goalBucket] ?? [0, false];
 			relativeBars[goalBucket][1] = true;
 			setBars(relativeBars);
@@ -413,7 +419,8 @@ export function Form() {
 									))}
 								</select>
 							</label>
-							{!mode.fixedArtifact && mode.fromDomain && <Checkbox label="Accept either set from the domain" checked={acceptEither} onChange={setAcceptEither} />}
+							{!mode.fixedArtifact && mode.fromDomain &&
+								<Checkbox label="Accept either set from the domain" checked={acceptEither} onChange={setAcceptEither} />}
 							{mode.fixedArtifact && <Checkbox label="Started with 4 lines" checked={isFiveRoller} onChange={setIsFiveRoller} />}
 							<div class="flex-1 text-right">
 								<Button onClick={() => setShowImport(!showImport)}>
@@ -530,7 +537,8 @@ export function Form() {
 			<section>
 				<h2 class="text-xl font-bold mt-5">Roll Requirements</h2>
 				<div class="mt-1">
-					Control the relative value of each roll, as well as stat roll limits.{!mode.fixedArtifact && <> Ignored if all weights and min stats are 0.</>}
+					Control the relative value of each roll, as well as stat roll limits.{!mode.fixedArtifact &&
+						<> Ignored if all weights and min stats are 0.</>}
 				</div>
 				<div class="mt-1">
 					<Checkbox label="Input roll value (RV) instead of stat value" checked={useRV} onChange={setUseRV} />
@@ -542,13 +550,9 @@ export function Form() {
 						onChange={(stat, entry) => setStatParams(prev => ({ ...prev, [stat]: entry }))}
 						useRV={useRV}
 					/>
-					{!useAutoGoal || maxTheoretical === undefined ? null : <div class="mt-2">
-						Current sub-stat & roll quality: <Percentage value={currentValue / maxTheoretical} />
-						{maxAttainable !== undefined && <> (Max: <Percentage value={maxAttainable / maxTheoretical} />, started with 3 lines)</>}
-					</div>}
 				</Section>
 				<Section>
-					<div class="flex gap-x-5 gap-y-2 flex-wrap mb-4">
+					<div class="flex gap-x-5 gap-y-2 flex-wrap mb-2">
 						<Checkbox label="Use current sub-stats for goal" checked={useAutoGoal} onChange={setUseAutoGoal} />
 						<Checkbox label="Include artifacts equal to goal" checked={includeEqual} onChange={setIncludeEqual} />
 					</div>
@@ -584,6 +588,10 @@ export function Form() {
 							</div>
 						</div>
 					</LabelGrid>
+					{maxTheoretical === undefined ? null : <div class="mt-2">
+						{useAutoGoal ? "Current" : "Goal"} sub-stat & roll probability: <Percentage value={goalValue / maxTheoretical} />
+						{maxAttainable !== undefined && <> (Max: <Percentage value={maxAttainable / maxTheoretical} />, started with 3 lines)</>}
+					</div>}
 				</Section>
 			</section>
 			<section>
