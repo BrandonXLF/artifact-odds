@@ -108,7 +108,10 @@ export const Import = (props: { import: (art: ImportedArtifact) => void }) => {
 
 	return <Section>
 		<div class="flex items-center gap-2">
-			<label class="flex items-center gap-2">UID: <input type="text" value={uid} onInput={e => setUid(e.currentTarget.value)} /></label>
+			<label class="contents">
+				<span>UID:</span>
+				<input class="flex-1 max-w-40" type="text" value={uid} onInput={e => setUid(e.currentTarget.value)} />
+			</label>
 			<Button onClick={loadProfile}>Load Profile</Button>
 			{profileName && <span>{profileName}</span>}
 		</div>
