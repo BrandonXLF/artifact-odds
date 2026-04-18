@@ -1,8 +1,7 @@
 import { twMerge } from "tailwind-merge";
-import { SubStat } from "../../logic/data";
 import { round2 } from "../utils/round";
 import { Button } from "./Button";
-import { OptionalNumberInput, StatValueInput } from "./NumberInput";
+import { OptionalNumberInput, StatValueInput } from "./StatValueInput";
 
 export interface StatParamInputEntry {
 	weight?: number;
@@ -54,15 +53,15 @@ const WeightButton = (props: Readonly<{
 );
 
 export function StatParamInput(props: Readonly<{
-	entries: Record<SubStat, StatParamInputEntry>;
-	validStats: SubStat[];
-	onChange: (stat: SubStat, entry: StatParamInputEntry) => void;
+	entries: Record<string, StatParamInputEntry>;
+	validStats: string[];
+	onChange: (stat: string, entry: StatParamInputEntry) => void;
 	useRV?: boolean;
 }>) {
 	const unit = props.useRV ? "RV%" : "Stat";
-	const entries = (Object.entries(props.entries) as [SubStat, StatParamInputEntry][]).filter(([stat]) => props.validStats.includes(stat));
+	const entries = (Object.entries(props.entries) as [string, StatParamInputEntry][]).filter(([stat]) => props.validStats.includes(stat));
 
-	const setRelWeight = (stat: SubStat, entry: StatParamInputEntry, scale: number) => {
+	const setRelWeight = (stat: string, entry: StatParamInputEntry, scale: number) => {
 		const newWeight = scale === 0 ? 0 : Math.max(...Object.values(props.entries).map(e => e.weight || 0), 1) * scale;
 		props.onChange(stat, { ...entry, weight: round2(newWeight) });
 	};

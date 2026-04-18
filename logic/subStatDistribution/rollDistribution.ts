@@ -1,7 +1,4 @@
-import { memoize } from "../utils.js";
-import { SubStat } from "../data.js";
-
-export type StatRoll = [SubStat, number];
+import { memoize } from "../utils/math.js";
 
 /**
  * Compute all substats^remaining outcomes, accounting for guaranteed rolls
@@ -54,13 +51,19 @@ const computePermutations = (subStatCount: number, totalRolls: number, guarantee
 /**
  * Get all possible substat roll distributions with relative probabilities for an artifact
  */
-export const computeRollDistribution = memoize((substatCount: number, totalRolls: number, guaranteedCount: number, guaranteedRolls: number = 0): [number[], number][] => {
-	if (guaranteedCount === 0) {
-		guaranteedRolls = 0;
-	}
-
-	const perms = computePermutations(substatCount, totalRolls, guaranteedCount, guaranteedRolls)
-		.map(([statRolls, prob]) => [statRolls.join(","), statRolls, prob] as const);
+export const computeRollDistribution = memoize((
+	substatCount: number,
+	totalRolls: number,
+	guaranteedCount: number,
+	guaranteedRolls: number,
+	unrollableCount: number
+): [number[], number][] => {
+	const disabledStatRolls = new Array(unrollableCount).fill(0);
+	const perms = computePermutations(substatCount - unrollableCount, totalRolls, guaranteedCount, guaranteedRolls)
+		.map(([statRolls, prob]) => {
+			if (unrollableCount) statRolls.push(...disabledStatRolls);
+			return [statRolls.join(","), statRolls, prob] as const
+		});
 
 	const seen: Record<string, [number[], number]> = {};
 

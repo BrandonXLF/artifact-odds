@@ -1,10 +1,20 @@
+import { useContext } from "preact/hooks";
 import { Distribution } from "../../data/distributions";
+import { GameContext } from "../../contexts/GameContext";
+import Article from "../Article";
 
-export const DistMain = ({ dist }: { dist: Distribution }) => {
-	return (
-		<div>
-			<h2 class="text-xl font-bold mb-4">{dist.name} Distribution Viewer</h2>
-			{dist.component()}
-		</div>
-	);
+export const DistMain = ({ dist }: { dist?: Distribution }) => {
+	const { gameMeta } = useContext(GameContext);
+
+	return <div>
+		<nav className="mb-5">
+			<a href={`/${gameMeta.url}`}>&larr; Back to Form</a>
+		</nav>
+		{dist
+			? <Article title={`${dist.name} Distribution Viewer`}>
+				{dist.component()}
+			</Article>
+			: <div>Distribution not found.</div>
+		}
+	</div>;
 }

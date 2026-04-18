@@ -1,7 +1,7 @@
 import { ComponentChildren } from "preact";
 import { twMerge } from "tailwind-merge";
 
-export const Section = (props: { children: ComponentChildren, class?: string }) => {
+export const VisualSection = (props: { children: ComponentChildren, class?: string }) => {
 	return (
 		<div
 			style={{

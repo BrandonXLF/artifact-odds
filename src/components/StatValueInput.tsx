@@ -1,19 +1,20 @@
-import { useRef } from "preact/hooks";
-import { statRollValues, SubStat } from "../../logic/data";
+import { useContext, useRef } from "preact/hooks";
 import { roundMaxPrecision } from "../utils/round";
+import { FormContext } from "../contexts/FormContext";
 
 export const StatValueInput = (props: Readonly<{
 	disabled?: boolean;
 	value: number | undefined;
 	useRV: boolean;
-	stat?: SubStat;
+	stat?: string;
 	placeholder?: string;
 	onChange: (value: number | undefined) => void;
 }>) => {
+	const { data } = useContext(FormContext)!;
 	let value = props.value;
 
 	if (value !== undefined && !props.useRV && props.stat !== undefined) {
-		value *= statRollValues[props.stat];
+		value *= data.statValues[props.stat];
 	}
 
 	if (value !== undefined) {
@@ -22,7 +23,11 @@ export const StatValueInput = (props: Readonly<{
 
 	const onChange = (newVal: number | undefined) => {
 		if (newVal !== undefined && !props.useRV && props.stat !== undefined) {
-			newVal /= statRollValues[props.stat];
+			newVal /= data.statValues[props.stat];
+		}
+
+		if (newVal !== undefined) {
+			newVal = roundMaxPrecision(newVal);
 		}
 
 		props.onChange(newVal === undefined ? undefined : Math.round(newVal / 10) * 10);

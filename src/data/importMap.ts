@@ -1,6 +1,4 @@
-import { AnyStat, mainStats } from "../../logic/data";
-
-export const importMap: Record<string, AnyStat> = {
+export const importMap: Record<string, string> = {
 	"FIGHT_PROP_HP": "HP",
 	"FIGHT_PROP_ATTACK": "ATK",
 	"FIGHT_PROP_DEFENSE": "DEF",
@@ -22,10 +20,40 @@ export const importMap: Record<string, AnyStat> = {
 	"FIGHT_PROP_HEAL_ADD": "Healing Bonus%"
 };
 
-export const typeMap: Record<string, keyof typeof mainStats> = {
+export const typeMap: Record<string, 0 | 1 | 2 | 3 | 4> = {
 	"EQUIP_BRACER": 0,
 	"EQUIP_NECKLACE": 1,
 	"EQUIP_SHOES": 2,
 	"EQUIP_RING": 3,
 	"EQUIP_DRESS": 4
+};
+
+export const hsrImportMap: Record<string, string> = {
+	// Sub-stats
+	"HPDelta": "HP",
+	"DefenceDelta": "DEF",
+	"AttackDelta": "ATK",
+	"HPAddedRatio": "HP%",
+	"DefenceAddedRatio": "DEF%",
+	"AttackAddedRatio": "ATK%",
+	"CriticalDamage": "CRIT DMG%",
+	"CriticalChance": "CRIT Rate%",
+	"StatusProbability": "EHR%",
+	"StatusResistance": "Effect RES%",
+	"SpeedDelta": "SPD",
+	"BreakDamageAddedRatio": "Break Effect%",
+
+	// Main stats
+	"CriticalDamageBase": "CRIT DMG%",
+	"CriticalChanceBase": "CRIT Rate%",
+	"HealRatioBase": "Healing Bonus%",
+	"SPRatioBase": "ERR%",
+	"BreakDamageAddedRatioBase": "Break Effect%",
+	"PhysicalAddedRatio": "Physical DMG Bonus%",
+	"FireAddedRatio": "Fire DMG Bonus%",
+	"IceAddedRatio": "Ice DMG Bonus%",
+	"WindAddedRatio": "Wind DMG Bonus%",
+	"LightningAddedRatio": "Lightning DMG Bonus%",
+	"QuantumAddedRatio": "Quantum DMG Bonus%",
+	"ImaginaryAddedRatio": "Imaginary DMG Bonus%"
 };

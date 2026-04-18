@@ -1,26 +1,28 @@
-import { allSubStats, SubStat } from "../../logic/data";
-import { StatValueInput } from "./NumberInput";
+import { useContext } from "preact/hooks";
+import { StatValueInput } from "./StatValueInput";
+import { FormContext } from "../contexts/FormContext";
 
 export interface StatListInputEntry {
 	currentRV?: number;
 }
 
 export function StatListInput(props: Readonly<{
-	stats: SubStat[];
+	stats: string[];
 	count: number;
-	validStats?: SubStat[];
-	statValues?: Record<SubStat, { currentRV?: number }>;
+	validStats?: string[];
+	statValues?: Record<string, { currentRV?: number }>;
 	useRV?: boolean;
-	onChange: (stats: SubStat[]) => void;
-	onValueChange?: (stat: SubStat, value: number | undefined) => void;
+	onChange: (stats: string[]) => void;
+	onValueChange?: (stat: string, value: number | undefined) => void;
 	clearable?: boolean;
 	hasKnownError?: boolean;
 	onErrorChange?: (hasError: boolean) => void;
 }>) {
-	const validStats = props.validStats ?? allSubStats;
+	const { data } = useContext(FormContext)!;
+	const validStats = props.validStats ?? data.stats;
 	const selectableStats = validStats.filter(stat => !props.stats.includes(stat));
 
-	const change = (i: number, stat: SubStat) => {
+	const change = (i: number, stat: string) => {
 		const newStats = [...props.stats];
 		newStats[i] = stat;
 		props.onChange(newStats);
@@ -51,7 +53,7 @@ export function StatListInput(props: Readonly<{
 						<select
 							value={value ?? ""}
 							disabled={selectableStats.length === 0}
-							onChange={(e) => change(index, (e.target as HTMLSelectElement).value as SubStat)}
+							onChange={(e) => change(index, (e.target as HTMLSelectElement).value)}
 							class={`min-w-20 ${error ? "border-red-500" : ""}`}
 						>
 							{props.clearable && <option value="">--</option>}

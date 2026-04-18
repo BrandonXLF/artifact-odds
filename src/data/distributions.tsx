@@ -10,10 +10,10 @@ export interface Distribution {
 export const distributions: Record<string, Distribution> = {
 	"roll-counts": {
 		name: "Roll Counts",
-		component: () => <RollDist />
+		component: RollDist
 	},
 	"value-of-rolls": {
 		name: "Value of Rolls",
-		component: () => <RollValueDist />
+		component: RollValueDist
 	}
 }

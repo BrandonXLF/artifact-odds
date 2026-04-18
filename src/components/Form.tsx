@@ -1,16 +1,15 @@
-import { allSubStats, AnyStat, mainStats, rollValues, statRollValues, statWeights, SubStat } from '../../logic/data';
 import { computeMainStatProb } from '../../logic/mainStatProb';
 import { StatDataConfig } from '../../logic/StatData';
 import { computeRollProb } from '../../logic/subStatDistribution';
 import { StatParamInputEntry, StatParamInput } from './StatParamInput';
-import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'preact/hooks';
 import { StatListInput, StatListInputEntry } from './StatListInput';
 import { getSubStatCombinations } from '../../logic/combinations/subStatCombinations';
 import { computeSubProb } from '../../logic/subStatProb';
-import { Section } from './Section';
+import { VisualSection } from './VisualSection';
 import { ToggleButtons } from './ToggleButtonts';
 import { Checkbox } from './Checkbox';
-import { toBucket } from '../utils/barChart';
+import { toBucket } from '../../logic/utils/barChart';
 import { DocumentLink } from './DocumentLink';
 import { round2, roundMaxPrecision } from '../utils/round';
 import { Percentage } from './Percentage';
@@ -21,30 +20,45 @@ import { SimulationOutput } from './SimulationOutput';
 import { LabelGrid } from './LabelGrid';
 import { LogicSection } from './LogicSection';
 import { RVGraph } from './RVGraph';
-import { modes, StatOptimizers } from '../data/modes';
+import { StatOptimizers } from '../data/modes';
 import { Import } from './import/Import';
+import { LOWER_ROLL_COUNT, SUB_STAT_COUNT, UPPER_ROLL_COUNT } from '../data/consts';
+import RollRestrictions from '../../logic/RollRestrictions';
+import { Ref } from 'preact';
+import { FormContext } from '../contexts/FormContext';
 
 type StatParams = StatParamInputEntry & StatListInputEntry;
 
-export function Form() {
+export type FormHandle = {
+	reset: () => void;
+}
+
+export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const resetTrigger = useRef(new ResetTrigger()).current;
+	const { mode, data } = useContext(FormContext)!;
+
+	useImperativeHandle(props.formRef, () => {
+		return {
+			reset: () => resetTrigger.reset()
+		}
+	}, [resetTrigger]);
 
 	// Form state
-	const [modeNum, setModeNum] = useStoredState<number>("mode", 0);
-	const [showImport, setShowImport] = useState<boolean>(false);
+	const [showImport, setShowImport] = useResettableState<boolean>(false, resetTrigger);
 
 	// User input
 	const [artifactType, setArtifactType] = useStoredState<number>("artifactType", 0, resetTrigger);
-	const [mainStat, setMainStat] = useStoredState<AnyStat>("mainStat", "HP", resetTrigger);
-	const [currentStats, setCurrentStats] = useStoredState<SubStat[]>("currentStats", () => [], resetTrigger);
-	const [selectedStats, setSelectedStats] = useStoredState<SubStat[]>("selectedStats", () => [], resetTrigger);
-	const [guaranteedRollsCount, setGuaranteedRollsCount] = useStoredState<number>("guaranteedRollsCount", 2, resetTrigger);
+	const [mainStat, setMainStat] = useStoredState<string>("mainStat", "HP", resetTrigger);
+	const [currentStats, setCurrentStats] = useStoredState<string[]>("currentStats", () => [], resetTrigger);
+	const [selectedStats, setSelectedStats] = useStoredState<string[]>("selectedStats", () => [], resetTrigger);
+	const [rawSelectedStatCount, setRawSelectedStatCount] = useStoredState<number>("selectedStatCount", 0, resetTrigger);
+	const [rawGuaranteedRollsCount, setRawGuaranteedRollsCount] = useStoredState<number>("guaranteedRollsCount", 2, resetTrigger);
 	const [customGoal, setCustomGoal] = useStoredState<number>("customGoal", 0, resetTrigger);
 	const [requireCount, setRequireCount] = useStoredState<number>("requireCount", 0, resetTrigger);
-	const [required, setRequired] = useStoredState<SubStat[]>("required", () => [], resetTrigger);
+	const [required, setRequired] = useStoredState<string[]>("required", () => [], resetTrigger);
 	const [statParams, setStatParams] = useStoredState(
 		"statWeights",
-		() => Object.fromEntries(allSubStats.map(stat => [stat, {}])) as Record<SubStat, StatParams>,
+		() => Object.fromEntries(data.stats.map(stat => [stat, {}])) as Record<string, StatParams>,
 		resetTrigger,
 		true
 	);
@@ -57,7 +71,7 @@ export function Form() {
 
 	// Input feedback
 	const [selectedStatsInvalid, setSelectedStatsInvalid] = useResettableState<boolean | undefined>(undefined, resetTrigger);
-	const [allOptimalPairs, setAllOptimalPairs] = useResettableState<[SubStat, SubStat][]>(() => [], resetTrigger);
+	const [allOptimalPairs, setAllOptimalPairs] = useResettableState<string[][]>(() => [], resetTrigger);
 
 	// Results
 	const [mainProb, setMainProb] = useResettableState<number | undefined>(undefined, resetTrigger);
@@ -72,16 +86,15 @@ export function Form() {
 	// Non-resettable
 	const [, setCustomGoalVer] = useState(0);
 
-	const mode = modes[modeNum];
 	const allLinesProb = mode.fixedArtifact ? Number(isFiveRoller) : mode.allLinesProb;
 	const validStats = mode.fixedArtifact
 		? currentStats
-		: allSubStats.filter(stat => stat !== mainStat);
+		: data.stats.filter(stat => stat !== mainStat);
 
 	const currentValue = useMemo(
 		() => roundMaxPrecision(
 			Object.entries(statParams)
-				.filter(([stat]) => currentStats.includes(stat as SubStat))
+				.filter(([stat]) => currentStats.includes(stat))
 				.reduce((acc, [, { currentRV, weight }]) => acc + (currentRV ?? 0) * (weight ?? 0), 0)
 		),
 		[statParams, validStats]
@@ -103,11 +116,29 @@ export function Form() {
 
 	const sortedValidWeights = useMemo(
 		() => Object.entries(statParams)
-			.filter(([stat]) => validStats.includes(stat as SubStat))
-			.map(([stat, w]) => [stat, w.weight ?? 0] as [SubStat, number])
+			.filter(([stat]) => validStats.includes(stat))
+			.map(([stat, w]) => [stat, w.weight ?? 0] as [string, number])
 			.sort((a, b) => (b[1] - a[1])),
 		[statParams, validStats]
 	);
+
+	const dynamicMode = useMemo(() => ({
+		selectedStatCount: typeof mode.selectedStatCount === "number"
+			? mode.selectedStatCount
+			: rawSelectedStatCount,
+		guaranteedRollsCount: mode.fixedArtifact && !mode.selectToIgnore
+			? (typeof mode.guaranteedCount === "number" ? mode.guaranteedCount : rawGuaranteedRollsCount)
+			: 0
+	}), [mode, rawSelectedStatCount, rawGuaranteedRollsCount]);
+
+	const getModeProb = useCallback(<T,>(prop: T | ((artifactType: number, selectedStatCount: number) => T)) => {
+		return typeof prop === "function"
+			? (prop as (artifactType: number, selectedStatCount: number) => T)(
+				artifactType,
+				dynamicMode.selectedStatCount
+			)
+			: prop;
+	}, [artifactType, dynamicMode.selectedStatCount]);
 
 	const probCost = useMemo(() => {
 		if (totalProb === undefined || mode.output === undefined) {
@@ -115,13 +146,7 @@ export function Form() {
 		}
 
 		const odds = 1 / totalProb;
-		let mult = 1;
-
-		if (mode.output.perArtifact !== undefined) {
-			mult = typeof mode.output.perArtifact === "function"
-				? mode.output.perArtifact(artifactType)
-				: mode.output.perArtifact;
-		}
+		const mult = getModeProb(mode.output.perArtifact ?? 1);
 
 		return Math.round(odds * mult);
 	}, [totalProb, mode]);
@@ -131,12 +156,12 @@ export function Form() {
 			return [undefined, undefined];
 		}
 
-		const top4 = sortedValidWeights.slice(0, 4).reduce((acc, [_, w]) => acc + w, 0) * 100;
+		const top4 = sortedValidWeights.slice(0, SUB_STAT_COUNT).reduce((acc, [_, w]) => acc + w, 0) * 100;
 		const best = (sortedValidWeights[0]?.[1] ?? 0) * 100;
-		const max = top4 + best * 5;
+		const max = top4 + best * UPPER_ROLL_COUNT;
 
 		if (mode.fixedArtifact && !isFiveRoller) {
-			return [max, top4 + best * 4];
+			return [max, top4 + best * LOWER_ROLL_COUNT];
 		}
 
 		return [max, max];
@@ -151,6 +176,18 @@ export function Form() {
 		setBars([]);
 		setSimulationWorker(undefined);
 		setSimulationVer(undefined);
+
+		if (Array.isArray(mode.selectedStatCount) && !mode.selectedStatCount.includes(rawSelectedStatCount)) {
+			setRawSelectedStatCount(mode.selectedStatCount[0]);
+		}
+
+		if (mode.fixedArtifact &&
+			!mode.selectToIgnore &&
+			Array.isArray(mode.guaranteedCount) &&
+			!mode.guaranteedCount.includes(rawGuaranteedRollsCount)
+		) {
+			setRawGuaranteedRollsCount(mode.guaranteedCount[0]);
+		}
 	}, [mode]);
 
 	useEffect(() => {
@@ -165,6 +202,7 @@ export function Form() {
 		[
 			mainStat,
 			mode,
+			dynamicMode,
 			required,
 			requireCount,
 			currentStats,
@@ -172,13 +210,12 @@ export function Form() {
 			artifactType,
 			acceptEither,
 			allLinesProb,
-			logicGoal,
-			guaranteedRollsCount
+			logicGoal
 		]
 	);
 
 	const getBaseConfig = () => {
-		const statDataConfig = new StatDataConfig();
+		const statDataConfig = new StatDataConfig(data.stats, data.statWeights, data.rollValues);
 		statDataConfig.exclude(mainStat);
 
 		if (!mode.fixedArtifact && requireCount > 0) {
@@ -189,7 +226,7 @@ export function Form() {
 			statDataConfig.onlyInclude(currentStats);
 		}
 
-		for (const [stat, data] of Object.entries(statParams) as [SubStat, StatParamInputEntry][]) {
+		for (const [stat, data] of Object.entries(statParams) as [string, StatParamInputEntry][]) {
 			if (data.weight !== undefined) {
 				statDataConfig.setWeight(stat, Math.round(data.weight * 100));
 			}
@@ -206,29 +243,47 @@ export function Form() {
 		return statDataConfig;
 	};
 
+	const makeRollRestrictions = (
+		allLineProb: number,
+		guaranteedStats: Set<string> = new Set(),
+		guaranteedCount: number = 0,
+		unrollableStats: Set<string> = new Set()
+	) => {
+		return new RollRestrictions(
+			SUB_STAT_COUNT,
+			LOWER_ROLL_COUNT,
+			UPPER_ROLL_COUNT,
+			allLineProb,
+			guaranteedStats,
+			guaranteedCount,
+			unrollableStats
+		);
+	}
+
 	const optimizers: Record<StatOptimizers, () => void> = {
 		bestStats: () => {
-			const baseStatData = getBaseConfig().make();
+			const statData = getBaseConfig().make();
+			const rollRestrictions = makeRollRestrictions(allLinesProb);
 
-			let maxStats: [SubStat, SubStat][] = [];
+			let maxStats: [string, string][] = [];
 			let maxProb = -1;
 
-			for (const [stats] of getSubStatCombinations(baseStatData, 2)) {
+			for (const [stats] of getSubStatCombinations(statData, dynamicMode.selectedStatCount)) {
 				const statData = getBaseConfig()
 					.guarantee(stats[0])
 					.guarantee(stats[1])
 					.make();
 
-				const [subStatProb, validCombos] = computeSubProb(statData);
-				const rollProb = computeRollProb(statData, validCombos, logicGoal, allLinesProb)[0];
+				const [subStatProb, validCombos] = computeSubProb(statData, SUB_STAT_COUNT);
+				const rollProb = computeRollProb(statData, rollRestrictions, validCombos, logicGoal)[0];
 				const prob = subStatProb * rollProb;
 
 				// Note: This is far larger than the minimum difference between actual probabilities
 				if (prob - maxProb > 4 * Number.EPSILON) {
-					maxStats = [stats as [SubStat, SubStat]];
+					maxStats = [stats as [string, string]];
 					maxProb = prob;
 				} else if (Math.abs(prob - maxProb) <= 4 * Number.EPSILON) {
-					maxStats.push(stats as [SubStat, SubStat]);
+					maxStats.push(stats as [string, string]);
 				}
 			}
 
@@ -238,9 +293,9 @@ export function Form() {
 			}
 		},
 		bestRolls: () => {
-			const baseStatData = getBaseConfig().make();
+			const baseStatData = getBaseConfig().onlyInclude(currentStats).make();
 
-			let maxStatsAndAvg: [SubStat, SubStat, number][] = [];
+			let maxStatsAndAvg: [string, string, number][] = [];
 			let maxProb = -1;
 
 			for (const [stats] of getSubStatCombinations(baseStatData, 2)) {
@@ -248,24 +303,53 @@ export function Form() {
 
 				const [rollProb, avg] = computeRollProb(
 					statData,
+					makeRollRestrictions(allLinesProb, new Set(stats), dynamicMode.guaranteedRollsCount),
 					[[[...currentStats], 1]],
-					logicGoal,
-					allLinesProb,
-					new Set(stats),
-					guaranteedRollsCount
+					logicGoal
 				);
 
 				// Note: This is far larger than the minimum difference between actual probabilities
 				if (rollProb - maxProb > 4 * Number.EPSILON) {
-					maxStatsAndAvg = [[...stats, avg] as [SubStat, SubStat, number]];
+					maxStatsAndAvg = [[...stats, avg] as [string, string, number]];
 					maxProb = rollProb;
 				} else if (Math.abs(rollProb - maxProb) <= 4 * Number.EPSILON) {
-					maxStatsAndAvg.push([...stats, avg] as [SubStat, SubStat, number]);
+					maxStatsAndAvg.push([...stats, avg] as [string, string, number]);
 				}
 			}
 
 			maxStatsAndAvg.sort((a, b) => b[2] - a[2]); // Sort by average RV descending
-			const maxStats = maxStatsAndAvg.map(([s1, s2]) => [s1, s2] as [SubStat, SubStat]);
+			const maxStats = maxStatsAndAvg.map(([s1, s2]) => [s1, s2] as [string, string]);
+
+			if (maxStats.length) {
+				setSelectedStats(maxStats[0]);
+				setAllOptimalPairs(maxStats);
+			}
+		},
+		bestToIgnore: () => {
+			const statData = getBaseConfig().make();
+
+			let maxStatAndAvg: [string, number][] = [];
+			let maxProb = -1;
+
+			for (const stat of currentStats) {
+				const [rollProb, avg] = computeRollProb(
+					statData,
+					makeRollRestrictions(allLinesProb, undefined, undefined, new Set([stat])),
+					[[[...currentStats], 1]],
+					logicGoal
+				);
+
+				// Note: This is far larger than the minimum difference between actual probabilities
+				if (rollProb - maxProb > 4 * Number.EPSILON) {
+					maxStatAndAvg = [[stat, avg] as [string, number]];
+					maxProb = rollProb;
+				} else if (Math.abs(rollProb - maxProb) <= 4 * Number.EPSILON) {
+					maxStatAndAvg.push([stat, avg] as [string, number]);
+				}
+			}
+
+			maxStatAndAvg.sort((a, b) => b[1] - a[1]); // Sort by average RV descending
+			const maxStats = maxStatAndAvg.map(([s]) => [s] as [string]);
 
 			if (maxStats.length) {
 				setSelectedStats(maxStats[0]);
@@ -276,41 +360,60 @@ export function Form() {
 
 	const calculate = () => {
 		const statDataConfig = getBaseConfig();
-		const guaranteedRollsStats = new Set<SubStat>();
+		const guaranteedRollsStats = new Set<string>();
+		const unrollableStats = new Set<string>();
 		
 		// Optimization target, can't be included in base
-		if (mode.selectedStatCount && !mode.fixedArtifact) {
-			for (const stat of selectedStats.slice(0, mode.selectedStatCount)) {
+		if (dynamicMode.selectedStatCount && !mode.fixedArtifact) {
+			for (const stat of selectedStats.slice(0, dynamicMode.selectedStatCount)) {
 				statDataConfig.guarantee(stat);
 			}
 		}
 
 		// Optimization target, can't be included in base
-		if (mode.selectedStatCount && mode.fixedArtifact) {
-			for (const stat of selectedStats.slice(0, mode.selectedStatCount)) {
+		if (dynamicMode.selectedStatCount && mode.fixedArtifact && !mode.selectToIgnore) {
+			for (const stat of selectedStats.slice(0, dynamicMode.selectedStatCount)) {
 				guaranteedRollsStats.add(stat);
 			}
 		}
 
-		const statData = statDataConfig.make();
+		// Optimization target, can't be included in base
+		if (dynamicMode.selectedStatCount && mode.fixedArtifact && mode.selectToIgnore) {
+			for (const stat of selectedStats.slice(0, dynamicMode.selectedStatCount)) {
+				unrollableStats.add(stat);
+			}
+		}
 
+		const chosenTypeGroup = data.mainStats[artifactType].typeGroup;
 		const newMainProb = showMainProb
-			? computeMainStatProb(artifactType, mainStat, mode.fromDomain && !acceptEither)
+			? computeMainStatProb(
+				data.mainStats.filter(({ typeGroup }) => typeGroup === chosenTypeGroup).length,
+				data.mainStats,
+				artifactType,
+				mainStat,
+				mode.fromDomain && !acceptEither
+			)
 			: undefined;
 		setMainProb(newMainProb);
 
-		const [newSubProb, validCombos] = computeSubProb(statData);
+		const statData = statDataConfig.make();
+		const [newSubProb, validCombos] = computeSubProb(statData, SUB_STAT_COUNT);
 		setSubProb(showSubProb ? newSubProb : undefined);
 
+		const rollRestrictions = makeRollRestrictions(
+			allLinesProb,
+			guaranteedRollsStats,
+			dynamicMode.guaranteedRollsCount,
+			unrollableStats
+		);
+
 		if (calcRollProb) {
-			const [newRollProb, avg, buckets] = computeRollProb(
-				statData,
-				validCombos,
-				logicGoal,
-				allLinesProb,
-				guaranteedRollsStats,
-				guaranteedRollsCount
+			console.log(
+				"Calculating roll probability",
+				{ statData, rollRestrictions, validCombos, logicGoal }
 			);
+
+			const [newRollProb, avg, buckets] = computeRollProb(statData, rollRestrictions, validCombos, logicGoal);
 			setRollProb(newRollProb);
 			setAvgRV(avg);
 
@@ -334,11 +437,9 @@ export function Form() {
 				const worker = new SimulationWorker();
 				worker.postMessage({
 					statData,
+					rollRestrictions,
 					goal: logicGoal,
-					allLinesProb,
-					fixedStats: mode.fixedArtifact ? currentStats : undefined,
-					guaranteedRollsStats,
-					guaranteedRollsCount
+					fixedStats: mode.fixedArtifact ? currentStats : undefined
 				});
 
 				return worker;
@@ -357,19 +458,19 @@ export function Form() {
 		if (
 			maxAttainable !== undefined &&
 			sortedValidWeights[0][1] > sortedValidWeights[1][1] &&
-			(sortedValidWeights.length < 5 || sortedValidWeights[3][1] > sortedValidWeights[4][1])
+			(sortedValidWeights.length <= SUB_STAT_COUNT || sortedValidWeights[SUB_STAT_COUNT - 1][1] > sortedValidWeights[SUB_STAT_COUNT][1])
 		) {
 			const secondBest = maxAttainable - (
-				sortedValidWeights[3][1] *
-					(rollValues[rollValues.length - 1] - rollValues[rollValues.length - 2])
+				sortedValidWeights[SUB_STAT_COUNT - 1][1] *
+					(data.rollValues[data.rollValues.length - 1] - data.rollValues[data.rollValues.length - 2])
 			);
 
 			// - Goal is better than the second best possibility
 			// - Weights are as small as possible
 			if (
 				secondBest * 100 <= logicGoal &&
-				sortedValidWeights.slice(0, 4).reduce((acc, [_, w]) => acc + w, 0) <=
-					validStats.map(s => statWeights[s]).sort((a, b) => b - a).slice(0, 4).reduce((acc, w) => acc + w, 0)
+				sortedValidWeights.slice(0, SUB_STAT_COUNT).reduce((acc, [_, w]) => acc + w, 0) <=
+					validStats.map(s => data.statWeights[s]).sort((a, b) => b - a).slice(0, SUB_STAT_COUNT).reduce((acc, w) => acc + w, 0)
 			) {
 				setOverwhelminglyLikely(true);
 				return;
@@ -381,13 +482,7 @@ export function Form() {
 
 	return (
 		<div>
-			<div class="flex flex-wrap gap-4">
-				<ToggleButtons options={modes.map(mode => mode.name)} value={modeNum} onChange={setModeNum} />
-				<div class="flex flex-1 w-full justify-end">
-					<Button onClick={() => resetTrigger.reset()}>Reset</Button>
-				</div>
-			</div>
-			<Section class="mt-6">
+			<VisualSection>
 				<LabelGrid>
 					<div>
 						<div>
@@ -398,12 +493,12 @@ export function Form() {
 								<select value={artifactType} onChange={(e) => {
 									setArtifactType(Number((e.target as HTMLSelectElement).value));
 
-									const newMainStats = Object.keys(mainStats[+(e.target as HTMLSelectElement).value].stats);
+									const newMainStats = Object.keys(data.mainStats[+(e.target as HTMLSelectElement).value].stats);
 									if (!newMainStats.includes(mainStat)) {
-										setMainStat(newMainStats[0] as AnyStat);
+										setMainStat(newMainStats[0]);
 									}
 								}}>
-									{Object.entries(mainStats).map(([key, { name }]) => (
+									{Object.entries(data.mainStats).map(([key, { name }]) => (
 										<option key={key} value={key}>
 											{name}
 										</option>
@@ -411,8 +506,8 @@ export function Form() {
 								</select>
 							</label>
 							<label>
-								Main Stat: <select value={mainStat} onChange={(e) => setMainStat((e.target as HTMLSelectElement).value as AnyStat)}>
-									{Object.keys(mainStats[artifactType].stats).map(stat => (
+								Main Stat: <select value={mainStat} onChange={(e) => setMainStat((e.target as HTMLSelectElement).value)}>
+									{Object.keys(data.mainStats[artifactType].stats).map(stat => (
 										<option key={stat} value={stat}>
 											{stat}
 										</option>
@@ -438,16 +533,16 @@ export function Form() {
 								useRV={useRV}
 								clearable={!mode.fixedArtifact}
 								stats={currentStats}
-								count={4}
+								count={SUB_STAT_COUNT}
 								onChange={setCurrentStats}
-								validStats={allSubStats.filter(stat => stat !== mainStat)}
+								validStats={data.stats.filter(stat => stat !== mainStat)}
 								statValues={mode.fixedArtifact && useAutoGoal ? statParams : undefined}
 								onValueChange={(stat, value) => setStatParams(prev => ({ ...prev, [stat]: { ...prev[stat], currentRV: value } }))}
 							/>
 						</div>
 					</div>}
 				</LabelGrid>
-			</Section>
+			</VisualSection>
 			{showImport && <Import import={art => {
 				setArtifactType(art.artifactType);
 				setMainStat(art.mainStat);
@@ -458,69 +553,85 @@ export function Form() {
 					for (const [stat, value] of art.subStats) {
 						newParams[stat] = {
 							...newParams[stat],
-							currentRV: Math.round((value / statRollValues[stat]) / 10) * 10
+							currentRV: Math.round((value / data.statValues[stat]) / 10) * 10
 						};
 					}
 
 					return newParams;
 				});
-				setIsFiveRoller(art.propIdCount >= 9);
+				setIsFiveRoller(art.totalCount >= 9);
 				setShowImport(false);
 			}} />}
-			{mode.selectedStatCount > 0 && <Section>
-				<div class="mb-2"><strong>Tip</strong>: Run optimize after completing the sections below to find the best subsets to select.</div>
+			{(dynamicMode.selectedStatCount > 0 || Array.isArray(mode.selectedStatCount)) && <VisualSection>
 				<LabelGrid>
-					{mode.fixedArtifact && <div>
+					{Array.isArray(mode.selectedStatCount) && <div>
 						<div>
-							Guaranteed rolls:
+							{mode.fixedArtifact && mode.selectToIgnore ? "Ignored" : "Selected"} count:
 						</div>
 						<div>
 							<ToggleButtons
-								options={["2", "3", "4"]}
-								value={guaranteedRollsCount - 2}
-								onChange={(value) => setGuaranteedRollsCount(value + 2)}
+								options={mode.selectedStatCount}
+								value={rawSelectedStatCount}
+								onChange={(value) => setRawSelectedStatCount(value)}
 							/>
 						</div>
 					</div>}
-					<div>
+					{dynamicMode.selectedStatCount > 0 && <>
+						{mode.fixedArtifact && !mode.selectToIgnore && Array.isArray(mode.guaranteedCount) && <div>
+							<div>
+								Guaranteed rolls:
+							</div>
+							<div>
+								<ToggleButtons
+									options={mode.guaranteedCount}
+									value={rawGuaranteedRollsCount}
+									onChange={(value) => setRawGuaranteedRollsCount(value)}
+								/>
+							</div>
+						</div>}
 						<div>
-							Selected stats:
+							<div>
+								{mode.fixedArtifact && mode.selectToIgnore ? "Ignored" : "Selected"} {dynamicMode.selectedStatCount === 1 ? "stat" : "stats"}:
+							</div>
+							<div class="flex gap-2 items-center flex-wrap">
+								<StatListInput
+									stats={selectedStats}
+									count={dynamicMode.selectedStatCount}
+									onChange={setSelectedStats}
+									validStats={validStats}
+									hasKnownError={selectedStatsInvalid}
+									onErrorChange={(hasError) => setSelectedStatsInvalid(hasError)}
+								/>
+								{mode.selectedStatOptimizer && (
+									<Button onClick={() => optimizers[mode.selectedStatOptimizer!]()}>Optimize</Button>
+								)}
+								{mode.selectedStatOptimizer === "bestRolls" && <DocumentLink name="selecting-useless-stats.pdf">Selecting worse substats may be optimal</DocumentLink>}
+							</div>
 						</div>
-						<div class="flex gap-2 items-center flex-wrap">
-							<StatListInput
-								stats={selectedStats}
-								count={mode.selectedStatCount}
-								onChange={setSelectedStats}
-								validStats={validStats}
-								hasKnownError={selectedStatsInvalid}
-								onErrorChange={(hasError) => setSelectedStatsInvalid(hasError)}
-							/>
-							{mode.selectedStatOptimizer && (
-								<Button onClick={() => optimizers[mode.selectedStatOptimizer!]()}>Optimize</Button>
-							)}
-							{mode.selectedStatOptimizer === "bestRolls" && <DocumentLink name="selecting-useless-stats.pdf">Selecting worse substats may be optimal</DocumentLink>}
-						</div>
-					</div>
+					</>}
 					{allOptimalPairs.length > 1 && <div>
 						<div>
-							All optimal pairs:
+							All optimal:
 						</div>
 						<div class="flex gap-x-4 gap-y-1 items-center overflow-auto">
-							{allOptimalPairs.map(([s1, s2], i) => (
-								<button key={i} onClick={() => setSelectedStats([s1, s2])} class="shrink-0 underline">
-									{s1} + {s2}
+							{allOptimalPairs.map(stats => (
+								<button key={stats.join(" + ")} onClick={() => setSelectedStats(stats)} class="shrink-0 underline">
+									{stats.join(" + ")}
 								</button>
 							))}
 						</div>
 					</div>}
 				</LabelGrid>
-			</Section>}
+				{dynamicMode.selectedStatCount > 0 && <div class="mt-2">
+					<strong>Tip</strong>: Run optimize after completing the sections below to find the best subsets to select.
+				</div>}
+			</VisualSection>}
 			{!mode.fixedArtifact && <section>
-				<h2 class="text-xl font-bold mt-5">Stat Requirements</h2>
+				<h3 class="text-xl font-bold mt-5">Stat Requirements</h3>
 				<div class="mt-1">
 					Only consider artifacts with these stats.
 				</div>
-				<Section>
+				<VisualSection>
 					<div class="flex gap-2 items-center">
 						<span>Require</span>
 						<input
@@ -530,12 +641,18 @@ export function Form() {
 							class="w-20"
 						/>
 						<span>of</span>
-						<StatListInput clearable stats={required} count={4} onChange={setRequired} validStats={validStats} />
+						<StatListInput
+							clearable
+							stats={required}
+							count={SUB_STAT_COUNT}
+							onChange={setRequired}
+							validStats={validStats}
+						/>
 					</div>
-				</Section>
+				</VisualSection>
 			</section>}
 			<section>
-				<h2 class="text-xl font-bold mt-5">Roll Requirements</h2>
+				<h3 class="text-xl font-bold mt-5">Roll Requirements</h3>
 				<div class="mt-1">
 					Control the relative value of each roll, as well as stat roll limits.{!mode.fixedArtifact &&
 						<> Ignored if all weights and min stats are 0.</>}
@@ -543,15 +660,15 @@ export function Form() {
 				<div class="mt-1">
 					<Checkbox label="Input roll value (RV) instead of stat value" checked={useRV} onChange={setUseRV} />
 				</div>
-				<Section>
+				<VisualSection>
 					<StatParamInput
 						entries={statParams}
 						validStats={validStats}
 						onChange={(stat, entry) => setStatParams(prev => ({ ...prev, [stat]: entry }))}
 						useRV={useRV}
 					/>
-				</Section>
-				<Section>
+				</VisualSection>
+				<VisualSection>
 					<div class="flex gap-x-5 gap-y-2 flex-wrap mb-2">
 						<Checkbox label="Use current sub-stats for goal" checked={useAutoGoal} onChange={setUseAutoGoal} />
 						<Checkbox label="Include artifacts equal to goal" checked={includeEqual} onChange={setIncludeEqual} />
@@ -562,9 +679,9 @@ export function Form() {
 							<StatListInput
 								clearable={!mode.fixedArtifact}
 								stats={currentStats}
-								count={4}
+								count={SUB_STAT_COUNT}
 								onChange={setCurrentStats}
-								validStats={allSubStats.filter(stat => stat !== mainStat)}
+								validStats={data.stats.filter(stat => stat !== mainStat)}
 								useRV={useRV}
 								statValues={mode.fixedArtifact ? undefined : statParams}
 								onValueChange={(stat, value) => setStatParams(prev => ({ ...prev, [stat]: { ...prev[stat], currentRV: value } }))}
@@ -589,16 +706,16 @@ export function Form() {
 						</div>
 					</LabelGrid>
 					{maxTheoretical === undefined ? null : <div class="mt-2">
-						{useAutoGoal ? "Current" : "Goal"} sub-stat & roll probability: <Percentage value={goalValue / maxTheoretical} />
-						{maxAttainable !== undefined && <> (Max: <Percentage value={maxAttainable / maxTheoretical} />, started with 3 lines)</>}
+						{useAutoGoal ? "Currently at" : "Goal is"} <Percentage value={goalValue / maxTheoretical} /> of maximum reachable
+						{maxAttainable < maxTheoretical && <> (Max: <Percentage value={maxAttainable / maxTheoretical} />, started with 3 lines)</>}
 					</div>}
-				</Section>
+				</VisualSection>
 			</section>
 			<section>
-				<h2 class="text-xl font-bold my-5">Probability Results</h2>
-				<Section>
+				<h3 class="text-xl font-bold my-5">Probability Results</h3>
+				<VisualSection>
 					<div class="flex gap-4 items-center flex-wrap">
-						<Button primary onClick={() => calculate()} disabled={mode.selectedStatCount > 0 && selectedStatsInvalid}>Calculate</Button>
+						<Button primary onClick={() => calculate()} disabled={dynamicMode.selectedStatCount > 0 && selectedStatsInvalid}>Calculate</Button>
 						<div class="flex gap-2 items-center flex-wrap">
 							<strong>Advanced:</strong>
 							<label>
@@ -606,8 +723,8 @@ export function Form() {
 							</label>
 						</div>
 					</div>
-				</Section>
-				<Section>
+				</VisualSection>
+				<VisualSection>
 					<LabelGrid tight>
 						{showMainProb && <div>
 							<div>Main stat probability:</div>
@@ -629,15 +746,15 @@ export function Form() {
 									showQuality={!mode.fixedArtifact && mode.mainStatUnknown ? 35 : 1}
 								/>{probCost !== undefined && mode.output !== undefined &&
 									<span> &#8776; {probCost.toLocaleString()} {mode.output.desc
-										? <abbr title={mode.output.desc}>{mode.output.unit}</abbr>
-										: <span>{mode.output.unit}</span>}
+										? <abbr title={mode.output.desc}>{getModeProb(mode.output.unit)}</abbr>
+										: <span>{getModeProb(mode.output.unit)}</span>}
 									</span>}
 							</div>
 						</div>
 						{totalProb !== undefined && totalProb !== 0 && overwhelminglyLikely && <div>
 							<div></div>
 							<div class="flex gap-2 items-center">
-								<img src="./nah-id-win.png" class="h-4" alt="Gojo" /> Nah, I'd win
+								<img src="/artifact-copium/nah-id-win.png" class="h-4" alt="Gojo" /> Nah, I'd win
 							</div>
 						</div>}
 						{simulationVer !== undefined && <div>
@@ -655,11 +772,11 @@ export function Form() {
 							</div>
 						</div>}
 					</LabelGrid>
-				</Section>
-				{(avgRV !== undefined || bars.length > 0) && <Section>
+				</VisualSection>
+				{(avgRV !== undefined || bars.length > 0) && <VisualSection>
 					{avgRV !== undefined && <div>Average weighted RV of rolled artifacts: {Math.round(avgRV / 100).toLocaleString()}%</div>}
 					{bars.length > 0 && <RVGraph bars={bars} max={maxAttainable} />}
-				</Section>}
+				</VisualSection>}
 				<LogicSection />
 			</section>
 		</div>

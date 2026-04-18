@@ -1,12 +1,11 @@
-import { memoize } from "../utils.js";
-import { rollValues, SubStat } from "../data.js";
+import { memoize } from "../utils/math.js";
 import { StatData } from "../StatData.js";
-import { toBucket } from "../../src/utils/barChart.js";
+import { toBucket } from "../utils/barChart.js";
 
 /**
  * Compute distribution of roll value sums for a given number of rolls (0 to 5)
  */
-export const computeRollValueDistribution = memoize((count: number): Map<number, number> => {
+export const computeRollValueDistribution = memoize((count: number, rollValues: readonly number[]): Map<number, number> => {
 	let statStates = new Map<number, number>([[0, 1]]);
 
 	for (let r = 0; r < count; r++) {
@@ -28,7 +27,7 @@ export const computeRollValueDistribution = memoize((count: number): Map<number,
 /**
  * Compute the number of ways to achieve the stat sum goal with the given rolls, accounting for roll values
  */
-export const computeWaysAboveGoal = (statData: StatData, subStats: SubStat[], rolls: number[], goal: number): [number, number, number[]] => {
+export const computeWaysAboveGoal = (statData: StatData, subStats: string[], rolls: number[], goal: number): [number, number, number[]] => {
 	let states = new Map<number, number>([[0, 1]]);
 
 	// Iteratively move through all roll value combinations stat by stat
@@ -36,7 +35,7 @@ export const computeWaysAboveGoal = (statData: StatData, subStats: SubStat[], ro
 		const stat = subStats[statIndex];
 		const count = rolls[statIndex];
 
-		let statRollSums = computeRollValueDistribution((count) + 1); // +1 - Account for initial roll
+		let statRollSums = computeRollValueDistribution(count + 1, statData.rollValues); // +1 - Account for initial roll
 
 		const next = new Map<number, number>();
 

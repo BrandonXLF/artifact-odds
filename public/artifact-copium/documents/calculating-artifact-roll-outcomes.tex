@@ -61,8 +61,8 @@ The probability for a given sub-stat outcome is:
 Where:
 \begin{itemize}[]
 	\item $p$ is the probability of the stat combination.
-	\item $InitialValueOutcomes$ is the number of possible roll outcomes.
 	\item $InitialValueOutcomes$ the number of value outcomes for the initial states.
+	\item $RollOutcomes$ is the number of possible roll outcomes.
 	\item $RollValueOutcomes$ the number of value outcomes for the rolled stats.
 \end{itemize}
 
@@ -76,16 +76,25 @@ Since the sub-stat probability is separately defined above, we have:
 	&\left(\frac{p}{\sum_{valid} p}\right)\left(\frac{1}{InitialValueOutcomes}\right)\left(\frac{1}{RollOutcomes}\right)\left(\frac{1}{RollValueOutcomes}\right)\end{aligned}
 \end{align*}
 
-As there are 4 stats to choose from each time, and since there are 4 roll values a roll can have (70\%, 80\%, 90\%, and 100\%), all these are exponents with a base of 4. Let $n$ be the number of rolls.
+\pagebreak
+Let:
 \begin{itemize}[]
-	\item $InitialValueOutcomes = 4^4$ - There are 4 initial substats
-	\item $RollOutcomes = 4^n$ - There are $n$ sub-stats to roll
-	\item $RollValueOutcomes = 4^n$ - $n$ sub-stats where rolled, and need a value assigned
+	\item $a$ - The number of sub-stats
+	\item $a_{r}$ - The number of rollable sub-stats
+	\item $b$ - The number of roll values
+	\item $n$ - The number of sub-stat rolls
+\end{itemize}
+
+Then, there are $a = 4$ sub-stats to roll initially, $a^* = 4$ sub-stats choose from each time for each roll, and $b = 4$ roll values a roll can have (70\%, 80\%, 90\%, and 100\%).
+\begin{itemize}[]
+	\item $InitialValueOutcomes = b^a = 4^4$ - There are 4 sub-stats to assign base values to
+	\item $RollOutcomes = a_{r}^n = 4^n$ - There are $n$ sub-stats rolls that each choose a sub-stat
+	\item $RollValueOutcomes = b^n = 4^n$ - The $n$ sub-stats rolls needs value assigned
 \end{itemize}
 
 Thus, the total number of possibilities is:
 \begin{align*}
-	(4^n)^2(4^4)
+	(b^a)(a_{r}b)^n = (4^4)(16^n)
 \end{align*}
 
 \subsection{Roll Permutations}
@@ -130,7 +139,7 @@ For example, assume the roll values are 0, 0.5, and 1. After the second iteratio
 
 Giving us $3^2 = 9$ outcomes to bring to the next iteration.
 
-But instead, they can be groupped as so: 2 (1x), 1.5 (2x), 1 (3x), 0.5 (2x), 0 (1x). This leaves only 5 outcomes to bring to the next iteration. This is repeated for all of the $x$ iterations.
+But instead, they can be grouped as so: 2 (1x), 1.5 (2x), 1 (3x), 0.5 (2x), 0 (1x). This leaves only 5 outcomes to bring to the next iteration. This is repeated for all of the $x$ iterations.
 
 The general method to compute the number of outcomes above the goal also uses this method, but for the $4$ stat iterations.
 
@@ -185,7 +194,7 @@ An overview of the code used to generate all outcomes is thus:
 		}
 	}
 	
-	\Return $Sum \div (\sum_{valid} p \times (4^n)^2(4^4))$
+	\Return $Sum \div (\sum_{valid} p \times (4^4)(4^n)^2))$
 \end{algorithm}
 
 Note that at the end, $Ways$ is just the product of the $RollValuePossibilities_i$, $i = 1, \dots, 4$, for the outcome.

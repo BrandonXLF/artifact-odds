@@ -1,30 +1,30 @@
-import { allSubStats, AnyStat, statWeights, SubStat } from "./data.js";
-
 export class StatData {
-	private readonly requiredByMin: SubStat[] = [];
+	private readonly requiredByMin: string[] = [];
 	private readonly _maxWeight: number;
 
 	constructor(
-		private readonly _random: SubStat[],
-		private readonly _guaranteed: SubStat[],
-		private readonly weights: Partial<Record<SubStat, number>>,
-		private readonly mins: Partial<Record<SubStat, number>>,
-		private readonly limits: Partial<Record<SubStat, number>>,
-		private readonly required: SubStat[],
+		private readonly _random: string[],
+		private readonly _guaranteed: string[],
+		private readonly statWeights: Partial<Record<string, number>>,
+		private readonly weights: Partial<Record<string, number>>,
+		private readonly mins: Partial<Record<string, number>>,
+		private readonly limits: Partial<Record<string, number>>,
+		private readonly required: string[],
 		private readonly requiredCount: number,
+		private readonly _rollValues: readonly number[]
 	) {
 		for (const [stat, min] of Object.entries(mins)) {
-			if (min > 0) this.requiredByMin.push(stat as SubStat);
+			if (min !== undefined && (min) > 0) this.requiredByMin.push(stat);
 		}
 
-		this._maxWeight = Math.max(...Object.values(weights));
+		this._maxWeight = Math.max(...Object.values(weights).filter((w): w is number => w !== undefined), 0);
 	}
 
-	get random(): SubStat[] {
+	get random(): string[] {
 		return this._random;
 	}
 
-	get guaranteed(): SubStat[] {
+	get guaranteed(): string[] {
 		return this._guaranteed;
 	}
 
@@ -32,7 +32,11 @@ export class StatData {
 		return this._maxWeight;
 	}
 
-	meetsRequirements(combo: SubStat[]): boolean {
+	get rollValues(): readonly number[] {
+		return this._rollValues;
+	}
+
+	meetsRequirements(combo: string[]): boolean {
 		for (const stat of this.requiredByMin) {
 			if (!combo.includes(stat)) return false;
 		}
@@ -43,80 +47,53 @@ export class StatData {
 		return count >= this.requiredCount;
 	}
 
-	getRollWeight(stat: SubStat): number {
-		return statWeights[stat] ?? 0;
+	getRollWeight(stat: string): number {
+		return this.statWeights[stat] ?? 0;
 	}
 
-	getUsefulness(stat: SubStat): number {
+	getUsefulness(stat: string): number {
 		return this.weights[stat] ?? 0;
 	}
 
-	getMin(stat: SubStat): number {
+	getMin(stat: string): number {
 		return this.mins[stat] ?? 0;
 	}
 
-	getLimit(stat: SubStat): number {
+	getLimit(stat: string): number {
 		return this.limits[stat] ?? Infinity;
 	}
 }
 
 export class StatDataConfig {
-	random: SubStat[] = [...allSubStats];
+	random: string[];
 
-	weights: Record<SubStat, number> = {
-		"HP": 0,
-		"ATK": 0,
-		"DEF": 0,
-		"HP%": 0,
-		"ATK%": 0,
-		"DEF%": 0,
-		"EM": 0,
-		"ER%": 0,
-		"CRIT Rate%": 0,
-		"CRIT DMG%": 0,
-	};
+	constructor(
+		allSubStats: readonly string[],
+		private readonly statWeights: Partial<Record<string, number>>,
+		private readonly rollValues: readonly number[]
+	) {
+		this.random = [...allSubStats];
+	}
 
-	mins: Record<SubStat, number> = {
-		"HP": 0,
-		"ATK": 0,
-		"DEF": 0,
-		"HP%": 0,
-		"ATK%": 0,
-		"DEF%": 0,
-		"EM": 0,
-		"ER%": 0,
-		"CRIT Rate%": 0,
-		"CRIT DMG%": 0,
-	};
+	weights: Partial<Record<string, number>> = {};
+	mins: Partial<Record<string, number>> = {};
+	limits: Partial<Record<string, number>> = {};
 
-	limits: Record<SubStat, number> = {
-		"HP": Infinity,
-		"ATK": Infinity,
-		"DEF": Infinity,
-		"HP%": Infinity,
-		"ATK%": Infinity,
-		"DEF%": Infinity,
-		"EM": Infinity,
-		"ER%": Infinity,
-		"CRIT Rate%": Infinity,
-		"CRIT DMG%": Infinity
-	};
-
-	guaranteed: SubStat[] = [];
+	guaranteed: string[] = [];
 	requiredCount: number = 0;
-	required: SubStat[] = [];
+	required: string[] = [];
 
-	onlyInclude(stats: SubStat[]): this {
+	onlyInclude(stats: string[]): this {
 		this.random = this.random.filter((s) => stats.includes(s));
 		return this;
 	}
 
-	exclude(stat: AnyStat): this {
+	exclude(stat: string): this {
 		this.random = this.random.filter((s) => s !== stat);
 		return this;
 	}
 
-	guarantee(stat: SubStat): this {
+	guarantee(stat: string): this {
 		this.random = this.random.filter((s) => s !== stat);
 		this.guaranteed.push(stat);
 		return this;
@@ -124,7 +101,7 @@ export class StatDataConfig {
 
 	require(count: number) {
 		return {
-			of: (...stats: SubStat[]): this => {
+			of: (...stats: string[]): this => {
 				this.requiredCount = count;
 				this.required = stats;
 				return this;
@@ -132,25 +109,25 @@ export class StatDataConfig {
 		}
 	}
 
-	setWeight(stat: SubStat, weight: number): this {
+	setWeight(stat: string, weight: number): this {
 		this.weights[stat] = weight;
 		return this;
 	}
 
-	setMin(stat: SubStat, min: number): this {
+	setMin(stat: string, min: number): this {
 		this.mins[stat] = min;
 		return this;
 	}
 
-	setLimit(stat: SubStat, limit: number): this {
+	setLimit(stat: string, limit: number): this {
 		this.limits[stat] = limit;
 		return this;
 	}
 
 	make(): StatData {
-		const weights: Partial<Record<SubStat, number>> = {};
-		const mins: Partial<Record<SubStat, number>> = {};
-		const limits: Partial<Record<SubStat, number>> = {};
+		const weights: Partial<Record<string, number>> = {};
+		const mins: Partial<Record<string, number>> = {};
+		const limits: Partial<Record<string, number>> = {};
 
 		for (const stat of [...this.random, ...this.guaranteed]) {
 			weights[stat] = this.weights[stat];
@@ -161,11 +138,13 @@ export class StatDataConfig {
 		return new StatData(
 			this.random,
 			this.guaranteed,
+			this.statWeights,
 			weights,
 			mins,
 			limits,
 			this.required,
-			this.requiredCount
+			this.requiredCount,
+			this.rollValues
 		);
 	}
 }
