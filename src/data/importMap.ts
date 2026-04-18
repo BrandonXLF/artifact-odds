@@ -46,14 +46,15 @@ export const hsrImportMap: Record<string, string> = {
 	// Main stats
 	"CriticalDamageBase": "CRIT DMG%",
 	"CriticalChanceBase": "CRIT Rate%",
-	"HealRatioBase": "Healing Bonus%",
-	"SPRatioBase": "ERR%",
+	"StatusProbabilityBase": "EHR%",
+	"HealRatioBase": "OHB%",
 	"BreakDamageAddedRatioBase": "Break Effect%",
-	"PhysicalAddedRatio": "Physical DMG Bonus%",
-	"FireAddedRatio": "Fire DMG Bonus%",
-	"IceAddedRatio": "Ice DMG Bonus%",
-	"WindAddedRatio": "Wind DMG Bonus%",
-	"LightningAddedRatio": "Lightning DMG Bonus%",
-	"QuantumAddedRatio": "Quantum DMG Bonus%",
-	"ImaginaryAddedRatio": "Imaginary DMG Bonus%"
+	"SPRatioBase": "ERR%",
+	"PhysicalAddedRatio": "Physical DMG Boost%",
+	"FireAddedRatio": "Fire DMG Boost%",
+	"IceAddedRatio": "Ice DMG Boost%",
+	"WindAddedRatio": "Wind DMG Boost%",
+	"ThunderAddedRatio": "Lightning DMG Boost%",
+	"QuantumAddedRatio": "Quantum DMG Boost%",
+	"ImaginaryAddedRatio": "Imaginary DMG Boost%"
 };
