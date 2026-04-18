@@ -1,5 +1,5 @@
-import RollRestrictions from "../logic/RollRestrictions";
-import { StatData } from "../logic/StatData";
+import RollRestrictions from "../logic/data/RollRestrictions";
+import { StatData } from "../logic/data/StatData";
 
 export const SIMULATIONS_PER_RUN = 100000;
 

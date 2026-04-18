@@ -1,9 +1,9 @@
 import { useContext } from "preact/hooks";
-import { distributions } from "../data/distributions";
-import { DocumentLink } from "./DocumentLink";
-import { LabelGrid } from "./LabelGrid";
-import { VisualSection } from "./VisualSection";
-import { GameContext } from "../contexts/GameContext";
+import { distributions } from "../../data/distributions";
+import { DocumentLink } from "../misc/DocumentLink";
+import { LabelGrid } from "../structure/LabelGrid";
+import { VisualSection } from "../structure/VisualSection";
+import { GameContext } from "../../contexts/GameContext";
 
 export const LogicSection = () => {
 	const { gameMeta } = useContext(GameContext);

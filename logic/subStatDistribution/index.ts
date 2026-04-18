@@ -1,8 +1,8 @@
 import { computeRollDistribution } from "./rollDistribution.js";
 import { computeWaysAboveGoal } from "./valueDistribution.js";
-import { StatData } from "../StatData.js";
+import { StatData } from "../data/StatData.js";
 import { memoize } from "../utils/math.js";
-import RollRestrictions from "../RollRestrictions.js";
+import RollRestrictions from "../data/RollRestrictions.js";
 
 /**
  * Compute the number of valid roll combinations for a given goal

@@ -1,6 +1,6 @@
 import { twMerge } from "tailwind-merge";
-import { round2 } from "../utils/round";
-import { Button } from "./Button";
+import { round2 } from "../../utils/round";
+import { Button } from "../input/Button";
 import { OptionalNumberInput, StatValueInput } from "./StatValueInput";
 
 export interface StatParamInputEntry {

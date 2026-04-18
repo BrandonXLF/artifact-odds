@@ -1,5 +1,5 @@
 import { getSubStatCombinations } from "./combinations/subStatCombinations";
-import { StatData } from "./StatData";
+import { StatData } from "./data/StatData";
 
 export const computeSubProb = (statData: StatData, size: number): [number, [string[], number][]] => {
 	const combos = getSubStatCombinations(statData, size)

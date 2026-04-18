@@ -1,5 +1,5 @@
 import { rollValues, SubStat } from "../data.js";
-import { StatDataConfig } from "../StatData.js";
+import { StatDataConfig } from "../data/StatData.js";
 import { computeValidRolls, computeRollProb } from "./index.js";
 
 test("All rolls required (>)", () => {

@@ -1,5 +1,5 @@
-import RollRestrictions from "../logic/RollRestrictions";
-import { StatData } from "../logic/StatData";
+import RollRestrictions from "../logic/data/RollRestrictions";
+import { StatData } from "../logic/data/StatData";
 import { runSimulator, SIMULATIONS_PER_RUN } from "./main";
 
 export interface EstimatorWorkerData {

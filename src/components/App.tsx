@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'preact/hooks';
 import { distributions } from '../data/distributions';
 import { DistMain } from './distributions/DistMain';
-import { FormMain } from './FormMain';
+import { FormMain } from './form/FormMain';
 import { GameContext } from '../contexts/GameContext';
 import { meta } from '../data/meta';
 import { Game } from '../data/game';

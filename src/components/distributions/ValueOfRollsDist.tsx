@@ -2,11 +2,11 @@ import { useContext, useMemo, useState } from "preact/hooks"
 import { computeRollValueDistribution } from "../../../logic/subStatDistribution/valueDistribution";
 import { DistributionView } from "./DistributionView";
 import { GameContext } from "../../contexts/GameContext";
-import { ToggleButtons } from "../ToggleButtonts";
+import { ToggleButtons } from "../input/ToggleButtons";
 import { meta } from "../../data/meta";
 import { Game } from "../../data/game";
 import { data } from "../../data/data";
-import { LabelGrid } from "../LabelGrid";
+import { LabelGrid } from "../structure/LabelGrid";
 
 export const RollValueDist = () => {
 	const { game } = useContext(GameContext);

@@ -1,7 +1,7 @@
 import { useContext } from "preact/hooks";
 import { Distribution } from "../../data/distributions";
 import { GameContext } from "../../contexts/GameContext";
-import Article from "../Article";
+import Article from "../structure/Article";
 
 export const DistMain = ({ dist }: { dist?: Distribution }) => {
 	const { gameMeta } = useContext(GameContext);

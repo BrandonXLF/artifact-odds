@@ -1,8 +1,8 @@
 import { useContext, useEffect, useRef, useState } from "preact/hooks";
 import { hsrImportMap, importMap, typeMap } from "../../data/importMap";
-import { ToggleButtons } from "../ToggleButtonts";
-import { VisualSection } from "../VisualSection";
-import { Button } from "../Button";
+import { ToggleButtons } from "../input/ToggleButtons";
+import { VisualSection } from "../structure/VisualSection";
+import { Button } from "../input/Button";
 import { useStoredState } from "../../utils/resettableState";
 import { ImportedCharacter } from "./ImportedCharacter";
 import { GameContext } from "../../contexts/GameContext";

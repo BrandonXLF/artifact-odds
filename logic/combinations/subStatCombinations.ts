@@ -1,5 +1,5 @@
 import { getWeightedCombinations } from "./weightedCombinations.js";
-import { StatData } from "../StatData.js";
+import { StatData } from "../data/StatData.js";
 
 /**
  * Get all possible sub-stat combinations for an artifact

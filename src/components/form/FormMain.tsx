@@ -1,14 +1,14 @@
 import { useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { data } from '../data/data';
-import { Button } from './Button';
+import { data } from '../../data/data';
+import { Button } from '../input/Button';
 import { Form, FormHandle } from './Form';
-import { ToggleButtons } from './ToggleButtonts';
-import Article from './Article';
-import { FormContext } from '../contexts/FormContext';
-import { GameContext } from '../contexts/GameContext';
-import { meta } from '../data/meta';
-import { Game } from '../data/game';
-import { modes } from '../data/modes';
+import { ToggleButtons } from '../input/ToggleButtons';
+import Article from '../structure/Article';
+import { FormContext } from '../../contexts/FormContext';
+import { GameContext } from '../../contexts/GameContext';
+import { meta } from '../../data/meta';
+import { Game } from '../../data/game';
+import { modes } from '../../data/modes';
 import { Component, ComponentChild } from 'preact';
 
 export const FormMain = (props: { initialModeNum: number }) => {

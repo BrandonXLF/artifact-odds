@@ -1,6 +1,6 @@
 import { useContext } from "preact/hooks";
 import { StatValueInput } from "./StatValueInput";
-import { FormContext } from "../contexts/FormContext";
+import { FormContext } from "../../contexts/FormContext";
 
 export interface StatListInputEntry {
 	currentRV?: number;

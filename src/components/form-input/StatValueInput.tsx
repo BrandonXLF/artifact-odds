@@ -1,6 +1,6 @@
 import { useContext, useRef } from "preact/hooks";
-import { roundMaxPrecision } from "../utils/round";
-import { FormContext } from "../contexts/FormContext";
+import { roundMaxPrecision } from "../../utils/round";
+import { FormContext } from "../../contexts/FormContext";
 
 export const StatValueInput = (props: Readonly<{
 	disabled?: boolean;

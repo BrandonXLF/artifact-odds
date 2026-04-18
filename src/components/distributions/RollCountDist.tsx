@@ -1,10 +1,10 @@
 import { useContext, useMemo, useState } from "preact/hooks"
 import { DistributionView } from "./DistributionView";
 import { computeRollDistribution } from "../../../logic/subStatDistribution/rollDistribution";
-import { Checkbox } from "../Checkbox";
+import { Checkbox } from "../input/Checkbox";
 import { SUB_STAT_COUNT } from "../../data/consts";
 import { GameContext } from "../../contexts/GameContext";
-import { ToggleButtons } from "../ToggleButtonts";
+import { ToggleButtons } from "../input/ToggleButtons";
 
 export const RollDist = () => {
 	const { game } = useContext(GameContext);
