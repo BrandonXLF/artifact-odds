@@ -8,6 +8,7 @@ import { Game } from '../data/game';
 import { modes } from '../data/modes';
 import { ensureTitle } from '..';
 import { data } from '../data/data';
+import { AssumptionsMain } from './AssumptionsMain';
 
 const getRoute = (url?: string) => {
 	const path = url ?? (typeof window !== "undefined" ? window.location.pathname : "");
@@ -16,6 +17,10 @@ const getRoute = (url?: string) => {
 
 	if (gameEntry) {
 		const game = gameEntry[0] as Game;
+
+		if (parts[1] === "assumptions") {
+			return [game, "assumptions"] as const;
+		}
 
 		if (parts[1] === "dist") {
 			return [game, "dist", parts[2]] as const;
@@ -33,7 +38,9 @@ export const App = (props: { url?: string }) => {
 	const [game, setGame] = useState(route?.[0] ?? "genshin");
 
 	let mainEl;
-	if (route?.[1] === "dist") {
+	if (route?.[1] === "assumptions") {
+		mainEl = <AssumptionsMain />;
+	} else if (route?.[1] === "dist") {
 		mainEl = <DistMain dist={distributions[route[2]]} />;
 	} else {
 		mainEl = <FormMain initialModeNum={route[2]} />
