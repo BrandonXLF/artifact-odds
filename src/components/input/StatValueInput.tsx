@@ -1,6 +1,6 @@
 import { useContext, useRef } from "preact/hooks";
 import { roundMaxPrecision } from "../../utils/round";
-import { FormContext } from "../../contexts/FormContext";
+import { GameContext } from "../../contexts/GameContext";
 
 export const StatValueInput = (props: Readonly<{
 	disabled?: boolean;
@@ -10,11 +10,11 @@ export const StatValueInput = (props: Readonly<{
 	placeholder?: string;
 	onChange: (value: number | undefined) => void;
 }>) => {
-	const { data } = useContext(FormContext)!;
+	const { gameData } = useContext(GameContext);
 	let value = props.value;
 
 	if (value !== undefined && !props.useRV && props.stat !== undefined) {
-		value *= data.statValues[props.stat];
+		value *= gameData.statValues[props.stat];
 	}
 
 	if (value !== undefined) {
@@ -23,7 +23,7 @@ export const StatValueInput = (props: Readonly<{
 
 	const onChange = (newVal: number | undefined) => {
 		if (newVal !== undefined && !props.useRV && props.stat !== undefined) {
-			newVal /= data.statValues[props.stat];
+			newVal /= gameData.statValues[props.stat];
 		}
 
 		if (newVal !== undefined) {

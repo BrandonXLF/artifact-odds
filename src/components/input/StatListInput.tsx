@@ -1,6 +1,6 @@
 import { useContext } from "preact/hooks";
 import { StatValueInput } from "./StatValueInput";
-import { FormContext } from "../../contexts/FormContext";
+import { GameContext } from "../../contexts/GameContext";
 
 export interface StatListInputEntry {
 	currentRV?: number;
@@ -18,8 +18,8 @@ export function StatListInput(props: Readonly<{
 	hasKnownError?: boolean;
 	onErrorChange?: (hasError: boolean) => void;
 }>) {
-	const { data } = useContext(FormContext)!;
-	const validStats = props.validStats ?? data.stats;
+	const { gameData } = useContext(GameContext);
+	const validStats = props.validStats ?? gameData.stats;
 	const selectableStats = validStats.filter(stat => !props.stats.includes(stat));
 
 	const change = (i: number, stat: string) => {

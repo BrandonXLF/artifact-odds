@@ -7,6 +7,7 @@ import { meta } from '../data/meta';
 import { Game } from '../data/game';
 import { modes } from '../data/modes';
 import { ensureTitle } from '..';
+import { data } from '../data/data';
 
 const getRoute = (url?: string) => {
 	const path = url ?? (typeof window !== "undefined" ? window.location.pathname : "");
@@ -41,7 +42,8 @@ export const App = (props: { url?: string }) => {
 	const contextValue = useMemo(() => ({
 		game: game,
 		setGame: setGame,
-		gameMeta: meta[game]
+		gameMeta: meta[game],
+		gameData: data[game]
 	}), [game]);
 
 	ensureTitle(meta[game].title);

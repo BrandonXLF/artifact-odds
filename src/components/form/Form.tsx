@@ -1,9 +1,9 @@
 import { computeMainStatProb } from '../../../logic/mainStatProb';
 import { StatDataConfig } from '../../../logic/data/StatData';
 import { computeRollProb } from '../../../logic/subStatDistribution';
-import { StatParamInputEntry, StatParamInput } from '../form-input/StatParamInput';
+import { StatParamInputEntry, StatParamInput } from '../input/StatParamInput';
 import { useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'preact/hooks';
-import { StatListInput, StatListInputEntry } from '../form-input/StatListInput';
+import { StatListInput, StatListInputEntry } from '../input/StatListInput';
 import { getSubStatCombinations } from '../../../logic/combinations/subStatCombinations';
 import { computeSubProb } from '../../../logic/subStatProb';
 import { VisualSection } from '../structure/VisualSection';
@@ -18,14 +18,15 @@ import SimulationWorker from '../../../simulator/worker?worker';
 import { ResetTrigger, useResettableState, useStoredState } from '../../utils/resettableState';
 import { SimulationOutput } from '../output/SimulationOutput';
 import { LabelGrid } from '../structure/LabelGrid';
-import { LogicSection } from '../form-sections/LogicSection';
+import { LogicSection } from './LogicSection';
 import { RVGraph } from '../output/RVGraph';
 import { StatOptimizers } from '../../data/modes';
-import { Import } from '../form-sections/Import';
+import { Import } from './Import';
 import { LOWER_ROLL_COUNT, SUB_STAT_COUNT, UPPER_ROLL_COUNT } from '../../data/consts';
 import RollRestrictions from '../../../logic/data/RollRestrictions';
 import { Ref } from 'preact';
 import { FormContext } from '../../contexts/FormContext';
+import { GameContext } from '../../contexts/GameContext';
 
 type StatParams = StatParamInputEntry & StatListInputEntry;
 
@@ -35,7 +36,8 @@ export type FormHandle = {
 
 export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const resetTrigger = useRef(new ResetTrigger()).current;
-	const { mode, data } = useContext(FormContext)!;
+	const { gameData } = useContext(GameContext);
+	const { mode } = useContext(FormContext)!;
 
 	useImperativeHandle(props.formRef, () => {
 		return {
@@ -58,7 +60,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const [required, setRequired] = useStoredState<string[]>("required", () => [], resetTrigger);
 	const [statParams, setStatParams] = useStoredState(
 		"statWeights",
-		() => Object.fromEntries(data.stats.map(stat => [stat, {}])) as Record<string, StatParams>,
+		() => Object.fromEntries(gameData.stats.map(stat => [stat, {}])) as Record<string, StatParams>,
 		resetTrigger,
 		true
 	);
@@ -89,7 +91,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const allLinesProb = mode.fixedArtifact ? Number(isFiveRoller) : mode.allLinesProb;
 	const validStats = mode.fixedArtifact
 		? currentStats
-		: data.stats.filter(stat => stat !== mainStat);
+		: gameData.stats.filter(stat => stat !== mainStat);
 
 	const currentValue = useMemo(
 		() => roundMaxPrecision(
@@ -215,7 +217,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	);
 
 	const getBaseConfig = () => {
-		const statDataConfig = new StatDataConfig(data.stats, data.statWeights, data.rollValues);
+		const statDataConfig = new StatDataConfig(gameData.stats, gameData.statWeights, gameData.rollValues);
 		statDataConfig.exclude(mainStat);
 
 		if (!mode.fixedArtifact && requireCount > 0) {
@@ -384,11 +386,11 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			}
 		}
 
-		const chosenTypeGroup = data.mainStats[artifactType].typeGroup;
+		const chosenTypeGroup = gameData.mainStats[artifactType].typeGroup;
 		const newMainProb = showMainProb
 			? computeMainStatProb(
-				data.mainStats.filter(({ typeGroup }) => typeGroup === chosenTypeGroup).length,
-				data.mainStats,
+				gameData.mainStats.filter(({ typeGroup }) => typeGroup === chosenTypeGroup).length,
+				gameData.mainStats,
 				artifactType,
 				mainStat,
 				mode.fromDomain && !acceptEither
@@ -462,7 +464,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		) {
 			const secondBest = maxAttainable - (
 				sortedValidWeights[SUB_STAT_COUNT - 1][1] *
-					(data.rollValues[data.rollValues.length - 1] - data.rollValues[data.rollValues.length - 2])
+					(gameData.rollValues[gameData.rollValues.length - 1] - gameData.rollValues[gameData.rollValues.length - 2])
 			);
 
 			// - Goal is better than the second best possibility
@@ -470,7 +472,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			if (
 				secondBest * 100 <= logicGoal &&
 				sortedValidWeights.slice(0, SUB_STAT_COUNT).reduce((acc, [_, w]) => acc + w, 0) <=
-					validStats.map(s => data.statWeights[s]).sort((a, b) => b - a).slice(0, SUB_STAT_COUNT).reduce((acc, w) => acc + w, 0)
+					validStats.map(s => gameData.statWeights[s]).sort((a, b) => b - a).slice(0, SUB_STAT_COUNT).reduce((acc, w) => acc + w, 0)
 			) {
 				setOverwhelminglyLikely(true);
 				return;
@@ -493,12 +495,12 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 								<select value={artifactType} onChange={(e) => {
 									setArtifactType(Number((e.target as HTMLSelectElement).value));
 
-									const newMainStats = Object.keys(data.mainStats[+(e.target as HTMLSelectElement).value].stats);
+									const newMainStats = Object.keys(gameData.mainStats[+(e.target as HTMLSelectElement).value].stats);
 									if (!newMainStats.includes(mainStat)) {
 										setMainStat(newMainStats[0]);
 									}
 								}}>
-									{Object.entries(data.mainStats).map(([key, { name }]) => (
+									{Object.entries(gameData.mainStats).map(([key, { name }]) => (
 										<option key={key} value={key}>
 											{name}
 										</option>
@@ -507,7 +509,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 							</label>
 							<label>
 								Main Stat: <select value={mainStat} onChange={(e) => setMainStat((e.target as HTMLSelectElement).value)}>
-									{Object.keys(data.mainStats[artifactType].stats).map(stat => (
+									{Object.keys(gameData.mainStats[artifactType].stats).map(stat => (
 										<option key={stat} value={stat}>
 											{stat}
 										</option>
@@ -535,7 +537,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 								stats={currentStats}
 								count={SUB_STAT_COUNT}
 								onChange={setCurrentStats}
-								validStats={data.stats.filter(stat => stat !== mainStat)}
+								validStats={gameData.stats.filter(stat => stat !== mainStat)}
 								statValues={mode.fixedArtifact && useAutoGoal ? statParams : undefined}
 								onValueChange={(stat, value) => setStatParams(prev => ({ ...prev, [stat]: { ...prev[stat], currentRV: value } }))}
 							/>
@@ -553,7 +555,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 					for (const [stat, value] of art.subStats) {
 						newParams[stat] = {
 							...newParams[stat],
-							currentRV: Math.round((value / data.statValues[stat]) / 10) * 10
+							currentRV: Math.round((value / gameData.statValues[stat]) / 10) * 10
 						};
 					}
 
@@ -681,7 +683,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 								stats={currentStats}
 								count={SUB_STAT_COUNT}
 								onChange={setCurrentStats}
-								validStats={data.stats.filter(stat => stat !== mainStat)}
+								validStats={gameData.stats.filter(stat => stat !== mainStat)}
 								useRV={useRV}
 								statValues={mode.fixedArtifact ? undefined : statParams}
 								onValueChange={(stat, value) => setStatParams(prev => ({ ...prev, [stat]: { ...prev[stat], currentRV: value } }))}
