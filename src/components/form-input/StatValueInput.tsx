@@ -66,6 +66,7 @@ export const OptionalNumberInput = (props: Readonly<{
 			type="number"
 			value={props.value ?? ""}
 			placeholder={props.placeholder}
+			onInput={() => {}}
 			onChange={onChange}
 			class={props.small ? "w-20" : "w-24"}
 			step={props.step ?? "any"}

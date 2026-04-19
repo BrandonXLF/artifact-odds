@@ -6,9 +6,10 @@ import { GameContext } from '../contexts/GameContext';
 import { meta } from '../data/meta';
 import { Game } from '../data/game';
 import { modes } from '../data/modes';
+import { ensureTitle } from '..';
 
-const getRoute = () => {
-	const path = typeof window !== "undefined" ? window.location.pathname : "";
+const getRoute = (url?: string) => {
+	const path = url ?? (typeof window !== "undefined" ? window.location.pathname : "");
 	const parts = path.split("/").filter(Boolean);
 	const gameEntry = Object.entries(meta).find(([_, { url }]) => url === parts[0]);
 
@@ -26,8 +27,8 @@ const getRoute = () => {
 	return ["genshin", "form", 0] as const;
 }
 
-export const App = () => {
-	let route = useRef(getRoute()).current;
+export const App = (props: { url?: string }) => {
+	let route = useRef(getRoute(props.url)).current;
 	const [game, setGame] = useState(route?.[0] ?? "genshin");
 
 	let mainEl;
@@ -42,6 +43,8 @@ export const App = () => {
 		setGame: setGame,
 		gameMeta: meta[game]
 	}), [game]);
+
+	ensureTitle(meta[game].title);
 
 	return (
 		<main class="p-4 max-w-300 m-auto">

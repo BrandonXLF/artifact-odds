@@ -9,7 +9,8 @@ import { GameContext } from '../../contexts/GameContext';
 import { meta } from '../../data/meta';
 import { Game } from '../../data/game';
 import { modes } from '../../data/modes';
-import { Component, ComponentChild } from 'preact';
+import { ComponentChild } from 'preact';
+import { ensureTitle } from '../..';
 
 export const FormMain = (props: { initialModeNum: number }) => {
 	const formRef = useRef<FormHandle>(null);
@@ -23,11 +24,9 @@ export const FormMain = (props: { initialModeNum: number }) => {
 	const gameModes = modes[game];
 
 	const contextData = useMemo(() => ({
-		gameId: game,
-		gameMeta: gameMeta,
 		mode: gameModes[modeNum],
 		data: gameData,
-	}), [game, modeNum, gameModes, gameData]);
+	}), [gameModes, modeNum, gameData]);
 
 	useEffect(() => {
 		setModeNum(gameModeMap.current[game] ?? 0);
@@ -38,8 +37,10 @@ export const FormMain = (props: { initialModeNum: number }) => {
 	}, [modeNum, game]);
 
 	useEffect(() => {
-		window.history.replaceState(null, "", `/${gameMeta.url}/${gameModes[modeNum].url}`);
-	}, [modeNum, game, gameModes]);
+		window.history.pushState(null, "", `/${gameMeta.url}/${gameModes[modeNum].url}`);
+	}, [gameMeta.url, gameModes[modeNum].url]);
+
+	ensureTitle(`${gameModes[modeNum].name} Probability Calculator | ${gameMeta.title}`);
 
 	return <div>
 		<nav class="flex gap-4 mb-4">
