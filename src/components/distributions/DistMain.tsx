@@ -7,11 +7,18 @@ import { ensureTitle } from "../..";
 export const DistMain = ({ dist }: { dist?: Distribution }) => {
 	const { gameMeta } = useContext(GameContext);
 
+	const onBack = (e: MouseEvent) => {
+		if (new URL(window.document.referrer).origin === window.location.origin && !window.opener.closed) {
+			e.preventDefault();
+			window.close();
+		}
+	};
+
 	ensureTitle(`${dist?.name ?? "Unknown"} Distribution Viewer | ${gameMeta.title}`);
 
 	return <div>
 		<nav className="mb-5">
-			<a href={`/${gameMeta.url}`}>&larr; Back to Form</a>
+			<a href={`/${gameMeta.url}/`} onClick={onBack}>&larr; Back to Form</a>
 		</nav>
 		{dist
 			? <Article title={`${dist.name} Distribution Viewer`}>

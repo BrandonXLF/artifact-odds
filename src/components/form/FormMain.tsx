@@ -37,7 +37,7 @@ export const FormMain = (props: { initialModeNum: number }) => {
 	}, [modeNum, game]);
 
 	useEffect(() => {
-		window.history.pushState(null, "", `/${gameMeta.url}/${gameModes[modeNum].url}`);
+		window.history.pushState(null, "", `/${gameMeta.url}/${gameModes[modeNum].url}/`);
 	}, [gameMeta.url, gameModes[modeNum].url]);
 
 	ensureTitle(`${gameModes[modeNum].name} Probability Calculator | ${gameMeta.title}`);
@@ -46,17 +46,22 @@ export const FormMain = (props: { initialModeNum: number }) => {
 		<nav class="flex gap-4 mb-4">
 			<ToggleButtons options={Object.entries(meta).map(([game, { name }]) => [
 				game,
-				<div className="flex items-center">
+				<a href={`/${meta[game as Game].url}/`} className="flex items-center plain" onClick={e => e.preventDefault()}>
 					<img src={meta[game as Game].icon} class="w-5 h-5 rounded-xs mr-1" alt="" />
 					{name}
-				</div>
+				</a>
 			] as [Game, ComponentChild])}
 				value={game}
 				onChange={(value) => setGame(value)}
 			/>
 		</nav>
 		<nav class="flex flex-wrap gap-4 mb-5">
-			<ToggleButtons options={gameModes.map((mode, i) => [i, mode.name])} value={modeNum} onChange={setModeNum} />
+			<ToggleButtons options={gameModes.map((mode, i) => [
+				i,
+				<a href={`/${gameMeta.url}/${mode.url}/`} className="plain" onClick={e => e.preventDefault()}>
+					{mode.name}
+				</a>
+			])} value={modeNum} onChange={setModeNum} />
 			<div class="flex flex-1 w-full justify-end">
 				<Button onClick={() => formRef.current?.reset()}>Reset</Button>
 			</div>

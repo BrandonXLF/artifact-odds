@@ -20,7 +20,7 @@ export const LogicSection = () => {
 				<div>Distribution viewers:</div>
 				<div>
 					{Object.entries(distributions).map(([key, { name }], i) => (
-						<>{i === 0 ? "" : ", "}<a key={key} href={`/${gameMeta.url}/dist/${key}`} target="arp-dist">{name}</a></>
+						<>{i === 0 ? "" : ", "}<a key={key} href={`/${gameMeta.url}/dist/${key}/`} target="arp-dist">{name}</a></>
 					))}
 				</div>
 			</div>
