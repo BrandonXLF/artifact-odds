@@ -57,7 +57,7 @@ const computeRollCountProb = (
 	combos: [string[], number][],
 	goal: number,
 	rollCount: number
-): [number, number, number[]] => {
+): [number, number, number[], number] => {
 	const totalOutcomes = getTotalOutcomes(
 		rollRestrictions.subStatCount, rollRestrictions.rollableCount, statData.rollValues.length, rollCount
 	);
@@ -82,7 +82,8 @@ const computeRollCountProb = (
 	return [
 		(totalWeightedWays / totalWeights) / totalOutcomes,
 		avgSum / totalWeights,
-		totalBuckets
+		totalBuckets,
+		totalOutcomes
 	];
 }
 
@@ -108,19 +109,22 @@ export const computeRollProb = (
 	rollRestrictions: RollRestrictions,
 	combos: [string[], number][],
 	goal: number
-): [number, number, number[]] => {
+): [number, number, number[], number] => {
 	const allLinesProb = rollRestrictions.upperProb;
 	const scaleDown = computeScaleDownRatio(rollRestrictions, statData.rollValues.length);
 	
 	let prob = 0;
 	let avg = 0;
 	const totalBuckets: number[] = [];
+	let totalPerCombo = 0;
 
 	if (allLinesProb < 1) {
-		const [fourProb, fourAvg, fourBuckets] = computeRollCountProb(statData, rollRestrictions, combos, goal, rollRestrictions.lowerRollCount);
+		const [fourProb, fourAvg, fourBuckets, forTot]
+			= computeRollCountProb(statData, rollRestrictions, combos, goal, rollRestrictions.lowerRollCount);
 
 		prob += fourProb * (1 - allLinesProb);
 		avg += fourAvg * (1 - allLinesProb);
+		totalPerCombo += forTot;
 
 		for (let i = 0; i < fourBuckets.length; i++) {
 			totalBuckets[i] = (totalBuckets[i] ?? 0) + (1 - allLinesProb) * (fourBuckets[i] ?? 0);
@@ -128,15 +132,17 @@ export const computeRollProb = (
 	}
 
 	if (allLinesProb > 0) {
-		const [fiveProb, fiveAvg, fiveBuckets] = computeRollCountProb(statData, rollRestrictions, combos, goal, rollRestrictions.upperRollCount);
+		const [fiveProb, fiveAvg, fiveBuckets, fiveTot]
+			= computeRollCountProb(statData, rollRestrictions, combos, goal, rollRestrictions.upperRollCount);
 
 		prob += fiveProb * allLinesProb;
 		avg += fiveAvg * allLinesProb;
+		totalPerCombo += fiveTot;
 
 		for (let i = 0; i < fiveBuckets.length; i++) {
 			totalBuckets[i] = (totalBuckets[i] ?? 0) + allLinesProb * scaleDown * (fiveBuckets[i] ?? 0);
 		}
 	}
 
-	return [prob, avg, totalBuckets];
+	return [prob, avg, totalBuckets, totalPerCombo];
 };

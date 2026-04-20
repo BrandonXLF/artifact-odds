@@ -27,6 +27,7 @@ import RollRestrictions from '../../../logic/data/RollRestrictions';
 import { Ref } from 'preact';
 import { FormContext } from '../../contexts/FormContext';
 import { GameContext } from '../../contexts/GameContext';
+import { factorial } from '../../utils/factorial';
 
 type StatParams = StatParamInputEntry & StatListInputEntry;
 
@@ -84,6 +85,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const [bars, setBars] = useResettableState<[number, boolean][]>([], resetTrigger);
 	const [simulationWorker, setSimulationWorker] = useResettableState<Worker | undefined>(undefined, resetTrigger);
 	const [simulationVer, setSimulationVer] = useResettableState<number | undefined>(undefined, resetTrigger);
+	const [total, setTotal] = useResettableState<number | undefined>(undefined, resetTrigger);
 
 	// Non-resettable
 	const [, setCustomGoalVer] = useState(0);
@@ -178,6 +180,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		setBars([]);
 		setSimulationWorker(undefined);
 		setSimulationVer(undefined);
+		setTotal(undefined);
 
 		if (Array.isArray(mode.selectedStatCount) && !mode.selectedStatCount.includes(rawSelectedStatCount)) {
 			setRawSelectedStatCount(mode.selectedStatCount[0]);
@@ -399,8 +402,11 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		setMainProb(newMainProb);
 
 		const statData = statDataConfig.make();
-		const [newSubProb, validCombos] = computeSubProb(statData, SUB_STAT_COUNT);
+		const [newSubProb, validCombos, totalComboCount] = computeSubProb(statData, SUB_STAT_COUNT);
 		setSubProb(showSubProb ? newSubProb : undefined);
+
+		// Every combination corresponds to SUB_STAT_COUNT! permutations unless fixed
+		let total = totalComboCount * (mode.fixedArtifact ? 1 : factorial(SUB_STAT_COUNT));
 
 		const rollRestrictions = makeRollRestrictions(
 			allLinesProb,
@@ -415,9 +421,10 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 				{ statData, rollRestrictions, validCombos, logicGoal }
 			);
 
-			const [newRollProb, avg, buckets] = computeRollProb(statData, rollRestrictions, validCombos, logicGoal);
+			const [newRollProb, avg, buckets, totPerCombo] = computeRollProb(statData, rollRestrictions, validCombos, logicGoal);
 			setRollProb(newRollProb);
 			setAvgRV(avg);
+			total *= totPerCombo;
 
 			const maxBar = Math.max(...buckets);
 			const relativeBars = buckets.map(b => [b / maxBar, false] as [number, boolean]);
@@ -430,6 +437,8 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			setAvgRV(undefined);
 			setBars([]);
 		}
+
+		setTotal(total);
 
 		if (doSimulate) {
 			setSimulationVer(prev => (prev ?? 0) + 1);
@@ -774,6 +783,9 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 							</div>
 						</div>}
 					</LabelGrid>
+					{total !== undefined && <div class="mt-2">
+						Considered {total.toLocaleString()} {rollProb === undefined ? "artifact" : "artifact + roll"} outcomes
+					</div>}
 				</VisualSection>
 				{(avgRV !== undefined || bars.length > 0) && <VisualSection>
 					{avgRV !== undefined && <div>Average weighted RV of rolled artifacts: {Math.round(avgRV / 100).toLocaleString()}%</div>}
