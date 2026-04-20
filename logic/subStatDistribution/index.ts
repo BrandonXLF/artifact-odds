@@ -58,20 +58,19 @@ const computeRollCountProb = (
 	goal: number,
 	rollCount: number
 ): [number, number, number[]] => {
-	const totalBuckets: number[] = [];
-
-	let num = 0;
-	let avgSum = 0;
-	let totalWeights = 0;
-
 	const totalOutcomes = getTotalOutcomes(
 		rollRestrictions.subStatCount, rollRestrictions.rollableCount, statData.rollValues.length, rollCount
 	);
 
-	for (const [combo, weightProb] of combos) {
-		const [result, avg, buckets] = computeValidRolls(statData, rollRestrictions, goal, combo, rollCount);
+	let totalWeightedWays = 0;
+	let avgSum = 0;
+	let totalWeights = 0;
+	const totalBuckets: number[] = [];
 
-		num += result * weightProb;
+	for (const [combo, weightProb] of combos) {
+		const [ways, avg, buckets] = computeValidRolls(statData, rollRestrictions, goal, combo, rollCount);
+
+		totalWeightedWays += ways * weightProb;
 		avgSum += avg * weightProb;
 		totalWeights += weightProb;
 
@@ -81,7 +80,7 @@ const computeRollCountProb = (
 	}
 
 	return [
-		num / (totalWeights * totalOutcomes),
+		(totalWeightedWays / totalWeights) / totalOutcomes,
 		avgSum / totalWeights,
 		totalBuckets
 	];
