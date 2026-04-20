@@ -2,6 +2,8 @@ import { twMerge } from "tailwind-merge";
 import { round2 } from "../../utils/round";
 import { Button } from "../input/Button";
 import { OptionalNumberInput, StatValueInput } from "./StatValueInput";
+import { useContext } from "preact/hooks";
+import { GameContext } from "../../contexts/GameContext";
 
 export interface StatParamInputEntry {
 	weight?: number;
@@ -60,6 +62,7 @@ export function StatParamInput(props: Readonly<{
 }>) {
 	const unit = props.useRV ? "RV%" : "Stat";
 	const entries = (Object.entries(props.entries) as [string, StatParamInputEntry][]).filter(([stat]) => props.validStats.includes(stat));
+	const { gameMeta } = useContext(GameContext);
 
 	const setRelWeight = (stat: string, entry: StatParamInputEntry, scale: number) => {
 		const newWeight = scale === 0 ? 0 : Math.max(...Object.values(props.entries).map(e => e.weight || 0), 1) * scale;
@@ -71,7 +74,7 @@ export function StatParamInput(props: Readonly<{
 		<div>
 			<strong>Weight</strong> is the relative worth of each stat. Use the {weightButtons.map(btn => 
 				<><span class={`inline-block w-3 h-3 border rounded ${btn.class}`}></span>{' '}</>
-			)}buttons to quickly set weights, or enter custom weights (which can be more than 1). A reasonable source for more granular weights is the "substat priority" %'s from <a href="https://akasha.cv" target="_blank">akasha.cv</a>.
+			)}buttons to quickly set weights, or enter custom weights (which can be more than 1).{gameMeta.weightSource && <> A reasonable source for more granular weights is {gameMeta.weightSource}.</>}
 		</div>
 			<div class="overflow-x-auto">
 				<table class="mt-2 [&_td,&_th]:px-2 [&_td,&_th]:py-1 [&_td,&_th]:first:pl-0 [&_td,&_th]:last:pr-0">
