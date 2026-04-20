@@ -9,12 +9,12 @@ export const LogicSection = () => {
 
 	return <VisualSection>
 		<div>
-			<a href={`/${gameMeta.url}/assumptions/`} target="arp-assumptions">Assumptions</a>,{' '}
+			<a href={`/${gameMeta.url}/assumptions/`}>Assumptions</a>,{' '}
 			<DocumentLink name="calculating-artifact-roll-outcomes.pdf">Overview of Logic</DocumentLink>
 		</div>
 		<div>
 			Distribution viewers: {Object.entries(distributions).map(([key, { name }], i) => (
-				<>{i === 0 ? "" : ", "}<a key={key} href={`/${gameMeta.url}/dist/${key}/`} target="arp-dist">{name}</a></>
+				<>{i === 0 ? "" : ", "}<a key={key} href={`/${gameMeta.url}/dist/${key}/`}>{name}</a></>
 			))}
 		</div>
 	</VisualSection>;
