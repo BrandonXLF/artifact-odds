@@ -1,26 +1,25 @@
 import { useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { data } from '../../data/data';
 import { Button } from '../input/Button';
 import { Form, FormHandle } from './Form';
 import { ToggleButtons } from '../input/ToggleButtons';
 import Article from '../structure/Article';
 import { FormContext } from '../../contexts/FormContext';
 import { GameContext } from '../../contexts/GameContext';
-import { meta } from '../../data/meta';
-import { Game } from '../../data/game';
 import { modes } from '../../data/modes';
-import { ComponentChild } from 'preact';
 import { ensureTitle } from '../..';
+import { PREFIX_BASE } from '../../utils/resettableState';
 
 export const FormMain = (props: { initialModeNum: number }) => {
 	const formRef = useRef<FormHandle>(null);
-	const { game, setGame, gameMeta } = useContext(GameContext);
-	const [modeNum, setModeNum] = useState(props.initialModeNum);
-	const gameModeMap = useRef<Partial<Record<Game, number>>>({
-		[game]: props.initialModeNum
-	});
+	const initialLoad = useRef(true);
+	const { game, gameMeta, gameData } = useContext(GameContext);
 
-	const gameData = data[game];
+	const loadMode = () => +(localStorage.getItem(game + PREFIX_BASE + 'lastMode') ?? '1');
+	const [modeNum, setModeNum] = useState(props.initialModeNum === -1
+		? loadMode()
+		: props.initialModeNum
+	);
+
 	const gameModes = modes[game];
 
 	const contextData = useMemo(() => ({
@@ -29,12 +28,16 @@ export const FormMain = (props: { initialModeNum: number }) => {
 	}), [gameModes, modeNum, gameData]);
 
 	useEffect(() => {
-		setModeNum(gameModeMap.current[game] ?? 0);
+		if (initialLoad.current) {
+			initialLoad.current = false;
+		} else {
+			setModeNum(loadMode());
+		}
 	}, [game]);
 
 	useEffect(() => {
-		gameModeMap.current[game] = modeNum;
-	}, [modeNum, game]);
+		localStorage.setItem(game + PREFIX_BASE + 'lastMode', modeNum.toString());
+	}, [modeNum])
 
 	useEffect(() => {
 		window.history.pushState(null, "", `/${gameMeta.url}/${gameModes[modeNum].url}/`);
@@ -43,18 +46,6 @@ export const FormMain = (props: { initialModeNum: number }) => {
 	ensureTitle(`${gameModes[modeNum].name} Probability Calculator | ${gameMeta.title}`);
 
 	return <div>
-		<nav class="flex gap-4 mb-4">
-			<ToggleButtons options={Object.entries(meta).map(([game, { name }]) => [
-				game,
-				<a href={`/${meta[game as Game].url}/`} className="flex items-center plain" onClick={e => e.preventDefault()}>
-					<img src={meta[game as Game].icon} class="w-5 h-5 rounded-xs mr-1" alt="" />
-					{name}
-				</a>
-			] as [Game, ComponentChild])}
-				value={game}
-				onChange={(value) => setGame(value)}
-			/>
-		</nav>
 		<nav class="flex flex-wrap gap-4 mb-5">
 			<ToggleButtons options={gameModes.map((mode, i) => [
 				i,
@@ -68,7 +59,7 @@ export const FormMain = (props: { initialModeNum: number }) => {
 		</nav>
 		<Article title={`${gameModes[modeNum].name} Probability Calculator`}>
 			<FormContext.Provider value={contextData}>
-				<Form formRef={formRef} />
+				<Form key={game} formRef={formRef} />
 			</FormContext.Provider>
 		</Article>
 	</div>

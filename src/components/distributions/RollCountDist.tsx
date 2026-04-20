@@ -4,17 +4,22 @@ import { computeRollDistribution } from "../../../logic/subStatDistribution/roll
 import { Checkbox } from "../input/Checkbox";
 import { SUB_STAT_COUNT } from "../../data/consts";
 import { GameContext } from "../../contexts/GameContext";
-import { ToggleButtons } from "../input/ToggleButtons";
+import { Game } from "../../data/game";
+
+const ignoreModeMap: Record<Game, boolean> = {
+	genshin: false,
+	hsr: true
+};
 
 export const RollDist = () => {
 	const { game } = useContext(GameContext);
 	const [rolls, setRolls] = useState(4);
-	const [ignoreMode, setIgnoreMode] = useState<boolean>(game === "hsr");
 	const [ignoreCount, setIgnoreCount] = useState(0);
 	const [guaranteedCount, setGuaranteedCount] = useState(2);
 	const [guaranteedRolls, setGuaranteedRolls] = useState(0);
 	const [showAll, setShowAll] = useState(false);
 
+	const ignoreMode = ignoreModeMap[game];
 	const distribution = useMemo(() => {
 		let dist = ignoreMode
 			? computeRollDistribution(SUB_STAT_COUNT, rolls, 0, 0, ignoreCount)
@@ -49,16 +54,8 @@ export const RollDist = () => {
 						onInput={e => setRolls(+e.currentTarget.value)}
 					/>
 				</label>
-				<ToggleButtons
-					options={[
-						[true, "Ignore"],
-						[false, "Guarantee"]
-					]}
-					value={ignoreMode}
-					onChange={setIgnoreMode}
-				/>
 				{ignoreMode ? <label>
-					the <input
+					Ignore the <input
 						class="w-20"
 						type="number"
 						max={rolls}
@@ -67,7 +64,7 @@ export const RollDist = () => {
 					/> leftmost substats
 				</label> : <>
 					<label>
-						the <input
+						Guarantee the <input
 							class="w-20"
 							type="number"
 							max={rolls}
@@ -75,7 +72,7 @@ export const RollDist = () => {
 							onInput={e => setGuaranteedCount(+e.currentTarget.value)}
 						/> leftmost substats
 					</label>
-					<label>
+					<label className="-ml-3">
 						<input
 							class="w-20"
 							type="number"

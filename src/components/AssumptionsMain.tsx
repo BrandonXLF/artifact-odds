@@ -80,5 +80,5 @@ const Assumptions = () => {
 }
 
 export const AssumptionsMain = () => {
-	return <InfoMain title="Assumed Probabilities" content={<Assumptions />} />;
+	return <InfoMain path="assumptions" title="Assumed Probabilities" content={<Assumptions />} />;
 }

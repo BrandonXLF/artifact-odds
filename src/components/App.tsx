@@ -1,5 +1,4 @@
 import { useMemo, useRef, useState } from 'preact/hooks';
-import { distributions } from '../data/distributions';
 import { DistMain } from './distributions/DistMain';
 import { FormMain } from './form/FormMain';
 import { GameContext } from '../contexts/GameContext';
@@ -9,6 +8,8 @@ import { modes } from '../data/modes';
 import { ensureTitle } from '..';
 import { data } from '../data/data';
 import { AssumptionsMain } from './AssumptionsMain';
+import { ToggleButtons } from './input/ToggleButtons';
+import { ComponentChild } from 'preact';
 
 const getRoute = (url?: string) => {
 	const path = url ?? (typeof window !== "undefined" ? window.location.pathname : "");
@@ -27,7 +28,7 @@ const getRoute = (url?: string) => {
 		}
 
 		const modeNum = modes[game].findIndex(mode => mode.url === parts[1]);
-		return [game, "form", modeNum === -1 ? 0 : modeNum] as const;
+		return [game, "form", modeNum] as const;
 	}
 
 	return ["genshin", "form", 0] as const;
@@ -41,14 +42,13 @@ export const App = (props: { url?: string }) => {
 	if (route?.[1] === "assumptions") {
 		mainEl = <AssumptionsMain />;
 	} else if (route?.[1] === "dist") {
-		mainEl = <DistMain dist={distributions[route[2]]} />;
+		mainEl = <DistMain distKey={route[2]} />;
 	} else {
-		mainEl = <FormMain initialModeNum={route[2]} />
+		mainEl = <FormMain initialModeNum={route[2]} />;
 	}
 
 	const contextValue = useMemo(() => ({
 		game: game,
-		setGame: setGame,
 		gameMeta: meta[game],
 		gameData: data[game]
 	}), [game]);
@@ -61,6 +61,18 @@ export const App = (props: { url?: string }) => {
 				<h1 class="text-2xl font-bold mb-2">{meta[game].title}</h1>
 				<p>{meta[game].desc}</p>
 			</hgroup>
+			<nav class="flex gap-4 mb-4">
+				<ToggleButtons options={Object.entries(meta).map(([game, { name }]) => [
+					game,
+					<a href={`/${meta[game as Game].url}/`} className="flex items-center plain" onClick={e => e.preventDefault()}>
+						<img src={meta[game as Game].icon} class="w-5 h-5 rounded-xs mr-1" alt="" />
+						{name}
+					</a>
+				] as [Game, ComponentChild])}
+					value={game}
+					onChange={(value) => setGame(value)}
+				/>
+			</nav>
 			<GameContext.Provider value={contextValue}>
 				{mainEl}
 			</GameContext.Provider>

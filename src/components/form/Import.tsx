@@ -156,7 +156,7 @@ export const Import = (props: { import: (art: ImportedArtifact) => void }) => {
 	const { game } = useContext(GameContext);
 	const abort = useRef<AbortController | null>(null);
 	const [characterIndex, setCharacterIndex] = useState(0);
-	const [uid, setUid] = useStoredState<Partial<Record<Game, string>>>("importUid", {});
+	const [uid, setUid] = useStoredState<string>("importUid", "");
 	const [loadedGame, setLoadedGame] = useState<Game | null>(null);
 	const [profileName, setProfileName] = useState("");
 	const [loaded, setLoaded] = useState<EquippedCharacter[]>([]);
@@ -184,7 +184,7 @@ export const Import = (props: { import: (art: ImportedArtifact) => void }) => {
 		abort.current = new AbortController();
 
 		const [res, ...resources] = await Promise.all([
-			fetch(importer.getUrl(uid[game] || ""), {
+			fetch(importer.getUrl(uid || ""), {
 				signal: abort.current.signal
 			}),
 			...(importer.additionalResources?.map(getResource) ?? [])
@@ -201,7 +201,7 @@ export const Import = (props: { import: (art: ImportedArtifact) => void }) => {
 		<div class="flex items-center gap-2">
 			<label class="contents">
 				<span>UID:</span>
-				<input class="flex-1 max-w-40" type="text" value={uid[game]} onInput={e => setUid({...uid, [game]: e.currentTarget.value})} />
+				<input class="flex-1 max-w-40" type="text" value={uid} onInput={e => setUid(e.currentTarget.value)} />
 			</label>
 			<Button onClick={loadProfile}>Load Profile</Button>
 			{profileName && <span>{profileName}</span>}

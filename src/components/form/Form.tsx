@@ -46,7 +46,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	}, [resetTrigger]);
 
 	// Form state
-	const [showImport, setShowImport] = useResettableState<boolean>(false, resetTrigger);
+	const [showImport, setShowImport] = useStoredState<boolean>("importingUID", false, resetTrigger);
 
 	// User input
 	const [artifactType, setArtifactType] = useStoredState<number>("artifactType", 0, resetTrigger);

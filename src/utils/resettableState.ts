@@ -1,6 +1,7 @@
-import { useEffect, useState } from "preact/hooks";
+import { useContext, useEffect, useRef, useState } from "preact/hooks";
+import { GameContext } from "../contexts/GameContext";
 
-const PREFIX = "artifact-prob-calc-";
+export const PREFIX_BASE = "-arti-prob-";
 
 export class ResetTrigger extends EventTarget {
 	reset() {
@@ -23,24 +24,30 @@ export const useResettableState = <T extends DefaultType>(defaultValue: T | ((re
 }
 
 export const useStoredState = <T extends DefaultType>(name: string, defaultValue: T | (() => T), resetTrigger?: ResetTrigger, mergeDefault = false) => {
+	const { game } = useContext(GameContext);
+	const prefix = game + PREFIX_BASE;
+
 	const load = () => {
 		const getDefault = () => typeof defaultValue === "function" ? defaultValue() : defaultValue;
-		const stored = typeof window === "undefined" ? undefined : localStorage.getItem(PREFIX + name);
+		const stored = typeof window === "undefined" ? undefined : localStorage.getItem(prefix + name);
 		const val = stored ? JSON.parse(stored) : getDefault();
 		return mergeDefault ? { ...getDefault(), ...val } : val;
 	};
 
 	const [value, setValue] = useResettableState<T>((reset) => {
+		if (reset) localStorage.removeItem(prefix + name);
 		return reset ? (typeof defaultValue === "function" ? defaultValue() : defaultValue) : load();
 	}, resetTrigger);
+
+	const initialStr = useRef(JSON.stringify(value)).current;
 
 	useEffect(() => {
 		const str = JSON.stringify(value);
 
-		if (typeof str === "string") {
-			localStorage.setItem(PREFIX + name, str);
+		if (typeof str === "string" || str === initialStr) {
+			localStorage.setItem(prefix + name, str);
 		} else {
-			localStorage.removeItem(PREFIX + name);
+			localStorage.removeItem(prefix + name);
 		}
 	}, [name, value]);
 
