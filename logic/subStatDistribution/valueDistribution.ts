@@ -1,4 +1,4 @@
-import { memoize } from "../utils/math.js";
+import { memoize } from "../utils/utils.js";
 import { StatData } from "../data/StatData.js";
 import { toBucket } from "../utils/barChart.js";
 

@@ -1,4 +1,4 @@
-import { memoize } from "../utils/math.js";
+import { memoize } from "../utils/utils.js";
 
 const permuteProb = memoize((remainingWeights: number[], totalWeight: number): number => {
 	if (remainingWeights.length === 0) {

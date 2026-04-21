@@ -1,4 +1,4 @@
-import { memoize } from "../utils/math.js";
+import { memoize } from "../utils/utils.js";
 
 /**
  * Compute all substats^remaining outcomes, accounting for guaranteed rolls

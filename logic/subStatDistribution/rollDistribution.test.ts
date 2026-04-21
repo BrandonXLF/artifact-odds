@@ -1,4 +1,4 @@
-import { choose } from "../utils/math";
+import { choose } from "../utils/utils";
 import { computeRollDistribution } from "./rollDistribution";
 
 test("consolidated distribution for 3 rolls", () => {
