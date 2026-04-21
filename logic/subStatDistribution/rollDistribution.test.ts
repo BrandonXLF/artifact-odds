@@ -2,7 +2,7 @@ import { choose } from "../utils/math";
 import { computeRollDistribution } from "./rollDistribution";
 
 test("consolidated distribution for 3 rolls", () => {
-	const dist = computeRollDistribution(4, 3, 0, 0);
+	const dist = computeRollDistribution(4, 3, 0, 0, 0);
 
 	const consolidatedDist: Record<number, number> = {};
 

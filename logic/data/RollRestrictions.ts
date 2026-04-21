@@ -4,9 +4,9 @@ export default class RollRestrictions {
 		public readonly lowerRollCount: number,
 		public readonly upperRollCount: number,
 		public readonly upperProb: number,
-		public readonly guaranteedStats: Set<string>,
-		private readonly _guaranteedCount: number,
-		public readonly unrollableStats: Set<string>
+		public readonly guaranteedStats: Set<string> = new Set<string>(),
+		private readonly _guaranteedCount: number = 0,
+		public readonly unrollableStats: Set<string> = new Set<string>()
 	) {}
 
 	/**
