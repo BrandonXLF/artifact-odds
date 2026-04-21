@@ -1,7 +1,6 @@
 import { computeRollDistribution } from "./rollDistribution.js";
 import { computeWaysAboveGoal } from "./valueDistribution.js";
 import { StatData } from "../data/StatData.js";
-import { memoize } from "../utils/math.js";
 import RollRestrictions from "../data/RollRestrictions.js";
 
 /**
@@ -44,12 +43,8 @@ export const computeValidRolls = (
 	return [totalWays, avgSum / totalRelProbs, totalBuckets];
 };
 
-const getTotalOutcomes = memoize((
-	subStatCount: number,
-	rollableSubStatCount: number,
-	rollValuesCount: number,
-	rollCount: number
-) => (rollValuesCount ** subStatCount) * ((rollableSubStatCount * rollValuesCount) ** rollCount));
+const getTotalOutcomes = (subStatCount: number, rollableSubStatCount: number, rollValuesCount: number, rollCount: number) =>
+	(rollValuesCount ** (subStatCount + rollCount)) * (rollableSubStatCount ** rollCount);
 
 const computeRollCountProb = (
 	statData: StatData,
