@@ -1,7 +1,6 @@
 import { hydrate, prerender as ssr } from 'preact-iso';
 import { App } from './components/App';
 import './style.css';
-import { getPages } from './data/getPages';
 
 let docTitle: string | undefined = undefined;
 
@@ -20,13 +19,12 @@ if (typeof window !== 'undefined') {
 }
 
 export async function prerender(data) {
-	const { html } = await ssr(<App url={data.url} />);
+	const { html, links } = await ssr(<App url={data.url} />);
+	const validLinks = links ? new Set([...links].filter(x => !x.includes("/documents/"))) : undefined;
 
 	return {
 		html,
-		links: getPages(),
-		head: {
-			title: docTitle
-		}
+		links: validLinks,
+		head: { title: docTitle }
 	};
 }

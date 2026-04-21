@@ -5,7 +5,6 @@ export type StatOptimizers = "bestStats" | "bestRolls" | "bestToIgnore";
 
 type BaseMode = {
 	name: string;
-	url: string;
 	/**
 	 * @note Must be in increasing order.
 	 */
@@ -41,11 +40,10 @@ type FixedModeIgnore = BaseMode & {
 
 export type Mode = UnfixedMode | FixedModeGuarantee | FixedModeIgnore;
 
-export const modes: Record<Game, Mode[]> = {
-	"genshin": [
-		{
+export const modes: Record<Game, Record<string, Mode>> = {
+	genshin: {
+		domain: {
 			name: "Artifact Domain",
-			url: "domain",
 			fixedArtifact: false,
 			mainStatUnknown: true,
 			allLinesProb: data.genshin.allLinesDomainProb,
@@ -57,9 +55,8 @@ export const modes: Record<Game, Mode[]> = {
 				desc: "Average of 9.585 artifacts = 180 resin per day"
 			}
 		},
-		{
+		strongbox: {
 			name: "Artifact Strongbox",
-			url: "strongbox",
 			fixedArtifact: false,
 			mainStatUnknown: true,
 			allLinesProb: data.genshin.allLinesCraftedProb,
@@ -67,9 +64,8 @@ export const modes: Record<Game, Mode[]> = {
 			selectedStatCount: 0,
 			output: { unit: "strongboxes" }
 		},
-		{
+		definition: {
 			name: "Artifact Definition",
-			url: "definition",
 			fixedArtifact: false,
 			mainStatUnknown: false,
 			allLinesProb: data.genshin.allLinesCraftedProb,
@@ -95,9 +91,8 @@ export const modes: Record<Game, Mode[]> = {
 				}
 			}
 		},
-		{
+		reroll: {
 			name: "Artifact Reroll",
-			url: "reroll",
 			fixedArtifact: true,
 			selectToIgnore: false,
 			guaranteedCount: [2, 3, 4],
@@ -120,11 +115,10 @@ export const modes: Record<Game, Mode[]> = {
 				}
 			}
 		}
-	],
-	hsr: [
-		{
+	},
+	hsr: {
+		cavern: {
 			name: "Cavern / Extraction",
-			url: "cavern",
 			fixedArtifact: false,
 			mainStatUnknown: true,
 			allLinesProb: data.hsr.allLinesDomainProb,
@@ -136,9 +130,8 @@ export const modes: Record<Game, Mode[]> = {
 				desc: "Average of 12.6 relics = 240 TBP per day"
 			}
 		},
-		{
+		synthesis: {
 			name: "Relic Synthesis",
-			url: "synthesis",
 			fixedArtifact: false,
 			mainStatUnknown: true,
 			allLinesProb: data.hsr.allLinesCraftedProb,
@@ -149,9 +142,8 @@ export const modes: Record<Game, Mode[]> = {
 				perArtifact: 100,
 			}
 		},
-		{
+		"customized-synthesis": {
 			name: "Customized Synthesis",
-			url: "customized-synthesis",
 			fixedArtifact: false,
 			mainStatUnknown: false,
 			allLinesProb: data.hsr.allLinesCraftedProb,
@@ -174,15 +166,14 @@ export const modes: Record<Game, Mode[]> = {
 				}
 			}
 		},
-		{
+		reroll: {
 			name: "Reroll",
-			url: "reroll",
 			fixedArtifact: true,
 			selectToIgnore: true,
 			selectedStatCount: [0, 1],
 			selectedStatOptimizer: "bestToIgnore",
 			output: {
-				unit: (_, selectedStatCount: number) => {
+				unit: (_: unknown, selectedStatCount: number) => {
 					switch (selectedStatCount) {
 						case 0:
 							return "Variable Dice";
@@ -194,5 +185,5 @@ export const modes: Record<Game, Mode[]> = {
 				}
 			}
 		}
-	]
+	}
 };

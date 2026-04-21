@@ -4,7 +4,7 @@ import { Button } from "./Button";
 export const ToggleButtons = <T extends string | number | boolean>(props: Readonly<{
 	options: (T | [T, ComponentChild])[];
 	value: T;
-	onChange: (value: T) => void;
+	onChange?: (value: T) => void;
 	wrap?: boolean;
 }>) => {
 	return (
@@ -12,7 +12,7 @@ export const ToggleButtons = <T extends string | number | boolean>(props: Readon
 			{props.options.map(option => (
 				<Button
 					key={Array.isArray(option) ? option[0] : option}
-					onClick={() => props.onChange(Array.isArray(option) ? option[0] : option)}
+					onClick={() => props.onChange?.(Array.isArray(option) ? option[0] : option)}
 					primary={props.value === (Array.isArray(option) ? option[0] : option)}
 					class={`not-disabled:hover:bg-primary ${props.wrap ? 'shrink-0' : ''}`}
 				>

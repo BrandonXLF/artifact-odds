@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { useContext, useEffect, useMemo, useRef } from 'preact/hooks';
 import { Button } from '../input/Button';
 import { Form, FormHandle } from './Form';
 import { ToggleButtons } from '../input/ToggleButtons';
@@ -9,57 +9,47 @@ import { modes } from '../../data/modes';
 import { ensureTitle } from '../..';
 import { PREFIX_BASE } from '../../utils/resettableState';
 
-export const FormMain = (props: { initialModeNum: number }) => {
+export const FormMain = (props: { modeKey?: string }) => {
 	const formRef = useRef<FormHandle>(null);
-	const initialLoad = useRef(true);
-	const { game, gameMeta, gameData } = useContext(GameContext);
+	const { game, gameMeta } = useContext(GameContext);
 
-	const loadMode = () => +(localStorage.getItem(game + PREFIX_BASE + 'lastMode') ?? '1');
-	const [modeNum, setModeNum] = useState(props.initialModeNum === -1
-		? loadMode()
-		: props.initialModeNum
-	);
+	const loadMode = () => typeof localStorage === "undefined" ? null : localStorage.getItem(game + PREFIX_BASE + 'lastMode');
+	const ensureMode = (modeKey: string | null) => {
+		if (modeKey === null || !(modeKey in modes[game])) return Object.keys(modes[game])[0];
+		return modeKey;
+	}
 
 	const gameModes = modes[game];
+	const modeKey = useMemo(
+		() => Object.entries(gameModes).find(([modeKey]) => props.modeKey === modeKey)?.[0] ?? ensureMode(loadMode()),
+		[props.modeKey]
+	);
 
 	const contextData = useMemo(() => ({
-		mode: gameModes[modeNum],
-		data: gameData,
-	}), [gameModes, modeNum, gameData]);
+		mode: gameModes[modeKey],
+	}), [gameModes, modeKey]);
 
 	useEffect(() => {
-		if (initialLoad.current) {
-			initialLoad.current = false;
-		} else {
-			setModeNum(loadMode());
-		}
-	}, [game]);
+		localStorage.setItem(game + PREFIX_BASE + 'lastMode', modeKey.toString());
+	}, [modeKey])
 
-	useEffect(() => {
-		localStorage.setItem(game + PREFIX_BASE + 'lastMode', modeNum.toString());
-	}, [modeNum])
-
-	useEffect(() => {
-		window.history.pushState(null, "", `/${gameMeta.url}/${gameModes[modeNum].url}/`);
-	}, [gameMeta.url, gameModes[modeNum].url]);
-
-	ensureTitle(`${gameModes[modeNum].name} Probability Calculator | ${gameMeta.title}`);
+	ensureTitle(`${gameModes[modeKey].name} Probability Calculator | ${gameMeta.title}`);
 
 	return <div>
 		<nav class="flex flex-wrap gap-4 mb-5">
-			<ToggleButtons options={gameModes.map((mode, i) => [
-				i,
-				<a href={`/${gameMeta.url}/${mode.url}/`} className="plain" onClick={e => e.preventDefault()}>
+			<ToggleButtons options={Object.entries(gameModes).map(([key, mode]) => [
+				key,
+				<a href={`/${gameMeta.url}/${key}/`} className="plain" onClick={e => e.preventDefault()}>
 					{mode.name}
 				</a>
-			])} value={modeNum} onChange={setModeNum} />
+			])} value={modeKey} />
 			<div class="flex flex-1 w-full justify-end">
 				<Button onClick={() => formRef.current?.reset()}>Reset</Button>
 			</div>
 		</nav>
-		<Article title={`${gameModes[modeNum].name} Probability Calculator`}>
+		<Article title={`${gameModes[modeKey].name} Probability Calculator`}>
 			<FormContext.Provider value={contextData}>
-				<Form key={game} formRef={formRef} />
+				<Form formRef={formRef} />
 			</FormContext.Provider>
 		</Article>
 	</div>
