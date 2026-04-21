@@ -72,7 +72,7 @@ export const data: Record<Game, GameData> = {
 				}
 			},
 			{
-				typeGroup: 2,
+				typeGroup: 0,
 				name: "Sands",
 				stats: {
 					"HP%": 0.2668,

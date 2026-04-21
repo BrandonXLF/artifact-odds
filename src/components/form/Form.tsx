@@ -391,15 +391,8 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			}
 		}
 
-		const chosenTypeGroup = gameData.mainStats[artifactType].typeGroup;
 		const newMainProb = showMainProb
-			? computeMainStatProb(
-				gameData.mainStats.filter(({ typeGroup }) => typeGroup === chosenTypeGroup).length,
-				gameData.mainStats,
-				artifactType,
-				mainStat,
-				mode.fromDomain && !acceptEither
-			)
+			? computeMainStatProb(gameData.mainStats, artifactType, mainStat, mode.fromDomain && !acceptEither)
 			: undefined;
 		setMainProb(newMainProb);
 
