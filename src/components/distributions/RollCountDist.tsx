@@ -1,6 +1,6 @@
 import { useContext, useMemo, useState } from "preact/hooks"
 import { DistributionView } from "./DistributionView";
-import { computeRollDistribution } from "../../../logic/subStatDistribution/rollDistribution";
+import { computeRollDistribution, RolLDistOut } from "../../../logic/subStatDistribution/rollDistribution";
 import { Checkbox } from "../input/Checkbox";
 import { SUB_STAT_COUNT } from "../../data/consts";
 import { GameContext } from "../../contexts/GameContext";
@@ -20,13 +20,14 @@ export const RollDist = () => {
 	const [showAll, setShowAll] = useState(false);
 
 	const ignoreMode = ignoreModeMap[game];
-	const distribution = useMemo(() => {
+	const [distribution, totalWeight, permCount] = useMemo(() => {
 		let dist = ignoreMode
 			? computeRollDistribution(SUB_STAT_COUNT, rolls, 0, 0, ignoreCount)
-			: computeRollDistribution(SUB_STAT_COUNT, rolls, guaranteedCount, guaranteedRolls, 0);
+			: computeRollDistribution(SUB_STAT_COUNT, rolls, guaranteedCount, guaranteedCount ? guaranteedRolls : 0, 0);
 
 		if (!showAll) {
-			let consolidatedDist: [number[], number][] = [];
+			let consolidatedDist = [] as unknown as RolLDistOut;
+			consolidatedDist.permCount = dist.permCount;
 
 			for (const [statRolls, prob] of dist) {
 				const i = statRolls[0];
@@ -36,10 +37,14 @@ export const RollDist = () => {
 			consolidatedDist.reverse();
 			dist = consolidatedDist;
 		}
-		
-		return dist.map(([statRolls, prob]) => {
-			return [statRolls.join(" "), prob] as const;
-		});
+
+		return [
+			dist.map(([statRolls, prob]) => {
+				return [statRolls.join(" "), prob] as const;
+			}),
+			dist.reduce((sum, [, prob]) => sum + prob, 0),
+			dist.permCount
+		];
 	}, [rolls, ignoreMode, ignoreCount, guaranteedCount, guaranteedRolls, showAll]);
 
 	return (
@@ -86,7 +91,7 @@ export const RollDist = () => {
 			</div>
 			<DistributionView entries={distribution} />
 			<div class="mt-2">
-				Total: {distribution.reduce((sum, [, prob]) => sum + prob, 0).toLocaleString()}
+				Total: {permCount.toLocaleString()} (Total weight: {totalWeight.toLocaleString()})
 			</div>
 		</div>
 	);

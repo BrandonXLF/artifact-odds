@@ -46,6 +46,22 @@ export const computeValidRolls = (
 const getTotalOutcomes = (subStatCount: number, rollableSubStatCount: number, rollValuesCount: number, rollCount: number) =>
 	(rollValuesCount ** (subStatCount + rollCount)) * (rollableSubStatCount ** rollCount);
 
+/**
+ * Compute the (unweighted) number of outcomes for a roll count, taking into account guaranteed rolls etc.
+*/
+export const computePermutationCount = (statData: StatData, rollRestrictions: RollRestrictions, rollCount: number) => {
+	const dist = computeRollDistribution(
+		rollRestrictions.subStatCount,
+		rollCount,
+		rollRestrictions.guaranteedStats.size,
+		rollRestrictions.guaranteedCount,
+		rollRestrictions.unrollableStats.size
+	);
+
+	const valueOutcomesPer = (statData.rollValues.length ** (rollRestrictions.subStatCount + rollCount));
+	return dist.permCount * valueOutcomesPer;
+}
+
 const computeRollCountProb = (
 	statData: StatData,
 	rollRestrictions: RollRestrictions,
@@ -78,7 +94,7 @@ const computeRollCountProb = (
 		(totalWeightedWays / totalWeights) / totalOutcomes,
 		avgSum / totalWeights,
 		totalBuckets,
-		totalOutcomes
+		computePermutationCount(statData, rollRestrictions, rollCount)
 	];
 }
 

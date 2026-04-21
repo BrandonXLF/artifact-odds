@@ -41,12 +41,16 @@ const computePermutations = (subStatCount: number, totalRolls: number, guarantee
 
 		for (const [statRolls, prob] of t) {
 			statRolls[stat]++;
-			out.push([statRolls, prob * 1]);
+			out.push([statRolls, prob]);
 		}
 	}
 
 	return out;
 };
+
+export interface RolLDistOut extends Array<[number[], number]> {
+	permCount: number;
+}
 
 /**
  * Get all possible substat roll distributions with relative probabilities for an artifact
@@ -57,7 +61,7 @@ export const computeRollDistribution = memoize((
 	guaranteedCount: number,
 	guaranteedRolls: number,
 	unrollableCount: number
-): [number[], number][] => {
+): RolLDistOut => {
 	const disabledStatRolls = new Array(unrollableCount).fill(0);
 	const perms = computePermutations(substatCount - unrollableCount, totalRolls, guaranteedCount, guaranteedRolls)
 		.map(([statRolls, prob]) => {
@@ -75,5 +79,8 @@ export const computeRollDistribution = memoize((
 		}
 	}
 
-	return Object.values(seen);
+	const out = Object.values(seen) as RolLDistOut;
+	out.permCount = perms.length;
+
+	return out;
 });
