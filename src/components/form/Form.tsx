@@ -82,6 +82,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const [rollProb, setRollProb] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [overwhelminglyLikely, setOverwhelminglyLikely] = useResettableState<boolean>(false, resetTrigger);
 	const [avgRV, setAvgRV] = useResettableState<number | undefined>(undefined, resetTrigger);
+	const [maxRV, setMaxRV] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [bars, setBars] = useResettableState<[number, boolean][]>([], resetTrigger);
 	const [simulationWorker, setSimulationWorker] = useResettableState<Worker | undefined>(undefined, resetTrigger);
 	const [simulationVer, setSimulationVer] = useResettableState<number | undefined>(undefined, resetTrigger);
@@ -177,6 +178,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		setRollProb(undefined);
 		setOverwhelminglyLikely(false);
 		setAvgRV(undefined);
+		setMaxRV(undefined);
 		setBars([]);
 		setSimulationWorker(undefined);
 		setSimulationVer(undefined);
@@ -424,6 +426,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			const [newRollProb, avg, buckets, totPerCombo] = computeRollProb(statData, rollRestrictions, validCombos, logicGoal);
 			setRollProb(newRollProb);
 			setAvgRV(avg);
+			setMaxRV(maxAttainable);
 			total *= totPerCombo;
 
 			const maxBar = Math.max(...buckets);
@@ -435,6 +438,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		} else {
 			setRollProb(undefined);
 			setAvgRV(undefined);
+			setMaxRV(undefined);
 			setBars([]);
 		}
 
@@ -789,7 +793,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 				</VisualSection>
 				{(avgRV !== undefined || bars.length > 0) && <VisualSection>
 					{avgRV !== undefined && <div>Average weighted RV of rolled artifacts: {Math.round(avgRV / 100).toLocaleString()}%</div>}
-					{bars.length > 0 && <RVGraph bars={bars} max={maxAttainable} />}
+					{bars.length > 0 && <RVGraph bars={bars} max={maxRV} />}
 				</VisualSection>}
 				<LogicSection />
 			</section>
