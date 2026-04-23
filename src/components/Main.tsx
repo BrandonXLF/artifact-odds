@@ -38,19 +38,14 @@ export const Main = (props: { baseUrl?: string }) => {
 					<p>{meta[game].desc}</p>
 				</hgroup>
 				<nav class="flex gap-4 mb-4">
-					<ToggleButtons options={Object.entries(meta).map(([game, { name }]) => [
+					<ToggleButtons value={game} options={Object.entries(meta).map(([game, { name }]) => [
 						game,
-						<a
-							href={`/${meta[game as Game].url}${rest}/`}
-							className="flex items-center plain"
-							onClick={e => e.preventDefault()}
-						>
+						<div class="flex items-center">
 							<img src={meta[game as Game].icon} class="w-5 h-5 rounded-xs mr-1" alt="" />
 							{name}
-						</a>
-					] as [Game, ComponentChild])}
-						value={game}
-					/>
+						</div>,
+						`/${meta[game as Game].url}${rest}/`
+					])} />
 				</nav>
 				<GameContext.Provider value={contextValue}>
 					<Router>

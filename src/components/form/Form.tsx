@@ -714,7 +714,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 						</div>
 					</LabelGrid>
 					{maxTheoretical === undefined ? null : <div class="mt-2">
-						{useAutoGoal ? "Currently at" : "Goal is"} <Percentage value={goalValue / maxTheoretical} /> of maximum reachable
+						{useAutoGoal ? "Currently at" : "Goal is"} <Percentage value={goalValue / maxTheoretical} /> of maximum reachable sub-stat value
 						{maxAttainable < maxTheoretical && <> (Max: <Percentage value={maxAttainable / maxTheoretical} />, started with 3 lines)</>}
 					</div>}
 				</VisualSection>

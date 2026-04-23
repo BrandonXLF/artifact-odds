@@ -38,12 +38,10 @@ export const FormMain = (props: { modeKey?: string }) => {
 
 	return <div>
 		<nav class="flex flex-wrap gap-4 mb-5">
-			<ToggleButtons options={Object.entries(gameModes).map(([key, mode]) => [
-				key,
-				<a href={`/${gameMeta.url}/${key}/`} className="plain" onClick={e => e.preventDefault()}>
-					{mode.name}
-				</a>
-			])} value={modeKey} />
+			<ToggleButtons
+				value={modeKey} 
+				options={Object.entries(gameModes).map(([key, mode]) => [key, mode.name, `/${gameMeta.url}/${key}/`])}
+			/>
 			{validMode && <div class="flex flex-1 w-full justify-end">
 				<Button onClick={() => formRef.current?.reset()}>Reset</Button>
 			</div>}
