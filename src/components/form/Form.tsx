@@ -28,6 +28,7 @@ import { Ref } from 'preact';
 import { FormContext } from '../../contexts/FormContext';
 import { GameContext } from '../../contexts/GameContext';
 import { factorial } from '../../utils/factorial';
+import { NumberDisplay } from '../output/NumberDisplay';
 
 type StatParams = StatParamInputEntry & StatListInputEntry;
 
@@ -714,7 +715,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 						</div>
 					</LabelGrid>
 					{maxTheoretical === undefined ? null : <div class="mt-2">
-						{useAutoGoal ? "Currently at" : "Goal is"} <Percentage value={goalValue / maxTheoretical} /> of maximum reachable sub-stat value
+						{useAutoGoal ? "Currently at" : "Goal is"} <Percentage highlight value={goalValue / maxTheoretical} /> of maximum reachable sub-stat value
 						{maxAttainable < maxTheoretical && <> (Max: <Percentage value={maxAttainable / maxTheoretical} />, started with 3 lines)</>}
 					</div>}
 				</VisualSection>
@@ -751,9 +752,9 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 							<div>
 								<Percentage
 									value={totalProb}
-									showQuality={!mode.fixedArtifact && mode.mainStatUnknown ? 35 : 1}
+									showQuality={!mode.fixedArtifact && mode.mainStatUnknown ? 45 : 1}
 								/>{probCost !== undefined && mode.output !== undefined &&
-									<span> &#8776; {probCost.toLocaleString()} {mode.output.desc
+									<span> &#8776; <NumberDisplay highlight value={probCost} /> {mode.output.desc
 										? <abbr title={mode.output.desc}>{getModeProb(mode.output.unit)}</abbr>
 										: <span>{getModeProb(mode.output.unit)}</span>}
 									</span>}
@@ -781,7 +782,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 						</div>}
 					</LabelGrid>
 					{total !== undefined && <div class="mt-2">
-						Considered {total.toLocaleString()} {rollProb === undefined ? "artifact" : "artifact + roll"} outcomes
+						Considered <NumberDisplay highlight value={total} /> {rollProb === undefined ? "artifact" : "artifact + roll"} outcomes
 					</div>}
 				</VisualSection>
 				{(avgRV !== undefined || bars.length > 0) && <VisualSection>

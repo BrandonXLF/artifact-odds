@@ -2,7 +2,8 @@ import { HTMLAttributes } from "preact";
 
 export const Percentage = (props: {
 	value?: number,
-	showQuality?: number
+	showQuality?: number,
+	highlight?: boolean,
 }) => {
 	const valid = props.value !== undefined && !Number.isNaN(props.value);
 
@@ -13,6 +14,8 @@ export const Percentage = (props: {
 		const percent = Math.max(Math.min(props.value! * props.showQuality * 100, 100), 0);
 		className += " px-1 py-px";
 		style.background = `color-mix(in lab, var(--color-red-700), var(--color-green-700) ${percent}%)`;
+	} else if (props.highlight && valid) {
+		className += " px-1 py-px bg-[#1a1a1a]";
 	}
 
 	return <span class={className} style={style}>
