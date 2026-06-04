@@ -59,6 +59,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const [rawGuaranteedRollsCount, setRawGuaranteedRollsCount] = useStoredState<number>("guaranteedRollsCount", 2, resetTrigger);
 	const [customGoal, setCustomGoal] = useStoredState<number>("customGoal", 0, resetTrigger);
 	const [requireCount, setRequireCount] = useStoredState<number>("requireCount", 0, resetTrigger);
+	const [requireAllLines, setRequireAllLines] = useStoredState<boolean>("requireAllLines", false, resetTrigger);
 	const [required, setRequired] = useStoredState<string[]>("required", () => [], resetTrigger);
 	const [statParams, setStatParams] = useStoredState(
 		"statWeights",
@@ -213,6 +214,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			dynamicMode,
 			required,
 			requireCount,
+			requireAllLines,
 			currentStats,
 			statParams,
 			artifactType,
@@ -228,6 +230,10 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 
 		if (!mode.fixedArtifact && requireCount > 0) {
 			statDataConfig.require(requireCount).of(...required);
+		}
+
+		if (!mode.fixedArtifact && requireAllLines) {
+			statDataConfig.requireAllLines(allLinesProb);
 		}
 
 		if (mode.fixedArtifact) {
@@ -252,7 +258,6 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	};
 
 	const makeRollRestrictions = (
-		allLineProb: number,
 		guaranteedStats: Set<string> = new Set(),
 		guaranteedCount: number = 0,
 		unrollableStats: Set<string> = new Set()
@@ -261,7 +266,9 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			SUB_STAT_COUNT,
 			LOWER_ROLL_COUNT,
 			UPPER_ROLL_COUNT,
-			allLineProb,
+			// If all lines is required for an artifact to be considered, then all rolled
+			// artifacts must have all lines
+			requireAllLines ? 1 : allLinesProb,
 			guaranteedStats,
 			guaranteedCount,
 			unrollableStats
@@ -271,7 +278,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const optimizers: Record<StatOptimizers, () => void> = {
 		bestStats: () => {
 			const statData = getBaseConfig().make();
-			const rollRestrictions = makeRollRestrictions(allLinesProb);
+			const rollRestrictions = makeRollRestrictions();
 
 			let maxStats: [string, string][] = [];
 			let maxProb = -1;
@@ -311,7 +318,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 
 				const [rollProb, avg] = computeRollProb(
 					statData,
-					makeRollRestrictions(allLinesProb, new Set(stats), dynamicMode.guaranteedRollsCount),
+					makeRollRestrictions(new Set(stats), dynamicMode.guaranteedRollsCount),
 					[[[...currentStats], 1]],
 					logicGoal
 				);
@@ -342,7 +349,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			for (const stat of currentStats) {
 				const [rollProb, avg] = computeRollProb(
 					statData,
-					makeRollRestrictions(allLinesProb, undefined, undefined, new Set([stat])),
+					makeRollRestrictions(undefined, undefined, new Set([stat])),
 					[[[...currentStats], 1]],
 					logicGoal
 				);
@@ -405,7 +412,6 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		let total = totalComboCount * (mode.fixedArtifact ? 1 : factorial(SUB_STAT_COUNT));
 
 		const rollRestrictions = makeRollRestrictions(
-			allLinesProb,
 			guaranteedRollsStats,
 			dynamicMode.guaranteedRollsCount,
 			unrollableStats
@@ -658,6 +664,9 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 							validStats={validStats}
 						/>
 					</div>
+				</VisualSection>
+				<VisualSection>
+					<Checkbox label="Only consider artifacts that start with 4 lines" checked={requireAllLines} onChange={setRequireAllLines} />
 				</VisualSection>
 			</section>}
 			<section>

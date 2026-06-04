@@ -108,6 +108,9 @@ export const runSimulator = (statData: StatData, rollRestrictions: RollRestricti
 	const statOptions = makeStatOptionsArray(statData.random, statData);
 
 	for (let i = 0; i < tot; i++) {
+		const isAllLiner = Math.random();
+		if (statData.requiredAllLinesProb !== undefined && isAllLiner >= statData.requiredAllLinesProb) continue;
+
 		const stats = fixedStats ?? [...statData.guaranteed, ...getStats(4 - statData.guaranteed.length, statOptions)];
 		if (!statData.meetsRequirements(stats)) continue;
 
@@ -117,7 +120,7 @@ export const runSimulator = (statData: StatData, rollRestrictions: RollRestricti
 			continue;
 		}
 
-		const rolls = Math.random() < rollRestrictions.upperProb
+		const rolls = isAllLiner < rollRestrictions.upperProb
 			? rollRestrictions.upperRollCount
 			: rollRestrictions.lowerRollCount;
 

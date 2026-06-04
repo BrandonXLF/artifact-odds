@@ -7,5 +7,5 @@ export const computeSubProb = (statData: StatData, size: number): [number, [stri
 
 	const sum = combos.reduce((acc, [, weight]) => acc + weight, 0);
 
-	return [sum, combos, allCombos.length];
+	return [sum * (statData.requiredAllLinesProb ?? 1), combos, allCombos.length];
 }

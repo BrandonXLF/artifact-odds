@@ -11,6 +11,7 @@ export class StatData {
 		private readonly limits: Partial<Record<string, number>>,
 		private readonly required: string[],
 		private readonly requiredCount: number,
+		private readonly _requiredAllLinesProb: number | undefined,
 		private readonly _rollValues: readonly number[]
 	) {
 		for (const [stat, min] of Object.entries(mins)) {
@@ -34,6 +35,10 @@ export class StatData {
 
 	get rollValues(): readonly number[] {
 		return this._rollValues;
+	}
+
+	get requiredAllLinesProb(): number | undefined {
+		return this._requiredAllLinesProb;
 	}
 
 	meetsRequirements(combo: string[]): boolean {
@@ -82,6 +87,7 @@ export class StatDataConfig {
 	guaranteed: string[] = [];
 	requiredCount: number = 0;
 	required: string[] = [];
+	requiredAllLinesProb: number | undefined;
 
 	onlyInclude(stats: string[]): this {
 		this.random = this.random.filter((s) => stats.includes(s));
@@ -107,6 +113,11 @@ export class StatDataConfig {
 				return this;
 			}
 		}
+	}
+
+	requireAllLines(prob: number): this {
+		this.requiredAllLinesProb = prob;
+		return this;
 	}
 
 	setWeight(stat: string, weight: number): this {
@@ -144,6 +155,7 @@ export class StatDataConfig {
 			limits,
 			this.required,
 			this.requiredCount,
+			this.requiredAllLinesProb,
 			this.rollValues
 		);
 	}
