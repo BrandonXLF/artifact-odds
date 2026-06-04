@@ -1,5 +1,6 @@
 import { useEffect, useState } from "preact/hooks";
 import { Percentage } from "./Percentage";
+import { NumberDisplay } from "./NumberDisplay";
 
 export const SimulationOutput = (props: {
 	mainProb: number | undefined;
@@ -17,7 +18,7 @@ export const SimulationOutput = (props: {
 	return (
 		<>
 			{simulatedProb
-				? <><Percentage value={(props.mainProb ?? 1) * simulatedProb[0]} /> ({simulatedProb[1].toLocaleString()} runs)</>
+				? <><Percentage highlight value={(props.mainProb ?? 1) * simulatedProb[0]} /> (<NumberDisplay value={simulatedProb[1]} /> runs)</>
 				: <>Running...</>}
 			{props.worker && <button class="link ml-2" onClick={() => props.onTerminate()}>
 				Stop

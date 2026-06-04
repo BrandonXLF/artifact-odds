@@ -737,22 +737,22 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 					<LabelGrid tight>
 						{showMainProb && <div>
 							<div>Main stat probability:</div>
-							<div><Percentage value={mainProb} /></div>
+							<div><Percentage highlight value={mainProb} /></div>
 						</div>}
 						{showSubProb && <div>
 							<div>Sub-stat probability:</div>
-							<div><Percentage value={subProb} /></div>
+							<div><Percentage highlight value={subProb} /></div>
 						</div>}
 						{calcRollProb && <div>
 							<div>Roll probability:</div>
-							<div><Percentage value={rollProb} /></div>
+							<div><Percentage highlight value={rollProb} /></div>
 						</div>}
 						<div>
 							<div>Total probability:</div>
 							<div>
 								<Percentage
-									value={totalProb}
 									showQuality={!mode.fixedArtifact && mode.mainStatUnknown ? 45 : 1}
+									value={totalProb}
 								/>{probCost !== undefined && mode.output !== undefined &&
 									<span> &#8776; <NumberDisplay highlight value={probCost} /> {mode.output.desc
 										? <abbr title={mode.output.desc}>{getModeProb(mode.output.unit)}</abbr>
@@ -786,7 +786,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 					</div>}
 				</VisualSection>
 				{(avgRV !== undefined || bars.length > 0) && <VisualSection>
-					{avgRV !== undefined && <div>Average weighted RV of rolled artifacts: {Math.round(avgRV / 100).toLocaleString()}%</div>}
+					{avgRV !== undefined && <div>Average weighted RV of rolled artifacts: <Percentage highlight value={avgRV / 10000} /></div>}
 					{bars.length > 0 && <RVGraph bars={bars} max={maxRV} />}
 				</VisualSection>}
 				<LogicSection />
