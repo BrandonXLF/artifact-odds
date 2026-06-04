@@ -782,7 +782,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 						</div>}
 					</LabelGrid>
 					{total !== undefined && <div class="mt-2">
-						Considered <NumberDisplay highlight value={total} /> {rollProb === undefined ? "artifact" : "artifact + roll"} outcomes
+						Considered <NumberDisplay highlight value={total} /> {rollProb === undefined ? "artifact" : (mode.fixedArtifact ? "roll" : "artifact + roll")} outcomes
 					</div>}
 				</VisualSection>
 				{(avgRV !== undefined || bars.length > 0) && <VisualSection>
