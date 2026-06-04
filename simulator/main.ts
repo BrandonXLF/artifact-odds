@@ -15,10 +15,10 @@ type StatOption = {
  * Array where each stat has a number of entries equal to its weight, allowing stats
  * to be randomly selected according to their weights by picking a random index in the array.
  */
-const makeStatOptionsArray = (stats: string[], statData: StatData): StatOption[] => {
+const makeStatOptionsArray = (statData: StatData): StatOption[] => {
 	const statDistribution: StatOption[] = [];
 
-	for (const stat of stats) {
+	for (const stat of statData.random) {
 		const weight = statData.getRollWeight(stat);
 
 		for (let j = 0; j < weight; j++) {
@@ -105,7 +105,7 @@ const populateArtifact = (rolls: number, stats: string[], statData: StatData, ro
 export const runSimulator = (statData: StatData, rollRestrictions: RollRestrictions, goal: number, fixedStats?: string[]): number => {
 	const tot = SIMULATIONS_PER_RUN;
 	let valid = 0;
-	const statOptions = makeStatOptionsArray(statData.random, statData);
+	const statOptions = makeStatOptionsArray(statData);
 
 	for (let i = 0; i < tot; i++) {
 		const isAllLiner = Math.random();
