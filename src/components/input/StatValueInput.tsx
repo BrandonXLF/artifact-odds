@@ -37,7 +37,7 @@ export const StatValueInput = (props: Readonly<{
 		<OptionalNumberInput
 			disabled={props.disabled}
 			value={value}
-			placeholder={props.placeholder}
+			placeholder={props.placeholder + (props.useRV ? " RV%" : "")}
 			onChange={onChange}
 			step={props.useRV ? 10 : undefined}
 		/>
@@ -68,7 +68,7 @@ export const OptionalNumberInput = (props: Readonly<{
 			placeholder={props.placeholder}
 			onInput={() => {}}
 			onChange={onChange}
-			class={props.small ? "w-20" : "w-24"}
+			class={props.small ? "w-20" : "w-26"}
 			step={props.step ?? "any"}
 		/>
 	);

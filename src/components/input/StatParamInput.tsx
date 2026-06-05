@@ -60,7 +60,6 @@ export function StatParamInput(props: Readonly<{
 	onChange: (stat: string, entry: StatParamInputEntry) => void;
 	useRV?: boolean;
 }>) {
-	const unit = props.useRV ? "RV%" : "Stat";
 	const entries = (Object.entries(props.entries) as [string, StatParamInputEntry][]).filter(([stat]) => props.validStats.includes(stat));
 	const { gameMeta } = useContext(GameContext);
 
@@ -71,19 +70,32 @@ export function StatParamInput(props: Readonly<{
 
 	return (
 		<div>
-		<div>
-			<strong>Weight</strong> is the relative worth of each stat. Use the {weightButtons.map(btn => 
-				<><span class={`inline-block w-3 h-3 border rounded ${btn.class}`}></span>{' '}</>
-			)}buttons to quickly set weights, or enter custom weights (which can be more than 1).{gameMeta.weightSource && <> A reasonable source for more granular weights is {gameMeta.weightSource}.</>}
-		</div>
+			<div>
+				Use the {weightButtons.map(btn => 
+					<><span class={`inline-block w-3 h-3 border rounded ${btn.class}`}></span>{' '}</>
+				)}buttons to quickly set weights, or enter custom weights (which can be more than 1).{gameMeta.weightSource && <> A reasonable source for more granular weights is {gameMeta.weightSource}.</>}
+			</div>
 			<div class="overflow-x-auto">
-				<table class="mt-2 [&_td,&_th]:px-2 [&_td,&_th]:py-1 [&_td,&_th]:first:pl-0 [&_td,&_th]:last:pr-0">
+				<table class="mt-2 [&_td,&_th]:py-1 [&_th]:align-top">
 					<thead class="text-left">
 						<tr>
-							<th>Stat</th>
-							<th><abbr title="Relative worth of each stat.">Weight</abbr></th>
-							<th><abbr title="Require at least this much of the stat. Implies that it is required.">Min {unit}</abbr></th>
-							<th><abbr title="Only count up to this much of the stat.">Max {unit}</abbr></th>
+							<th className="border-r border-b border-neutral-400">Stat</th>
+							<th colSpan={2} className="border-b border-neutral-400 pl-3">Worth</th>
+							<th className="border-l border-b border-neutral-400 pl-3">
+								Amount
+							</th>
+						</tr>
+						<tr>
+							<th className="pb-0.5!">Name</th>
+							<th className="border-l border-neutral-400 pl-3 pb-0.5!">
+								<abbr title="Relative worth of each stat.">Relative Weight</abbr>
+							</th>
+							<th className="pb-0.5!">
+								<abbr title="Only count up to this much of the stat.">Max Counted</abbr>
+							</th>
+							<th className="border-l border-neutral-400 pl-3 pb-0.5!">
+								<abbr title="Require at least this much of the stat. Implies that it is required.">Min Required</abbr>
+							</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -94,8 +106,8 @@ export function StatParamInput(props: Readonly<{
 						)}
 						{entries.map(([stat, entry]) => (
 							<tr key={stat}>
-								<td>{stat}</td>
-								<td class="flex gap-2 items-center">
+								<td className="border-r border-neutral-400 pr-3">{stat}</td>
+								<td class="flex gap-2 items-center px-3">
 									<OptionalNumberInput
 										small
 										value={entry.weight}
@@ -109,22 +121,22 @@ export function StatParamInput(props: Readonly<{
 										<WeightButton key={btn.name} attrs={btn} onClick={() => setRelWeight(stat, entry, btn.scale)} />
 									))}
 								</td>
-								<td>
-									<StatValueInput
-										useRV={props.useRV ?? false}
-										stat={stat}
-										value={entry.minRV}
-										placeholder="0"
-										onChange={(value) => props.onChange(stat, { ...entry, minRV: value })}
-									/>
-								</td>
-								<td>
+								<td className="pr-3">
 									<StatValueInput
 										useRV={props.useRV ?? false}
 										stat={stat}
 										value={entry.maxRV}
 										placeholder="Infinity"
 										onChange={(value) => props.onChange(stat, { ...entry, maxRV: value })}
+									/>
+								</td>
+								<td className="border-l border-neutral-400 pl-3">
+									<StatValueInput
+										useRV={props.useRV ?? false}
+										stat={stat}
+										value={entry.minRV}
+										placeholder="0"
+										onChange={(value) => props.onChange(stat, { ...entry, minRV: value })}
 									/>
 								</td>
 							</tr>
