@@ -110,16 +110,20 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 
 	const showMainProb = !mode.fixedArtifact && mode.mainStatUnknown;
 	const showSubProb = !mode.fixedArtifact;
-	const calcRollProb = useMemo(
-		() => mode.fixedArtifact || Object.values(statParams).some(w => w.weight || w.minRV),
+	const calcGoalRollProb = useMemo(
+		() => mode.fixedArtifact || Object.values(statParams).some(w => w.weight),
 		[statParams, mode.fixedArtifact]
+	);
+	const calcBasicRollProb = useMemo(
+		() => mode.fixedArtifact || calcGoalRollProb || Object.values(statParams).some(w => w.weight || w.minRV),
+		[statParams, mode.fixedArtifact, calcGoalRollProb]
 	);
 	const totalProb = subProb !== undefined || rollProb !== undefined || mainProb !== undefined
 		? (mainProb ?? 1) * (subProb ?? 1) * (rollProb ?? 1)
 		: undefined;
 
 	const logicBaseGoal = Math.round(goalValue * 100);
-	const logicGoal = calcRollProb ? logicBaseGoal - (Number(includeEqual) / 10) : -Infinity;
+	const logicGoal = calcGoalRollProb ? logicBaseGoal - (Number(includeEqual) / 10) : -Infinity;
 
 	const sortedValidWeights = useMemo(
 		() => Object.entries(statParams)
@@ -417,7 +421,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			unrollableStats
 		);
 
-		if (calcRollProb) {
+		if (calcBasicRollProb) {
 			console.log(
 				"Calculating roll probability",
 				{ statData, rollRestrictions, validCombos, logicGoal }
@@ -672,8 +676,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			<section>
 				<h3 class="text-xl font-bold mt-5">Roll Requirements</h3>
 				<div class="mt-1">
-					Control the relative value of each roll, as well as stat roll limits.{!mode.fixedArtifact &&
-						<> Ignored if all weights and min stats are 0.</>}
+					Control the relative value (weight) of each stat roll as well as minimum required roll values.
 				</div>
 				<div class="mt-1">
 					<Checkbox label="Input roll value (RV) instead of stat value" checked={useRV} onChange={setUseRV} />
@@ -687,46 +690,50 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 					/>
 				</VisualSection>
 				<VisualSection>
-					<div class="flex gap-x-5 gap-y-2 flex-wrap mb-2">
-						<Checkbox label="Use current sub-stats for goal" checked={useAutoGoal} onChange={setUseAutoGoal} />
-						<Checkbox label="Include artifacts equal to goal" checked={includeEqual} onChange={setIncludeEqual} />
-					</div>
-					<LabelGrid>
-						{useAutoGoal && !mode.fixedArtifact && <div>
-							<div>Current sub-stats:</div>
-							<StatListInput
-								clearable={!mode.fixedArtifact}
-								stats={currentStats}
-								count={SUB_STAT_COUNT}
-								onChange={setCurrentStats}
-								validStats={gameData.stats.filter(stat => stat !== mainStat)}
-								useRV={useRV}
-								statValues={mode.fixedArtifact ? undefined : statParams}
-								onValueChange={(stat, value) => setStatParams(prev => ({ ...prev, [stat]: { ...prev[stat], currentRV: value } }))}
-							/>
-						</div>}
-						<div>
-							<div>Goal:</div>
-							<div>
-								<input
-									type="number"
-									class="w-25"
-									value={customGoal}
-									onChange={(e) => {
-										setCustomGoal(round2(+(e.target as HTMLInputElement).value));
-										// Update input if value was rounded back to the current value
-										setCustomGoalVer(v => v + 1);
-									}}
-									disabled={useAutoGoal}
-									step="any"
-								/> % weighted RV (Max: {maxAttainable === undefined ? "?" : <Percentage value={maxAttainable / 100} />})
-							</div>
+					<div class={calcGoalRollProb ? "" : "text-neutral-400"}>
+						<div class="flex gap-x-5 gap-y-2 flex-wrap mb-2">
+							<Checkbox disabled={!calcGoalRollProb} label="Use current sub-stats for goal" checked={useAutoGoal} onChange={setUseAutoGoal} />
+							<Checkbox disabled={!calcGoalRollProb} label="Include artifacts equal to goal" checked={includeEqual} onChange={setIncludeEqual} />
 						</div>
-					</LabelGrid>
-					{maxTheoretical === undefined ? null : <div class="mt-2">
-						{useAutoGoal ? "Currently at" : "Goal is"} <Percentage highlight value={goalValue / maxTheoretical} /> of maximum reachable sub-stat value
-						{maxAttainable < maxTheoretical && <> (Max: <Percentage value={maxAttainable / maxTheoretical} />, started with 3 lines)</>}
-					</div>}
+						<LabelGrid>
+							{useAutoGoal && !mode.fixedArtifact && <div>
+								<div>Current sub-stats:</div>
+								<StatListInput
+									clearable={!mode.fixedArtifact}
+									stats={currentStats}
+									count={SUB_STAT_COUNT}
+									onChange={setCurrentStats}
+									validStats={gameData.stats.filter(stat => stat !== mainStat)}
+									useRV={useRV}
+									statValues={mode.fixedArtifact ? undefined : statParams}
+									onValueChange={(stat, value) => setStatParams(prev => ({ ...prev, [stat]: { ...prev[stat], currentRV: value } }))}
+									disabled={!calcGoalRollProb}
+								/>
+							</div>}
+							<div>
+								<div>Goal:</div>
+								<div>
+									<input
+										type="number"
+										class="w-25"
+										value={customGoal}
+										onChange={(e) => {
+											setCustomGoal(round2(+(e.target as HTMLInputElement).value));
+											// Update input if value was rounded back to the current value
+											setCustomGoalVer(v => v + 1);
+										}}
+										disabled={!calcGoalRollProb || useAutoGoal}
+										step="any"
+									/> % weighted RV (Max: {maxAttainable === undefined ? "?" : <Percentage value={maxAttainable / 100} />})
+								</div>
+							</div>
+						</LabelGrid>
+						{maxTheoretical === undefined ? null : <div class="mt-2">
+							{useAutoGoal ? "Currently at" : "Goal is"} <Percentage highlight value={goalValue / maxTheoretical} /> of maximum reachable sub-stat value
+							{maxAttainable < maxTheoretical && <> (Max: <Percentage value={maxAttainable / maxTheoretical} />, started with 3 lines)</>}
+						</div>}
+					</div>
+					{!calcGoalRollProb && <div class="mt-2">&#x2139;&#xfe0f; Add stat weights above to set artifact goals.</div>}
 				</VisualSection>
 			</section>
 			<section>
@@ -752,9 +759,13 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 							<div>Sub-stat probability:</div>
 							<div><Percentage highlight value={subProb} /></div>
 						</div>}
-						{calcRollProb && <div>
+						{<div class={calcBasicRollProb ? "" : "text-neutral-400"}>
 							<div>Roll probability:</div>
-							<div><Percentage highlight value={rollProb} /></div>
+							<div>
+								{calcBasicRollProb
+									? <Percentage highlight value={rollProb} />
+									: <abbr title="No roll requirements set">n/a</abbr>}
+							</div>
 						</div>}
 						<div>
 							<div>Total probability:</div>

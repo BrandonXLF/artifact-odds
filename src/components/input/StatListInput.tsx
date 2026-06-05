@@ -12,6 +12,7 @@ export function StatListInput(props: Readonly<{
 	validStats?: string[];
 	statValues?: Record<string, { currentRV?: number }>;
 	useRV?: boolean;
+	disabled?: boolean;
 	onChange: (stats: string[]) => void;
 	onValueChange?: (stat: string, value: number | undefined) => void;
 	clearable?: boolean;
@@ -52,7 +53,7 @@ export function StatListInput(props: Readonly<{
 					<div class="inline-flex gap-2">
 						<select
 							value={value ?? ""}
-							disabled={selectableStats.length === 0}
+							disabled={props.disabled || selectableStats.length === 0}
 							onChange={(e) => change(index, (e.target as HTMLSelectElement).value)}
 							class={`min-w-20 ${error ? "border-red-500" : ""}`}
 						>
@@ -65,7 +66,7 @@ export function StatListInput(props: Readonly<{
 						</select>
 						{props.statValues && (
 							<StatValueInput
-								disabled={!value}
+								disabled={props.disabled || !value}
 								useRV={props.useRV ?? false}
 								stat={value}
 								value={props.statValues[value]?.currentRV}
