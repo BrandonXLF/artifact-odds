@@ -201,7 +201,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		) {
 			setRawGuaranteedRollsCount(mode.guaranteedCount[0]);
 		}
-	}, [mode]);
+	}, [mode, calcBasicRollProb]);
 
 	useEffect(() => {
 		if (useAutoGoal) {
