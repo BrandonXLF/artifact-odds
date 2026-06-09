@@ -123,7 +123,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		: undefined;
 
 	const logicBaseGoal = Math.round(goalValue * 100);
-	const logicGoal = calcGoalRollProb ? logicBaseGoal - (Number(includeEqual) / 10) : -Infinity;
+	const logicGoal = calcGoalRollProb ? logicBaseGoal - (Number(includeEqual) / 10) : -9999;
 
 	const sortedValidWeights = useMemo(
 		() => Object.entries(statParams)
