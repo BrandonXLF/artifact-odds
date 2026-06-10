@@ -38,7 +38,7 @@ const Assumptions = () => {
 		<section>
 			<h3 class="text-xl font-bold mt-5">Main Stats</h3>
 			<div class="my-5">
-				{gameData.mainStats.map(mainStat => <div>
+				{gameData.mainStats.map(mainStat => <div key={mainStat.name}>
 					<h3 class="font-bold mt-4 mb-2">{mainStat.name}</h3>
 					<ProbTable>
 						<thead>
@@ -48,7 +48,7 @@ const Assumptions = () => {
 							</tr>
 						</thead>
 						<tbody>
-							{Object.entries(mainStat.stats).map(([stat, prob]) => <tr>
+							{Object.entries(mainStat.stats).map(([stat, prob]) => <tr key={stat}>
 								<td>{stat}</td>
 								<td><Percentage value={prob} /></td>
 							</tr>)}
@@ -68,7 +68,7 @@ const Assumptions = () => {
 						</tr>
 					</thead>
 					<tbody>
-						{sortedStatWeights.map(([stat, weight]) => <tr>
+						{sortedStatWeights.map(([stat, weight]) => <tr key={stat}>
 							<td>{stat}</td>
 							<td>{weight}</td>
 						</tr>)}

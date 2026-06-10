@@ -50,7 +50,7 @@ export function StatListInput(props: Readonly<{
 				anyError = anyError || error;
 
 				return (
-					<div class="inline-flex gap-2">
+					<div class="inline-flex gap-2" key={index}>
 						<select
 							value={value ?? ""}
 							disabled={props.disabled || selectableStats.length === 0}

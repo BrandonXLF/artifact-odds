@@ -8,7 +8,6 @@ import { ensureTitle } from '..';
 import { data } from '../data/data';
 import { AssumptionsMain } from './AssumptionsMain';
 import { ToggleButtons } from './input/ToggleButtons';
-import { ComponentChild } from 'preact';
 import { LocationProvider, RouteHook, Router, useRoute } from 'preact-iso';
 
 const keepPathPrefixes = ["/assumptions", "/dist"];
@@ -40,7 +39,7 @@ export const Main = (props: { baseUrl?: string }) => {
 				<nav class="flex gap-4 mb-4">
 					<ToggleButtons value={game} options={Object.entries(meta).map(([game, { name }]) => [
 						game,
-						<div class="flex items-center">
+						<div class="flex items-center" key={game}>
 							<img src={meta[game as Game].icon} class="w-5 h-5 rounded-xs mr-1" alt="" />
 							{name}
 						</div>,

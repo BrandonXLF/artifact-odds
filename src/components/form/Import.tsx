@@ -209,6 +209,7 @@ export const Import = (props: { import: (art: ImportedArtifact) => void }) => {
 		{loaded.length > 0 && <div class="mt-4">
 			<ToggleButtons
 				options={loaded.map((c, i) => [i, <ImportedCharacter<any, LocResource>
+					key={c.id}
 					avatarResource={nameResources[0]}
 					locResource={nameResources[1]}
 					getNickname={importer.getAvatar}
@@ -223,11 +224,15 @@ export const Import = (props: { import: (art: ImportedArtifact) => void }) => {
 		{loaded[characterIndex] && <div class="mt-4">
 			<div class="flex gap-4 flex-wrap shrink-0">
 				{loaded[characterIndex].artifacts.map(a => (
-					<Button class="text-left min-w-30 px-3 py-1 flex items-start flex-col relative" onClick={() => props.import(a)}>
+					<Button
+						key={a.icon}
+						class="text-left min-w-30 px-3 py-1 flex items-start flex-col relative"
+						onClick={() => props.import(a)}
+					>
 						<img src={a.icon} alt="" class="absolute right-0 top-0 w-12 mask-b-from-0" />
 						<p class="font-bold z-2 text-shadow-(color:--bg) text-shadow-lg">{a.mainStat}</p>
 						<ul class="z-2 text-shadow-(color:--bg) text-shadow-lg">
-							{a.subStats.map(s => <li>{s[0]}: {s[1]}</li>)}
+							{a.subStats.map(s => <li key={s[0]}>{s[0]}: {s[1]}</li>)}
 						</ul>
 					</Button>
 				))}
