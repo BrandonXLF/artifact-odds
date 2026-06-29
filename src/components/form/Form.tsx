@@ -562,25 +562,27 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 					</div>}
 				</LabelGrid>
 			</VisualSection>
-			{showImport && <Import import={art => {
-				setArtifactType(art.artifactType);
-				setMainStat(art.mainStat);
-				setCurrentStats(art.subStats.map(([stat]) => stat));
-				setStatParams(prev => {
-					const newParams = { ...prev };
+			{showImport && <Import
+				import={art => {
+					setArtifactType(art.artifactType);
+					setMainStat(art.mainStat);
+					setCurrentStats(art.subStats.map(([stat]) => stat));
+					setStatParams(prev => {
+						const newParams = { ...prev };
 
-					for (const [stat, value] of art.subStats) {
-						newParams[stat] = {
-							...newParams[stat],
-							currentRV: Math.round((value / gameData.statValues[stat]) / 10) * 10
-						};
-					}
+						for (const [stat, value] of art.subStats) {
+							newParams[stat] = {
+								...newParams[stat],
+								currentRV: Math.round((value / gameData.statValues[stat]) / 10) * 10
+							};
+						}
 
-					return newParams;
-				});
-				setIsFiveRoller(art.totalCount >= 9);
-				setShowImport(false);
-			}} />}
+						return newParams;
+					});
+					setIsFiveRoller(art.totalCount >= 9);
+				}}
+				close={() => setShowImport(false)}
+			/>}
 			{(dynamicMode.selectedStatCount > 0 || Array.isArray(mode.selectedStatCount)) && <VisualSection>
 				<LabelGrid>
 					{Array.isArray(mode.selectedStatCount) && <div>

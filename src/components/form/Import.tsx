@@ -152,7 +152,7 @@ const importers: {
 	}
 };
 
-export const Import = (props: { import: (art: ImportedArtifact) => void }) => {
+export const Import = (props: { import: (art: ImportedArtifact) => void, close: () => void }) => {
 	const { game } = useContext(GameContext);
 	const abort = useRef<AbortController | null>(null);
 	const [characterIndex, setCharacterIndex] = useState(0);
@@ -205,6 +205,9 @@ export const Import = (props: { import: (art: ImportedArtifact) => void }) => {
 			</label>
 			<Button onClick={loadProfile}>Load Profile</Button>
 			{profileName && <span>{profileName}</span>}
+			<div class="flex-1 text-right">
+				<Button onClick={props.close}>Close</Button>
+			</div>
 		</div>
 		{loaded.length > 0 && <div class="mt-4">
 			<ToggleButtons
