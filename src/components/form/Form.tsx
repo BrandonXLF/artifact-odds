@@ -29,6 +29,7 @@ import { FormContext } from '../../contexts/FormContext';
 import { GameContext } from '../../contexts/GameContext';
 import { factorial } from '../../utils/factorial';
 import { NumberDisplay } from '../output/NumberDisplay';
+import { computeTypeProb } from '../../../logic/typeProb';
 
 type StatParams = StatParamInputEntry & StatListInputEntry;
 
@@ -79,6 +80,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const [allOptimalPairs, setAllOptimalPairs] = useResettableState<string[][]>(() => [], resetTrigger);
 
 	// Results
+	const [typeProb, setTypeProb] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [mainProb, setMainProb] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [subProb, setSubProb] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [rollProb, setRollProb] = useResettableState<number | undefined>(undefined, resetTrigger);
@@ -118,8 +120,8 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		() => mode.fixedArtifact || calcGoalRollProb || Object.values(statParams).some(w => w.weight || w.minRV),
 		[statParams, mode.fixedArtifact, calcGoalRollProb]
 	);
-	const totalProb = subProb !== undefined || rollProb !== undefined || mainProb !== undefined
-		? (mainProb ?? 1) * (subProb ?? 1) * (rollProb ?? 1)
+	const totalProb = subProb !== undefined || rollProb !== undefined || mainProb !== undefined || typeProb !== undefined
+		? (typeProb ?? 1) * (mainProb ?? 1) * (subProb ?? 1) * (rollProb ?? 1)
 		: undefined;
 
 	const logicBaseGoal = Math.round(goalValue * 100);
@@ -179,6 +181,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	}, [sortedValidWeights, isFiveRoller, mode.fixedArtifact]);
 
 	useEffect(() => {
+		setTypeProb(undefined);
 		setMainProb(undefined);
 		setSubProb(undefined);
 		setRollProb(undefined);
@@ -403,8 +406,13 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			}
 		}
 
+		const newTypeProb = showMainProb
+			? computeTypeProb(gameData.mainStats, artifactType, mode.fromDomain && !acceptEither)
+			: undefined;
+		setTypeProb(newTypeProb);
+
 		const newMainProb = showMainProb
-			? computeMainStatProb(gameData.mainStats, artifactType, mainStat, mode.fromDomain && !acceptEither)
+			? computeMainStatProb(gameData.mainStats, artifactType, mainStat)
 			: undefined;
 		setMainProb(newMainProb);
 
@@ -754,6 +762,10 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 				<VisualSection>
 					<LabelGrid tight>
 						{showMainProb && <div>
+							<div>Set & type probability:</div>
+							<div><Percentage highlight value={typeProb} /></div>
+						</div>}
+						{showMainProb && <div>
 							<div>Main stat probability:</div>
 							<div><Percentage highlight value={mainProb} /></div>
 						</div>}
@@ -793,7 +805,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 							<div>
 								<SimulationOutput
 									key={simulationVer}
-									mainProb={mainProb}
+									mainProb={(typeProb ?? 1) * (mainProb ?? 1)}
 									worker={simulationWorker}
 									onTerminate={() => setSimulationWorker(prev => {
 										prev?.terminate();
