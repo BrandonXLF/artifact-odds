@@ -104,23 +104,23 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 
 	const currentValue = useMemo(
 		() => roundMaxPrecision(
-			Object.entries(statParams)
-				.filter(([stat]) => currentStats.includes(stat))
-				.reduce((acc, [, { currentRV, weight }]) => acc + (currentRV ?? 0) * (weight ?? 0), 0)
+			currentStats
+				.map(stat => statParams[stat])
+				.reduce((acc, { currentRV, weight }) => acc + (currentRV ?? 0) * (weight ?? 0), 0)
 		),
-		[statParams, validStats]
+		[currentStats, statParams]
 	);
 	const goalValue = useAutoGoal ? currentValue : customGoal;
 
 	const showMainProb = !mode.fixedArtifact && mode.mainStatUnknown;
 	const showSubProb = !mode.fixedArtifact;
 	const calcGoalRollProb = useMemo(
-		() => mode.fixedArtifact || Object.values(statParams).some(w => w.weight),
-		[statParams, mode.fixedArtifact]
+		() => mode.fixedArtifact || validStats.some(stat => statParams[stat].weight),
+		[mode.fixedArtifact, validStats, statParams]
 	);
 	const calcBasicRollProb = useMemo(
-		() => mode.fixedArtifact || calcGoalRollProb || Object.values(statParams).some(w => w.weight || w.minRV),
-		[statParams, mode.fixedArtifact, calcGoalRollProb]
+		() => mode.fixedArtifact || calcGoalRollProb || validStats.some(stat => statParams[stat].weight || statParams[stat].minRV),
+		[mode.fixedArtifact, calcGoalRollProb, validStats, statParams]
 	);
 	const totalProb = subProb !== undefined || rollProb !== undefined || mainProb !== undefined || typeProb !== undefined
 		? (typeProb ?? 1) * (mainProb ?? 1) * (subProb ?? 1) * (rollProb ?? 1)
@@ -130,11 +130,10 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const logicGoal = calcGoalRollProb ? logicBaseGoal - (Number(includeEqual) / 10) : -9999;
 
 	const sortedValidWeights = useMemo(
-		() => Object.entries(statParams)
-			.filter(([stat]) => validStats.includes(stat))
-			.map(([stat, w]) => [stat, w.weight ?? 0] as [string, number])
+		() => validStats
+			.map(stat => [stat, statParams[stat].weight ?? 0] as [string, number])
 			.sort((a, b) => (b[1] - a[1])),
-		[statParams, validStats]
+		[validStats, statParams]
 	);
 
 	const dynamicMode = useMemo(() => ({
