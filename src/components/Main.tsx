@@ -33,7 +33,7 @@ export const Main = (props: { baseUrl?: string }) => {
 		<LocationProvider scope={/^(?!\/[^/]*\/documents).*$/}>
 			<main class="p-4 max-w-300 m-auto">
 				<hgroup class="mb-4">
-					<h1 class="text-2xl font-bold mb-2">{meta[game].title}</h1>
+					<h1 class="text-2xl font-bold mb-2">{meta[game].title} | {meta[game].subtitle}</h1>
 					<p>{meta[game].desc}</p>
 				</hgroup>
 				<nav class="flex gap-4 mb-4">

@@ -32,8 +32,8 @@ export const FormMain = (props: { modeKey?: string }) => {
 	}, [modeKey])
 
 	ensureTitle(validMode
-		? `${gameModes[modeKey].name} Probability Calculator | ${gameMeta.title}`
-		: `Unknown Mode | ${gameMeta.title}`
+		? `${gameModes[modeKey].name} Probability Calculator - ${gameMeta.title}`
+		: `Unknown Mode - ${gameMeta.title}`
 	);
 
 	return <div>

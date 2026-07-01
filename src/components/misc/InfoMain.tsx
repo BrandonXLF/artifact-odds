@@ -7,7 +7,7 @@ import Article from "../structure/Article";
 export const InfoMain = (props: { path: string, title: string, content: ComponentChild }) => {
 	const { gameMeta } = useContext(GameContext);
 
-	ensureTitle(`${props.title} | ${gameMeta.title}`);
+	ensureTitle(`${props.title} - ${gameMeta.title}`);
 
 	return <div>
 		<nav className="mb-5">

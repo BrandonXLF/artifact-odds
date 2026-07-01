@@ -824,7 +824,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 						{totalProb !== undefined && totalProb !== 0 && overwhelminglyLikely && <div>
 							<div></div>
 							<div class="flex gap-2 items-center">
-								<img src="/artifact-copium/nah-id-win.png" class="h-4" alt="Gojo" /> Nah, I'd win
+								<img src="/artifact-odds/nah-id-win.png" class="h-4" alt="Gojo" /> Nah, I'd win
 							</div>
 						</div>}
 						{simulationVer !== undefined && <div>
