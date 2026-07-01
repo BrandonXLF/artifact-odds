@@ -29,6 +29,7 @@ import { FormContext } from '../../contexts/FormContext';
 import { GameContext } from '../../contexts/GameContext';
 import { factorial } from '../../utils/factorial';
 import { NumberDisplay } from '../output/NumberDisplay';
+import { QuantileOutput } from '../output/QuantileOutput';
 import { computeTypeProb } from '../../../logic/typeProb';
 
 type StatParams = StatParamInputEntry & StatListInputEntry;
@@ -74,6 +75,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const [includeEqual, setIncludeEqual] = useStoredState<boolean>("includeEqual", false, resetTrigger);
 	const [doSimulate, setDoSimulate] = useStoredState<boolean>("runMonteCarlo", false, resetTrigger);
 	const [useRV, setUseRV] = useStoredState<boolean>("useRV", false, resetTrigger);
+	const [outputNum, setOutputNum] = useStoredState<number>("outputNum", 0, resetTrigger);
 
 	// Input feedback
 	const [selectedStatsInvalid, setSelectedStatsInvalid] = useResettableState<boolean | undefined>(undefined, resetTrigger);
@@ -153,16 +155,13 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			: prop;
 	}, [artifactType, dynamicMode.selectedStatCount]);
 
-	const probCost = useMemo(() => {
-		if (totalProb === undefined || mode.output === undefined) {
-			return undefined;
-		}
-
-		const odds = 1 / totalProb;
-		const mult = getModeProb(mode.output.perArtifact ?? 1);
-
-		return Math.round(odds * mult);
-	}, [totalProb, mode]);
+	const outputMode = Array.isArray(mode.output) ? mode.output[outputNum] : mode.output;
+	const expectedTimes = useMemo(() => {
+		if (totalProb === undefined) return undefined;
+		return Math.round(1 / totalProb);
+	}, [totalProb, outputMode]);
+	const costPerArtifact = useMemo(() => getModeProb(outputMode.perArtifact ?? 1), [outputMode]);
+	const expectedCost = expectedTimes === undefined ? undefined : Math.round(expectedTimes * costPerArtifact);
 
 	const [maxTheoretical, maxAttainable] = useMemo(() => {
 		if (sortedValidWeights.length === 0 || sortedValidWeights[0]?.[1] === 0) {
@@ -205,6 +204,10 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			setRawGuaranteedRollsCount(mode.guaranteedCount[0]);
 		}
 	}, [mode, calcBasicRollProb]);
+
+	useEffect(() => {
+		setOutputNum(0);
+	}, [mode]);
 
 	useEffect(() => {
 		if (useAutoGoal) {
@@ -787,10 +790,15 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 								<Percentage
 									showQuality={!mode.fixedArtifact && mode.mainStatUnknown ? 45 : 1}
 									value={totalProb}
-								/>{probCost !== undefined && mode.output !== undefined &&
-									<span> &#8776; <NumberDisplay highlight value={probCost} /> {mode.output.desc
-										? <abbr title={mode.output.desc}>{getModeProb(mode.output.unit)}</abbr>
-										: <span>{getModeProb(mode.output.unit)}</span>}
+								/>{expectedTimes !== undefined && outputMode !== undefined &&
+									<span> &#8776; <NumberDisplay highlight value={expectedCost} /> {Array.isArray(mode.output)
+										? <select
+											value={outputNum}
+											onChange={(e) => setOutputNum(Number((e.target as HTMLSelectElement).value))}
+										>
+											{mode.output?.map((out, i) => <option key={i} value={i}>{getModeProb(out.unit).label}</option>)}
+										</select>
+										: getModeProb(outputMode.unit)[expectedCost == 1 ? "single" : "many"]}
 									</span>}
 							</div>
 						</div>
@@ -813,6 +821,10 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 									})}
 								/>
 							</div>
+						</div>}
+						{totalProb !== undefined && <div>
+							<div>{getModeProb(outputMode.unit).oddsLabel} for chance:</div>
+							<QuantileOutput prob={totalProb} costPerTime={costPerArtifact} />
 						</div>}
 					</LabelGrid>
 					{total !== undefined && <div class="mt-2">

@@ -2,6 +2,7 @@ import { useContext, useMemo } from "preact/hooks";
 import { Percentage } from "./output/Percentage";
 import { GameContext } from "../contexts/GameContext";
 import { InfoMain } from "./misc/InfoMain";
+import { BasicUnitOutput, modes } from "../data/modes";
 
 const ProbTable = ({ children }: { children: preact.ComponentChildren }) => {
 	return <div>
@@ -17,23 +18,35 @@ const ProbTable = ({ children }: { children: preact.ComponentChildren }) => {
 }
 
 const Assumptions = () => {
-	const { gameData } = useContext(GameContext);
+	const { game, gameData } = useContext(GameContext);
 
 	const sortedStatWeights = useMemo(() => {
 		return Object.entries(gameData.statWeights).sort((a, b) => b[1] - a[1]);
 	}, [gameData.statWeights]);
 
+	const assumedOutputs = Object.values(modes[game])
+		.flatMap(mode => Array.isArray(mode.output) ? mode.output.map(o => [o, mode.name] as const) : [[mode.output, mode.name]] as const)
+		.filter((info): info is [BasicUnitOutput, string] => 'desc' in info[0]);
+
 	return <div>
 		<section>
+			<h3 class="text-xl font-bold mt-5">Output Quantities</h3>
+			<ul class="my-5 list-disc list-inside">
+				{assumedOutputs.length > 0 && assumedOutputs.map(([output, modeName]) =>
+					<li key={output.unit.label} class="my-5"><strong>{output.unit.label}</strong>  ({modeName}): {output.desc}</li>
+				)}
+			</ul>
+		</section>
+		<section>
 			<h3 class="text-xl font-bold mt-5">4-Liner</h3>
-			<div class="my-5">
-				<div>
+			<ul class="my-5 list-disc list-inside">
+				<li>
 					Probability of getting a 4-liner from a domain: <Percentage value={gameData.allLinesDomainProb} />
-				</div>
-				<div>
+				</li>
+				<li>
 					Probability of getting a 4-liner from crafting: <Percentage value={gameData.allLinesCraftedProb} />
-				</div>
-			</div>
+				</li>
+			</ul>
 		</section>
 		<section>
 			<h3 class="text-xl font-bold mt-5">Main Stats</h3>
