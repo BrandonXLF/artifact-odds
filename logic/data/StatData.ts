@@ -15,7 +15,7 @@ export class StatData {
 		private readonly _rollValues: readonly number[]
 	) {
 		for (const [stat, min] of Object.entries(mins)) {
-			if (min !== undefined && (min) > 0) this.requiredByMin.push(stat);
+			if (min !== undefined && min > 0) this.requiredByMin.push(stat);
 		}
 
 		this._maxWeight = Math.max(...Object.values(weights).filter((w): w is number => w !== undefined), 0);

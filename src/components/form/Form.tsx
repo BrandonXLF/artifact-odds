@@ -106,14 +106,26 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		() => roundMaxPrecision(
 			currentStats
 				.map(stat => statParams[stat])
+				.filter(Boolean)
 				.reduce((acc, { currentRV, weight }) => acc + (currentRV ?? 0) * (weight ?? 0), 0)
 		),
 		[currentStats, statParams]
 	);
 	const goalValue = useAutoGoal ? currentValue : customGoal;
 
+	const requiredByMins = useMemo(() => {
+		return validStats
+			.map(stat => [stat, statParams[stat]] as const)
+			.filter(([_, data]) => data.minRV !== undefined && data.minRV > 0)
+			.map(([stat]) => stat);
+	}, [statParams, statParams]);
+
 	const showMainProb = !mode.fixedArtifact && mode.mainStatUnknown;
 	const showSubProb = !mode.fixedArtifact;
+	const nonDefaultSubProb = useMemo(
+		() => showSubProb && (requireCount > 0 || requiredByMins.length > 0 || requireAllLines),
+		[showSubProb, requireCount, requiredByMins, requireAllLines]
+	);
 	const calcGoalRollProb = useMemo(
 		() => mode.fixedArtifact || validStats.some(stat => statParams[stat].weight),
 		[mode.fixedArtifact, validStats, statParams]
@@ -122,6 +134,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		() => mode.fixedArtifact || calcGoalRollProb || validStats.some(stat => statParams[stat].weight || statParams[stat].minRV),
 		[mode.fixedArtifact, calcGoalRollProb, validStats, statParams]
 	);
+
 	const totalProb = subProb !== undefined || rollProb !== undefined || mainProb !== undefined || typeProb !== undefined
 		? (typeProb ?? 1) * (mainProb ?? 1) * (subProb ?? 1) * (rollProb ?? 1)
 		: undefined;
@@ -202,7 +215,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		) {
 			setRawGuaranteedRollsCount(mode.guaranteedCount[0]);
 		}
-	}, [mode, calcBasicRollProb]);
+	}, [mode, nonDefaultSubProb, calcBasicRollProb]);
 
 	useEffect(() => {
 		setOutputNum(0);
@@ -670,6 +683,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 							value={requireCount}
 							onChange={(e) => setRequireCount(Number((e.target as HTMLInputElement).value))}
 							class="w-20"
+							min={0}
 						/>
 						<span>of</span>
 						<StatListInput
@@ -680,6 +694,9 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 							validStats={validStats}
 						/>
 					</div>
+					{requiredByMins.length > 0 && <div class="mt-2">
+						Implicitly required by roll minimums: {requiredByMins.join(', ')}
+					</div>}
 				</VisualSection>
 				<VisualSection>
 					<Checkbox label="Only consider artifacts that start with 4 lines" checked={requireAllLines} onChange={setRequireAllLines} />
@@ -771,9 +788,12 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 							<div>Main stat probability:</div>
 							<div><Percentage highlight value={mainProb} /></div>
 						</div>}
-						{showSubProb && <div>
+						{showSubProb && <div class={nonDefaultSubProb ? "" : "text-neutral-400"}>
 							<div>Sub-stat probability:</div>
-							<div><Percentage highlight value={subProb} /></div>
+							<div>{nonDefaultSubProb
+								? <Percentage highlight value={subProb} />
+								: <abbr title="No stat requirements set">n/a</abbr>}
+							</div>
 						</div>}
 						{<div class={calcBasicRollProb ? "" : "text-neutral-400"}>
 							<div>Roll probability:</div>
