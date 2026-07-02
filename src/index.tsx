@@ -5,6 +5,8 @@ import './style.css';
 let docTitle: string | undefined = undefined;
 
 export const ensureTitle = (title: string) => {
+	title += import.meta.env.VITE_TITLE_SUFFIX ?? '';
+
 	if (title === docTitle) return;
 
 	if (typeof window !== 'undefined') {
