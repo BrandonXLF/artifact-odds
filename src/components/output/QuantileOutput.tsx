@@ -1,7 +1,7 @@
 import { Fragment } from "preact/jsx-runtime";
 import { NumberDisplay } from "./NumberDisplay";
 
-const quantiles = [0.25, 0.5, 0.75, 0.8, 0.9, 0.95, 0.99, 0.999];
+const quantiles = [0.25, 0.5, 0.75, 0.8, 0.9, 0.95, 0.99];
 
 export const QuantileOutput = (props: {
 	prob: number;
