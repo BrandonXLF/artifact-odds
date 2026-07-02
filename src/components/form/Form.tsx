@@ -849,9 +849,9 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 						Considered <NumberDisplay highlight value={total} /> {rollProb === undefined ? "artifact" : (mode.fixedArtifact ? "roll" : "artifact + roll")} outcomes
 					</div>}
 				</VisualSection>
-				{(avgRV !== undefined || bars.length > 0) && <VisualSection>
+				{bars.length > 0 && <VisualSection>
 					{avgRV !== undefined && <div>Average weighted RV of rolled artifacts: <Percentage highlight value={avgRV / 10000} /></div>}
-					{bars.length > 0 && <RVGraph bars={bars} max={maxRV} />}
+					<RVGraph bars={bars} max={maxRV} />
 				</VisualSection>}
 				<LogicSection />
 			</section>
