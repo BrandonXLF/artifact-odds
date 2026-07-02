@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useRef } from 'preact/hooks';
+import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Button } from '../input/Button';
 import { Form, FormHandle } from './Form';
 import { ToggleButtons } from '../input/ToggleButtons';
@@ -12,6 +12,14 @@ import { PREFIX_BASE } from '../../utils/resettableState';
 export const FormMain = (props: { modeKey?: string }) => {
 	const formRef = useRef<FormHandle>(null);
 	const { game, gameMeta } = useContext(GameContext);
+	const [modeKey, setModeKey] = useState(() => props.modeKey ?? Object.keys(modes[game])[0]);
+
+	const gameModes = modes[game];
+	const validMode = modeKey !== undefined && modeKey in gameModes;
+
+	const contextData = useMemo(() => ({
+		mode: gameModes[modeKey],
+	}), [gameModes, modeKey]);
 
 	const loadMode = () => {
 		const loaded = typeof localStorage === "undefined" ? null : localStorage.getItem(game + PREFIX_BASE + 'lastMode');
@@ -19,13 +27,9 @@ export const FormMain = (props: { modeKey?: string }) => {
 		return loaded;
 	};
 
-	const gameModes = modes[game];
-	const modeKey = useMemo(() => props.modeKey ? props.modeKey : loadMode(), [props.modeKey]);
-	const validMode = modeKey in gameModes;
-
-	const contextData = useMemo(() => ({
-		mode: gameModes[modeKey],
-	}), [gameModes, modeKey]);
+	useEffect(() => {
+		setModeKey(props.modeKey ?? loadMode());
+	}, [props.modeKey]);
 
 	useEffect(() => {
 		localStorage.setItem(game + PREFIX_BASE + 'lastMode', modeKey.toString());
@@ -39,7 +43,7 @@ export const FormMain = (props: { modeKey?: string }) => {
 	return <div>
 		<nav class="flex flex-wrap gap-4 mb-5">
 			<ToggleButtons
-				value={modeKey} 
+				value={modeKey}
 				options={Object.entries(gameModes).map(([key, mode]) => [key, mode.name, `/${gameMeta.url}/${key}/`])}
 			/>
 			{validMode && <div class="flex flex-1 w-full justify-end">
