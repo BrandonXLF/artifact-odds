@@ -12,7 +12,7 @@ export class ResetTrigger extends EventTarget {
 type DefaultType = string | number | boolean | any[] | undefined | null | bigint | object;
 
 export const useResettableState = <T extends DefaultType>(defaultValue: T | ((reset: boolean) => T), resetTrigger?: ResetTrigger) => {
-	const [value, setValue] = useState<T>(typeof defaultValue === "function" ? defaultValue(false) : defaultValue);
+	const [value, setValue] = useState<T>(() => typeof defaultValue === "function" ? defaultValue(false) : defaultValue);
 
 	useEffect(() => {
 		const reset = () => setValue(typeof defaultValue === "function" ? defaultValue(true) : defaultValue);
@@ -36,10 +36,14 @@ export const useStoredState = <T extends DefaultType>(name: string, defaultValue
 
 	const [value, setValue] = useResettableState<T>((reset) => {
 		if (reset) localStorage.removeItem(prefix + name);
-		return reset ? (typeof defaultValue === "function" ? defaultValue() : defaultValue) : load();
+		return typeof defaultValue === "function" ? defaultValue() : defaultValue;
 	}, resetTrigger);
 
 	const initialStr = useRef(JSON.stringify(value)).current;
+
+	useEffect(() => {
+		setValue(load());
+	}, [name]);
 
 	useEffect(() => {
 		const str = JSON.stringify(value);
