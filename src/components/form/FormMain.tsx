@@ -1,4 +1,4 @@
-import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Button } from '../input/Button';
 import { Form, FormHandle } from './Form';
 import { ToggleButtons } from '../input/ToggleButtons';
@@ -35,10 +35,12 @@ export const FormMain = (props: { modeKey?: string }) => {
 		localStorage.setItem(game + PREFIX_BASE + 'lastMode', modeKey.toString());
 	}, [modeKey])
 
-	ensureTitle(validMode
-		? `${gameModes[modeKey].name} Probability Calculator - ${gameMeta.title}`
-		: `Unknown Mode - ${gameMeta.title}`
-	);
+	if (props.modeKey) {
+		ensureTitle(validMode
+			? `${gameModes[modeKey].name} Probability Calculator - ${gameMeta.title}`
+			: `Unknown Mode - ${gameMeta.title}`
+		);
+	}
 
 	return <div>
 		<nav class="flex flex-wrap gap-4 mb-5">

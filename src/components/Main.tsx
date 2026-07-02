@@ -8,7 +8,7 @@ import { ensureTitle } from '..';
 import { data } from '../data/data';
 import { AssumptionsMain } from './AssumptionsMain';
 import { ToggleButtons } from './input/ToggleButtons';
-import { LocationProvider, RouteHook, Router, useRoute } from 'preact-iso';
+import { RouteHook, Router, useRoute } from 'preact-iso';
 
 const keepPathPrefixes = ["/assumptions", "/dist"];
 
@@ -27,7 +27,7 @@ export const Main = (props: { baseUrl?: string }) => {
 		gameData: data[game]
 	}), [game]);
 
-	ensureTitle(meta[game].title);
+	ensureTitle(`${meta[game].title} | ${meta[game].subtitle}`);
 
 	return (
 		<main class="p-4 max-w-300 m-auto">
