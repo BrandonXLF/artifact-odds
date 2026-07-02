@@ -78,10 +78,10 @@ export const modes: Record<Game, Record<string, Mode>> = {
 				},
 				{
 					unit: {
-						label: "Runs",
-						oddsLabel: "Runs",
-						single: "run",
-						many: "runs"
+						label: "Drops",
+						oddsLabel: "Drops",
+						single: "drop",
+						many: "drops"
 					}
 				}
 			]
@@ -185,10 +185,10 @@ export const modes: Record<Game, Record<string, Mode>> = {
 				},
 				{
 					unit: {
-						label: "Runs",
-						oddsLabel: "Runs",
-						single: "run",
-						many: "runs"
+						label: "Drops",
+						oddsLabel: "Drops",
+						single: "drop",
+						many: "drops"
 					}
 				}
 			]
