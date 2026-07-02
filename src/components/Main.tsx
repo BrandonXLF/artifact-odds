@@ -57,7 +57,7 @@ export const Main = (props: { baseUrl?: string }) => {
 					<span>
 					Developed by Brandon Fowler (<a href="https://www.brandonfowler.me/genshin-tools/">other tools</a>)
 					</span>{" "} • {" "}
-					<a href="https://github.com/BrandonXLF/genshin-artifact-probability-calculator">Source code</a>
+					<a href="https://github.com/BrandonXLF/artifact-odds">Source code</a>
 				</footer>
 			</main>
 		</LocationProvider>
