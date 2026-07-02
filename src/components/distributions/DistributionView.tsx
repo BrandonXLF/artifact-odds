@@ -1,3 +1,5 @@
+import { Fraction } from "fraction.js";
+
 export const DistributionView = (props: {
 	entries: (readonly [string, number])[];
 }) => {
@@ -12,7 +14,7 @@ export const DistributionView = (props: {
 			{relativeEntries.map(([name, relVal, val]) => (
 				<>
 					<span class="font-mono text-nowrap text-right">{name}</span>
-					<div>({val})</div>
+					<div>({new Fraction(val).toFraction(true)})</div>
 					<div>
 						<div class="h-4 bg-primary-light" style={{ width: `${relVal * 100}%` }}></div>
 					</div>

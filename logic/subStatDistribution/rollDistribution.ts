@@ -48,7 +48,7 @@ const computePermutations = (subStatCount: number, totalRolls: number, guarantee
 	return out;
 };
 
-export interface RolLDistOut extends Array<[number[], number]> {
+export interface RollDistOut extends Array<[number[], number]> {
 	permCount: number;
 }
 
@@ -61,7 +61,7 @@ export const computeRollDistribution = memoize((
 	guaranteedCount: number,
 	guaranteedRolls: number,
 	unrollableCount: number
-): RolLDistOut => {
+): RollDistOut => {
 	const disabledStatRolls = new Array(unrollableCount).fill(0);
 	const perms = computePermutations(substatCount - unrollableCount, totalRolls, guaranteedCount, guaranteedRolls)
 		.map(([statRolls, prob]) => {
@@ -79,7 +79,7 @@ export const computeRollDistribution = memoize((
 		}
 	}
 
-	const out = Object.values(seen) as RolLDistOut;
+	const out = Object.values(seen) as RollDistOut;
 	out.permCount = perms.length;
 
 	return out;

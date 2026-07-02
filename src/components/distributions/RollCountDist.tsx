@@ -1,7 +1,6 @@
 import { useContext, useMemo, useState } from "preact/hooks"
 import { DistributionView } from "./DistributionView";
-import { computeRollDistribution, RolLDistOut } from "../../../logic/subStatDistribution/rollDistribution";
-import { Checkbox } from "../input/Checkbox";
+import { computeRollDistribution, RollDistOut } from "../../../logic/subStatDistribution/rollDistribution";
 import { SUB_STAT_COUNT } from "../../data/consts";
 import { GameContext } from "../../contexts/GameContext";
 import { Game } from "../../data/game";
@@ -17,7 +16,7 @@ export const RollDist = () => {
 	const [ignoreCount, setIgnoreCount] = useState(0);
 	const [guaranteedCount, setGuaranteedCount] = useState(2);
 	const [guaranteedRolls, setGuaranteedRolls] = useState(0);
-	const [showAll, setShowAll] = useState(false);
+	const [showCount, setShowCount] = useState(1);
 
 	const ignoreMode = ignoreModeMap[game];
 	const [distribution, totalWeight, permCount] = useMemo(() => {
@@ -25,16 +24,30 @@ export const RollDist = () => {
 			? computeRollDistribution(SUB_STAT_COUNT, rolls, 0, 0, ignoreCount)
 			: computeRollDistribution(SUB_STAT_COUNT, rolls, guaranteedCount, guaranteedCount ? guaranteedRolls : 0, 0);
 
-		if (!showAll) {
-			let consolidatedDist = [] as unknown as RolLDistOut;
+		if (showCount < SUB_STAT_COUNT) {
+			let sparseConsolidatedDist = [] as unknown as RollDistOut;
+			for (const [statRolls, prob] of dist) {
+				const parts = statRolls.slice(0, showCount);
+				const key = parts.reduce((acc, val) => acc * (SUB_STAT_COUNT + 1) + val, 0);
+				sparseConsolidatedDist[key] = [parts, (sparseConsolidatedDist[key]?.[1] || 0) + prob];
+			}
+			
+			let consolidatedDist = sparseConsolidatedDist.filter(Boolean) as RollDistOut;
 			consolidatedDist.permCount = dist.permCount;
 
-			for (const [statRolls, prob] of dist) {
-				const i = statRolls[0];
-				consolidatedDist[i] = [[i], (consolidatedDist[i]?.[1] || 0) + prob];
-			}
+			consolidatedDist.sort((a, b) => {
+				for (let i = 0; i < a[0].length; i++) {
+					if (a[0][i] !== b[0][i]) {
+						return b[0][i] - a[0][i];
+					}
+				}
+				return 0;
+			});
 
-			consolidatedDist.reverse();
+			consolidatedDist.sort((a, b) => {
+				return b[0].reduce((sum, val) => sum + val, 0) - a[0].reduce((sum, val) => sum + val, 0);
+			});
+
 			dist = consolidatedDist;
 		}
 
@@ -45,7 +58,7 @@ export const RollDist = () => {
 			dist.reduce((sum, [, prob]) => sum + prob, 0),
 			dist.permCount
 		];
-	}, [rolls, ignoreMode, ignoreCount, guaranteedCount, guaranteedRolls, showAll]);
+	}, [rolls, ignoreMode, ignoreCount, guaranteedCount, guaranteedRolls, showCount]);
 
 	return (
 		<div>
@@ -66,7 +79,7 @@ export const RollDist = () => {
 						max={rolls}
 						value={ignoreCount}
 						onInput={e => setIgnoreCount(+e.currentTarget.value)}
-					/> leftmost substats
+					/> rightmost substats
 				</label> : <>
 					<label>
 						Guarantee the <input
@@ -87,7 +100,15 @@ export const RollDist = () => {
 						/> times
 					</label>
 				</>}
-				<Checkbox label="Show all stats" checked={showAll} onChange={setShowAll} />
+				<label>
+					Show <input
+						class="w-20"
+						type="number"
+						max={SUB_STAT_COUNT}
+						value={showCount}
+						onInput={e => setShowCount(+e.currentTarget.value)}
+					/> stats
+				</label>
 			</div>
 			<DistributionView entries={distribution} />
 			<div class="mt-2">
