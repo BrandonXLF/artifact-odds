@@ -30,36 +30,34 @@ export const Main = (props: { baseUrl?: string }) => {
 	ensureTitle(meta[game].title);
 
 	return (
-		<LocationProvider scope={/^(?!\/[^/]*\/documents).*$/}>
-			<main class="p-4 max-w-300 m-auto">
-				<hgroup class="mb-4">
-					<h1 class="text-2xl font-bold mb-2">{meta[game].title} | {meta[game].subtitle}</h1>
-					<p>{meta[game].desc}</p>
-				</hgroup>
-				<nav class="flex gap-4 mb-4">
-					<ToggleButtons value={game} options={Object.entries(meta).map(([game, { name }]) => [
-						game,
-						<div class="flex items-center" key={game}>
-							<img src={meta[game as Game].icon} class="w-5 h-5 rounded-xs mr-1" alt="" />
-							{name}
-						</div>,
-						`/${meta[game as Game].url}${rest}/`
-					])} />
-				</nav>
-				<GameContext.Provider value={contextValue}>
-					<Router>
-						<AssumptionsMain path="/assumptions/" />
-						<DistMain path="/dist/:distKey/" />
-						<FormMain key={game} path="/:modeKey/" default />
-					</Router>
-				</GameContext.Provider>
-				<footer class="mt-5">
-					<span>
-					Developed by Brandon Fowler (<a href="https://www.brandonfowler.me/genshin-tools/">other tools</a>)
-					</span>{" "} • {" "}
-					<a href="https://github.com/BrandonXLF/artifact-odds">Source code</a>
-				</footer>
-			</main>
-		</LocationProvider>
+		<main class="p-4 max-w-300 m-auto">
+			<hgroup class="mb-4">
+				<h1 class="text-2xl font-bold mb-2">{meta[game].title} | {meta[game].subtitle}</h1>
+				<p>{meta[game].desc}</p>
+			</hgroup>
+			<nav class="flex gap-4 mb-4">
+				<ToggleButtons value={game} options={Object.entries(meta).map(([game, { name }]) => [
+					game,
+					<div class="flex items-center" key={game}>
+						<img src={meta[game as Game].icon} class="w-5 h-5 rounded-xs mr-1" alt="" />
+						{name}
+					</div>,
+					`/${meta[game as Game].url}${rest}/`
+				])} />
+			</nav>
+			<GameContext.Provider value={contextValue}>
+				<Router>
+					<AssumptionsMain path="/assumptions/" />
+					<DistMain path="/dist/:distKey/" />
+					<FormMain key={game} path="/:modeKey/" default />
+				</Router>
+			</GameContext.Provider>
+			<footer class="mt-5">
+				<span>
+				Developed by Brandon Fowler (<a href="https://www.brandonfowler.me/genshin-tools/">other tools</a>)
+				</span>{" "} • {" "}
+				<a href="https://github.com/BrandonXLF/artifact-odds">Source code</a>
+			</footer>
+		</main>
 	);
 }

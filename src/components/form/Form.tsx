@@ -105,8 +105,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const currentValue = useMemo(
 		() => roundMaxPrecision(
 			currentStats
-				.map(stat => statParams[stat])
-				.filter(Boolean)
+				.map(stat => statParams[stat] ?? {})
 				.reduce((acc, { currentRV, weight }) => acc + (currentRV ?? 0) * (weight ?? 0), 0)
 		),
 		[currentStats, statParams]
@@ -116,7 +115,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const requiredByMins = useMemo(() => {
 		return validStats
 			.map(stat => [stat, statParams[stat]] as const)
-			.filter(([_, data]) => data.minRV !== undefined && data.minRV > 0)
+			.filter(([_, data]) => data?.minRV !== undefined && data.minRV > 0)
 			.map(([stat]) => stat);
 	}, [statParams, statParams]);
 
@@ -144,7 +143,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 
 	const sortedValidWeights = useMemo(
 		() => validStats
-			.map(stat => [stat, statParams[stat].weight ?? 0] as [string, number])
+			.map(stat => [stat, statParams[stat]?.weight ?? 0] as [string, number])
 			.sort((a, b) => (b[1] - a[1])),
 		[validStats, statParams]
 	);
