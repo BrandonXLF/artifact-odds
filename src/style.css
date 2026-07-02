@@ -27,9 +27,13 @@
 	#app option {
 		@apply not-checked:bg-[#333] checked:bg-primary-dark;
 	}
+}
 
-	#app a:not(.plain),
-	#app button.link {
-		@apply text-primary-light underline;
-	}
+#app a.plain {
+	@apply no-underline;
+}
+
+#app a:not(.plain),
+#app button.link {
+	@apply text-primary-light underline;
 }
