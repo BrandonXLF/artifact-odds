@@ -86,11 +86,11 @@ export function StatParamInput(props: Readonly<{
 							</th>
 						</tr>
 						<tr>
-							<th className="pb-0.5!">Name</th>
-							<th className="border-l border-neutral-400 pl-3 pb-0.5!">
+							<th className="pr-3 pb-0.5!">Name</th>
+							<th className="border-l border-neutral-400 px-3 pb-0.5!">
 								<abbr title="Relative worth of each stat.">Relative Weight</abbr>
 							</th>
-							<th className="pb-0.5!">
+							<th className="pr-3 pb-0.5!">
 								<abbr title="Only count up to this much of the stat.">Max Counted</abbr>
 							</th>
 							<th className="border-l border-neutral-400 pl-3 pb-0.5!">
