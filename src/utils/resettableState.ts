@@ -39,8 +39,6 @@ export const useStoredState = <T extends DefaultType>(name: string, defaultValue
 		return typeof defaultValue === "function" ? defaultValue() : defaultValue;
 	}, resetTrigger);
 
-	const initialStr = useRef(JSON.stringify(value)).current;
-
 	useEffect(() => {
 		setValue(load());
 	}, [name]);
@@ -48,7 +46,7 @@ export const useStoredState = <T extends DefaultType>(name: string, defaultValue
 	useEffect(() => {
 		const str = JSON.stringify(value);
 
-		if (typeof str === "string" || str === initialStr) {
+		if (typeof str === "string") {
 			localStorage.setItem(prefix + name, str);
 		} else {
 			localStorage.removeItem(prefix + name);
