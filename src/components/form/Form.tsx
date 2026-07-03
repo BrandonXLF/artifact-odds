@@ -301,7 +301,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			const statData = getBaseConfig().make();
 			const rollRestrictions = makeRollRestrictions();
 
-			let maxStats: [string, string][] = [];
+			let maxStatsAndAvg: [string, string, number][] = [];
 			let maxProb = -1;
 
 			for (const [stats] of getSubStatCombinations(statData, dynamicMode.selectedStatCount)) {
@@ -311,17 +311,24 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 					.make();
 
 				const [subStatProb, validCombos] = computeSubProb(statData, SUB_STAT_COUNT);
-				const rollProb = computeRollProb(statData, rollRestrictions, validCombos, logicGoal)[0];
+				const [rollProb, avg] = computeRollProb(statData, rollRestrictions, validCombos, logicGoal);
 				const prob = subStatProb * rollProb;
 
 				// Note: This is far larger than the minimum difference between actual probabilities
 				if (prob - maxProb > 4 * Number.EPSILON) {
-					maxStats = [stats as [string, string]];
+					maxStatsAndAvg = [[...stats, avg] as [string, string, number]];
 					maxProb = prob;
 				} else if (Math.abs(prob - maxProb) <= 4 * Number.EPSILON) {
-					maxStats.push(stats as [string, string]);
+					maxStatsAndAvg.push([...stats, avg] as [string, string, number]);
 				}
 			}
+
+			maxStatsAndAvg.sort((a, b) => b[2] - a[2]); // Sort by average RV descending
+
+			const maxAvgValue = maxStatsAndAvg[0]?.[2];
+			const maxStats = maxStatsAndAvg
+				.filter(([_, __, avg]) => Math.abs(avg - maxAvgValue) <= 4 * Number.EPSILON)
+				.map(([s1, s2]) => [s1, s2] as [string, string]);
 
 			if (maxStats.length) {
 				setSelectedStats(maxStats[0]);
@@ -354,7 +361,11 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			}
 
 			maxStatsAndAvg.sort((a, b) => b[2] - a[2]); // Sort by average RV descending
-			const maxStats = maxStatsAndAvg.map(([s1, s2]) => [s1, s2] as [string, string]);
+
+			const maxAvgValue = maxStatsAndAvg[0]?.[2];
+			const maxStats = maxStatsAndAvg
+				.filter(([_, __, avg]) => Math.abs(avg - maxAvgValue) <= 4 * Number.EPSILON)
+				.map(([s]) => [s] as [string]);
 
 			if (maxStats.length) {
 				setSelectedStats(maxStats[0]);
@@ -385,7 +396,11 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			}
 
 			maxStatAndAvg.sort((a, b) => b[1] - a[1]); // Sort by average RV descending
-			const maxStats = maxStatAndAvg.map(([s]) => [s] as [string]);
+
+			const maxAvgValue = maxStatAndAvg[0]?.[1];
+			const maxStats = maxStatAndAvg
+				.filter(([_, avg]) => Math.abs(avg - maxAvgValue) <= 4 * Number.EPSILON)
+				.map(([s]) => [s] as [string]);
 
 			if (maxStats.length) {
 				setSelectedStats(maxStats[0]);
@@ -646,7 +661,12 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 									onErrorChange={(hasError) => setSelectedStatsInvalid(hasError)}
 								/>
 								{mode.selectedStatOptimizer && (
-									<Button onClick={() => optimizers[mode.selectedStatOptimizer!]()}>Optimize</Button>
+									<Button
+										title="Optimize by probability and then by expected RV"
+										onClick={() => optimizers[mode.selectedStatOptimizer!]()}
+									>
+										Optimize
+									</Button>
 								)}
 								{mode.selectedStatOptimizer === "bestRolls" && <DocumentLink name="selecting-useless-stats.pdf">Selecting worse substats may be optimal</DocumentLink>}
 							</div>
@@ -666,7 +686,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 					</div>}
 				</LabelGrid>
 				{dynamicMode.selectedStatCount > 0 && <div class="mt-2">
-					<strong>Tip</strong>: Run optimize after completing the sections below to find the best subsets to select.
+					<strong>Tip</strong>: Run optimize after completing the Roll Requirements below to find the best subsets to select.
 				</div>}
 			</VisualSection>}
 			{!mode.fixedArtifact && <section>
