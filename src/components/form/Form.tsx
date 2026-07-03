@@ -38,6 +38,9 @@ export type FormHandle = {
 	reset: () => void;
 }
 
+// Note: This is far larger than the minimum difference between actual probabilities
+const probDelta = 1 / 10_000_000_000_000;
+
 export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const resetTrigger = useRef(new ResetTrigger()).current;
 	const { gameData } = useContext(GameContext);
@@ -296,116 +299,98 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		);
 	}
 
+	const optimize = <T,>(
+		statCombos: T[],
+		calculate: (statCombo: T) => [number, number],
+		normalize: (statCombo: T) => string[]
+	) => {
+		let maxStatsAndAvg: [T, number][] = [];
+		let maxProb = -1;
+
+		for (const statCombo of statCombos) {
+			const [prob, avg] = calculate(statCombo);
+
+			// Note: This is far larger than the minimum difference between actual probabilities
+			if (prob - maxProb > probDelta) {
+				maxStatsAndAvg = [[statCombo, avg] as [T, number]];
+				maxProb = prob;
+			} else if (Math.abs(prob - maxProb) <= probDelta) {
+				maxStatsAndAvg.push([statCombo, avg] as [T, number]);
+			}
+		}
+
+		maxStatsAndAvg.sort((a, b) => b[1] - a[1]); // Sort by average RV descending
+
+		const maxAvgValue = maxStatsAndAvg[0]?.[1];
+		const maxStats = maxStatsAndAvg
+			.filter(([_, avg]) => Math.abs(avg - maxAvgValue) <= probDelta)
+			.map(([statCombo]) => normalize(statCombo));
+
+		if (maxStats.length) {
+			setSelectedStats(maxStats[0]);
+			setAllOptimalPairs(maxStats);
+		}
+	};
+
 	const optimizers: Record<StatOptimizers, () => void> = {
+		// New artifact optimizations
 		bestStats: () => {
 			const statData = getBaseConfig().make();
 			const rollRestrictions = makeRollRestrictions();
 
-			let maxStatsAndAvg: [string, string, number][] = [];
-			let maxProb = -1;
+			optimize(
+				getSubStatCombinations(statData, dynamicMode.selectedStatCount),
+				([stats]) => {
+					const statData = getBaseConfig()
+						.guarantee(stats[0])
+						.guarantee(stats[1])
+						.make();
 
-			for (const [stats] of getSubStatCombinations(statData, dynamicMode.selectedStatCount)) {
-				const statData = getBaseConfig()
-					.guarantee(stats[0])
-					.guarantee(stats[1])
-					.make();
+					const [subStatProb, validCombos] = computeSubProb(statData, SUB_STAT_COUNT);
+					const [rollProb, avg] = computeRollProb(statData, rollRestrictions, validCombos, logicGoal);
 
-				const [subStatProb, validCombos] = computeSubProb(statData, SUB_STAT_COUNT);
-				const [rollProb, avg] = computeRollProb(statData, rollRestrictions, validCombos, logicGoal);
-				const prob = subStatProb * rollProb;
-
-				// Note: This is far larger than the minimum difference between actual probabilities
-				if (prob - maxProb > 4 * Number.EPSILON) {
-					maxStatsAndAvg = [[...stats, avg] as [string, string, number]];
-					maxProb = prob;
-				} else if (Math.abs(prob - maxProb) <= 4 * Number.EPSILON) {
-					maxStatsAndAvg.push([...stats, avg] as [string, string, number]);
-				}
-			}
-
-			maxStatsAndAvg.sort((a, b) => b[2] - a[2]); // Sort by average RV descending
-
-			const maxAvgValue = maxStatsAndAvg[0]?.[2];
-			const maxStats = maxStatsAndAvg
-				.filter(([_, __, avg]) => Math.abs(avg - maxAvgValue) <= 4 * Number.EPSILON)
-				.map(([s1, s2]) => [s1, s2] as [string, string]);
-
-			if (maxStats.length) {
-				setSelectedStats(maxStats[0]);
-				setAllOptimalPairs(maxStats);
-			}
+					return [subStatProb * rollProb, avg];
+				},
+				([stats]) => stats
+			);
 		},
+		// Fixed artifact optimizations
 		bestRolls: () => {
 			const baseStatData = getBaseConfig().onlyInclude(currentStats).make();
+			const statData = getBaseConfig().make();
 
-			let maxStatsAndAvg: [string, string, number][] = [];
-			let maxProb = -1;
+			optimize(
+				getSubStatCombinations(baseStatData, 2),
+				([stats]) => {
+					const [rollProb, avg] = computeRollProb(
+						statData,
+						makeRollRestrictions(new Set(stats), dynamicMode.guaranteedRollsCount),
+						[[[...currentStats], 1]],
+						logicGoal
+					);
 
-			for (const [stats] of getSubStatCombinations(baseStatData, 2)) {
-				const statData = getBaseConfig().make();
-
-				const [rollProb, avg] = computeRollProb(
-					statData,
-					makeRollRestrictions(new Set(stats), dynamicMode.guaranteedRollsCount),
-					[[[...currentStats], 1]],
-					logicGoal
-				);
-
-				// Note: This is far larger than the minimum difference between actual probabilities
-				if (rollProb - maxProb > 4 * Number.EPSILON) {
-					maxStatsAndAvg = [[...stats, avg] as [string, string, number]];
-					maxProb = rollProb;
-				} else if (Math.abs(rollProb - maxProb) <= 4 * Number.EPSILON) {
-					maxStatsAndAvg.push([...stats, avg] as [string, string, number]);
-				}
-			}
-
-			maxStatsAndAvg.sort((a, b) => b[2] - a[2]); // Sort by average RV descending
-
-			const maxAvgValue = maxStatsAndAvg[0]?.[2];
-			const maxStats = maxStatsAndAvg
-				.filter(([_, __, avg]) => Math.abs(avg - maxAvgValue) <= 4 * Number.EPSILON)
-				.map(([s]) => [s] as [string]);
-
-			if (maxStats.length) {
-				setSelectedStats(maxStats[0]);
-				setAllOptimalPairs(maxStats);
-			}
+					return [rollProb, avg];
+				},
+				([stats]) => stats
+			);
 		},
 		bestToIgnore: () => {
 			const statData = getBaseConfig().make();
 
-			let maxStatAndAvg: [string, number][] = [];
-			let maxProb = -1;
+			optimize(
+				currentStats,
+				stat => {
+					const [rollProb, avg] = computeRollProb(
+						statData,
+						makeRollRestrictions(undefined, undefined, new Set([stat])),
+						[[[...currentStats], 1]],
+						logicGoal
+					);
 
-			for (const stat of currentStats) {
-				const [rollProb, avg] = computeRollProb(
-					statData,
-					makeRollRestrictions(undefined, undefined, new Set([stat])),
-					[[[...currentStats], 1]],
-					logicGoal
-				);
-
-				// Note: This is far larger than the minimum difference between actual probabilities
-				if (rollProb - maxProb > 4 * Number.EPSILON) {
-					maxStatAndAvg = [[stat, avg] as [string, number]];
-					maxProb = rollProb;
-				} else if (Math.abs(rollProb - maxProb) <= 4 * Number.EPSILON) {
-					maxStatAndAvg.push([stat, avg] as [string, number]);
-				}
-			}
-
-			maxStatAndAvg.sort((a, b) => b[1] - a[1]); // Sort by average RV descending
-
-			const maxAvgValue = maxStatAndAvg[0]?.[1];
-			const maxStats = maxStatAndAvg
-				.filter(([_, avg]) => Math.abs(avg - maxAvgValue) <= 4 * Number.EPSILON)
-				.map(([s]) => [s] as [string]);
-
-			if (maxStats.length) {
-				setSelectedStats(maxStats[0]);
-				setAllOptimalPairs(maxStats);
-			}
+					return [rollProb, avg];
+				},
+				stat => [stat]
+			);
 		}
 	};
 
@@ -686,7 +671,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 					</div>}
 				</LabelGrid>
 				{dynamicMode.selectedStatCount > 0 && <div class="mt-2">
-					<strong>Tip</strong>: Run optimize after completing the Roll Requirements below to find the best subsets to select.
+					<strong>Tip</strong>: Run optimize after completing the sections below to find the best subsets to select.
 				</div>}
 			</VisualSection>}
 			{!mode.fixedArtifact && <section>
