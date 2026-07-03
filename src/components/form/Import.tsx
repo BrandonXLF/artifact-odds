@@ -198,13 +198,15 @@ export const Import = (props: { import: (art: ImportedArtifact) => void, close: 
 	}
 
 	return <VisualSection>
-		<div class="flex items-center gap-2">
-			<label class="contents">
-				<span>UID:</span>
-				<input class="flex-1 max-w-40" type="text" value={uid} onInput={e => setUid(e.currentTarget.value)} />
-			</label>
-			<Button onClick={loadProfile}>Load Profile</Button>
-			{profileName && <span>{profileName}</span>}
+		<div class="flex gap-x-2 gap-y-4 flex-wrap-reverse">
+			<div class="flex items-center gap-2 flex-wrap">
+				<label class="contents">
+					<span>UID:</span>
+					<input class="flex-1 max-w-40" type="text" value={uid} onInput={e => setUid(e.currentTarget.value)} />
+				</label>
+				<Button onClick={loadProfile}>Load Profile</Button>
+				{profileName && <span>{profileName}</span>}
+			</div>
 			<div class="flex-1 text-right">
 				<Button onClick={props.close}>Close</Button>
 			</div>
@@ -221,7 +223,7 @@ export const Import = (props: { import: (art: ImportedArtifact) => void, close: 
 				/>])}
 				value={characterIndex}
 				onChange={setCharacterIndex}
-				wrap
+				noShrink
 			/>
 		</div>}
 		{loaded[characterIndex] && <div class="mt-4">

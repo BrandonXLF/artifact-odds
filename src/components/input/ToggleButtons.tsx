@@ -5,15 +5,15 @@ export const ToggleButtons = <T extends string | number | boolean>(props: Readon
 	options: (T | [T, ComponentChild] | [T, ComponentChild, string])[];
 	value: T;
 	onChange?: (value: T) => void;
-	wrap?: boolean;
+	noShrink?: boolean;
 }>) => {
 	return (
-		<div class={`inline-flex gap-2 ${props.wrap ? 'flex-wrap' : ''}`}>
+		<div class={`inline-flex gap-2 flex-wrap`}>
 			{props.options.map(option => {
 				const value = Array.isArray(option) ? option[0] : option;
 				const content = Array.isArray(option) ? option[1] : option;
 				const link = Array.isArray(option) ? option[2] : undefined;
-				const className = `not-disabled:hover:bg-primary ${props.wrap ? 'shrink-0' : ''}`;
+				const className = `not-disabled:hover:bg-primary grow shrink-0 ${props.noShrink ? '' : 'basis-[min-content]'} max-w-max`;
 
 				return <Button key={value} onClick={() => props.onChange?.(value)} primary={props.value === value} link={link} class={className}>
 					{content}
