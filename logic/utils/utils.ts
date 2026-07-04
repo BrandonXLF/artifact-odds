@@ -1,17 +1,17 @@
-export const memoize = <T extends (...args: any[]) => any>(fn: T): T => {
-	const cache = new Map<string, any>();
+export const memoize = <T extends unknown[], U>(fn: (...args: T) => U): typeof fn => {
+	const cache = new Map<string, U>();
 
-	return function(...args: any[]): any {
+	return function(...args: T): U {
 		const key = JSON.stringify(args);
 
 		if (cache.has(key)) {
-			return cache.get(key);
+			return cache.get(key) as U;
 		}
 
 		const result = fn(...args);
 		cache.set(key, result);
 		return result;
-	} as T;
+	};
 };
 
 export const choose = memoize((n: number, k: number): number => {
