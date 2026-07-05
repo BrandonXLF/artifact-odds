@@ -183,8 +183,11 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		if (totalProb === undefined) return undefined;
 		return Math.round(1 / totalProb);
 	}, [totalProb, outputMode]);
-	const costPerArtifact = useMemo(() => getModeProb(outputMode.perArtifact ?? 1), [outputMode]);
-	const expectedCost = expectedTimes === undefined ? undefined : Math.round(expectedTimes * costPerArtifact);
+	const costPerArtifact = useMemo(
+		() => getModeProb(outputMode.perArtifact ?? 1),
+		[outputMode, artifactType, dynamicMode.selectedStatCount]
+	);
+	const expectedCost = expectedTimes === undefined ? undefined : Math.round(expectedTimes * costPerArtifact * 1);
 
 	const [maxTheoretical, maxAttainable] = useMemo(() => {
 		if (sortedValidWeights.length === 0 || sortedValidWeights[0]?.[1] === 0) {
