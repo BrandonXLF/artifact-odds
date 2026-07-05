@@ -57,6 +57,8 @@ export const Main = (props: { baseUrl?: string }) => {
 				Developed by Brandon Fowler (<a href="https://www.brandonfowler.me/genshin-tools/">other tools</a>)
 				</span>{" "} • {" "}
 				<a href="https://github.com/BrandonXLF/artifact-odds">Source code</a>
+				{" "} • {" "}
+				<a href="https://github.com/BrandonXLF/artifact-odds/issues/new">Report a bug</a>
 			</footer>
 		</main>
 	);
