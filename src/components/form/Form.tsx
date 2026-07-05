@@ -122,8 +122,17 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			.map(([stat]) => stat);
 	}, [statParams, statParams]);
 
+	const domainPicky = !mode.fixedArtifact && mode.twoPossibleSets && !acceptEither;
+	const showTypeProb = !mode.fixedArtifact && mode.typeUnknown;
+
+	if (domainPicky) {
+		// If domain set probability matters, then type probability must as well.
+		const _testDomainNotIgnored: (typeof mode.typeUnknown extends true ? true : false) = true;
+	}
+
 	const showMainProb = !mode.fixedArtifact && mode.mainStatUnknown;
 	const showSubProb = !mode.fixedArtifact;
+
 	const nonDefaultSubProb = useMemo(
 		() => showSubProb && (requireCount > 0 || requiredByMins.length > 0 || requireAllLines),
 		[showSubProb, requireCount, requiredByMins, requireAllLines]
@@ -137,7 +146,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		[mode.fixedArtifact, calcGoalRollProb, validStats, statParams]
 	);
 
-	const totalProb = subProb !== undefined || rollProb !== undefined || mainProb !== undefined || typeProb !== undefined
+	const totalProb = typeProb !== undefined || mainProb !== undefined || subProb !== undefined || rollProb !== undefined
 		? (typeProb ?? 1) * (mainProb ?? 1) * (subProb ?? 1) * (rollProb ?? 1)
 		: undefined;
 
@@ -420,8 +429,8 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			}
 		}
 
-		const newTypeProb = showMainProb
-			? computeTypeProb(gameData.mainStats, artifactType, mode.fromDomain && !acceptEither)
+		const newTypeProb = showTypeProb
+			? computeTypeProb(gameData.mainStats, artifactType, domainPicky)
 			: undefined;
 		setTypeProb(newTypeProb);
 
@@ -555,7 +564,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 									))}
 								</select>
 							</label>
-							{!mode.fixedArtifact && mode.fromDomain &&
+							{!mode.fixedArtifact && mode.twoPossibleSets &&
 								<Checkbox label="Accept either set from the domain" checked={acceptEither} onChange={setAcceptEither} />}
 							{mode.fixedArtifact && <Checkbox label="Started with 4 lines" checked={isFiveRoller} onChange={setIsFiveRoller} />}
 							<div class="flex-1 text-right">
@@ -784,8 +793,8 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 				</VisualSection>
 				<VisualSection>
 					<LabelGrid tight>
-						{showMainProb && <div>
-							<div>Set & type probability:</div>
+						{showTypeProb && <div>
+							<div>{domainPicky ? "Set & type" : "Type"} probability:</div>
 							<div><Percentage highlight value={typeProb} /></div>
 						</div>}
 						{showMainProb && <div>

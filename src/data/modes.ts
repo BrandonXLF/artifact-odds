@@ -33,12 +33,25 @@ type BaseMode = {
 	output: Output | Output[];
 }
 
-type UnfixedMode = BaseMode & {
-	fixedArtifact: false;
+type UnfixedMainFeatures = {
+	twoPossibleSets: true;
+	typeUnknown: true;
+	mainStatUnknown: true;
+} | {
+	twoPossibleSets: false;
+	typeUnknown: true;
+	mainStatUnknown: true;
+} | {
+	twoPossibleSets: false;
+	typeUnknown: false;
 	mainStatUnknown: boolean;
+};
+
+type UnfixedMode = BaseMode & UnfixedMainFeatures & {
+	fixedArtifact: false;
+	twoPossibleSets: boolean;
 	allLinesProb: number;
-	fromDomain: boolean;
-}
+};
 
 type FixedModeGuarantee = BaseMode & {
 	fixedArtifact: true;
@@ -47,7 +60,7 @@ type FixedModeGuarantee = BaseMode & {
 	 * @note Must be in increasing order.
 	 */
 	guaranteedCount: number | number[];
-}
+};
 
 type FixedModeIgnore = BaseMode & {
 	fixedArtifact: true;
@@ -61,9 +74,10 @@ export const modes: Record<Game, Record<string, Mode>> = {
 		domain: {
 			name: "Artifact Domain",
 			fixedArtifact: false,
+			twoPossibleSets: true,
+			typeUnknown: true,
 			mainStatUnknown: true,
 			allLinesProb: data.genshin.allLinesDomainProb,
-			fromDomain: true,
 			selectedStatCount: 0,
 			output: [
 				{
@@ -89,9 +103,10 @@ export const modes: Record<Game, Record<string, Mode>> = {
 		strongbox: {
 			name: "Artifact Strongbox",
 			fixedArtifact: false,
+			twoPossibleSets: false,
+			typeUnknown: true,
 			mainStatUnknown: true,
 			allLinesProb: data.genshin.allLinesCraftedProb,
-			fromDomain: false,
 			selectedStatCount: 0,
 			output: {
 				unit: {
@@ -105,9 +120,10 @@ export const modes: Record<Game, Record<string, Mode>> = {
 		definition: {
 			name: "Artifact Definition",
 			fixedArtifact: false,
+			twoPossibleSets: false,
+			typeUnknown: false,
 			mainStatUnknown: false,
 			allLinesProb: data.genshin.allLinesCraftedProb,
-			fromDomain: false,
 			selectedStatCount: 2,
 			selectedStatOptimizer: "bestStats",
 			output: {
@@ -168,9 +184,10 @@ export const modes: Record<Game, Record<string, Mode>> = {
 		cavern: {
 			name: "Cavern / Extraction",
 			fixedArtifact: false,
+			twoPossibleSets: true,
+			typeUnknown: true,
 			mainStatUnknown: true,
 			allLinesProb: data.hsr.allLinesDomainProb,
-			fromDomain: true,
 			selectedStatCount: 0,
 			output: [
 				{
@@ -196,9 +213,10 @@ export const modes: Record<Game, Record<string, Mode>> = {
 		synthesis: {
 			name: "Relic Synthesis",
 			fixedArtifact: false,
+			twoPossibleSets: false,
+			typeUnknown: false,
 			mainStatUnknown: true,
 			allLinesProb: data.hsr.allLinesCraftedProb,
-			fromDomain: false,
 			selectedStatCount: 0,
 			output: {
 				unit: {
@@ -213,9 +231,10 @@ export const modes: Record<Game, Record<string, Mode>> = {
 		"customized-synthesis": {
 			name: "Customized Synthesis",
 			fixedArtifact: false,
+			twoPossibleSets: false,
+			typeUnknown: false,
 			mainStatUnknown: false,
 			allLinesProb: data.hsr.allLinesCraftedProb,
-			fromDomain: false,
 			selectedStatCount: [0, 1, 2],
 			selectedStatOptimizer: "bestStats",
 			output: {
