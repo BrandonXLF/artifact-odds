@@ -38,6 +38,13 @@ export type FormHandle = {
 	reset: () => void;
 }
 
+interface BarStats {
+	avgRV: number;
+	avgAboveRV: number;
+	maxRV: number;
+	goalRV: number;
+}
+
 // Note: This is far larger than the minimum difference between actual probabilities
 const probDelta = 1 / 10_000_000_000_000;
 
@@ -90,9 +97,8 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const [subProb, setSubProb] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [rollProb, setRollProb] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [overwhelminglyLikely, setOverwhelminglyLikely] = useResettableState<boolean>(false, resetTrigger);
-	const [avgRV, setAvgRV] = useResettableState<number | undefined>(undefined, resetTrigger);
-	const [maxRV, setMaxRV] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [bars, setBars] = useResettableState<[number, boolean][]>([], resetTrigger);
+	const [barStats, setBarStats] = useResettableState<BarStats | undefined>(undefined, resetTrigger);
 	const [simulationWorker, setSimulationWorker] = useResettableState<Worker | undefined>(undefined, resetTrigger);
 	const [simulationVer, setSimulationVer] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [total, setTotal] = useResettableState<number | undefined>(undefined, resetTrigger);
@@ -211,8 +217,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		setSubProb(undefined);
 		setRollProb(undefined);
 		setOverwhelminglyLikely(false);
-		setAvgRV(undefined);
-		setMaxRV(undefined);
+		setBarStats(undefined);
 		setBars([]);
 		setSimulationWorker(undefined);
 		setSimulationVer(undefined);
@@ -359,9 +364,9 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 						.make();
 
 					const [subStatProb, validCombos] = computeSubProb(statData, SUB_STAT_COUNT);
-					const [rollProb, avg] = computeRollProb(statData, rollRestrictions, validCombos, logicGoal);
+					const statistics = computeRollProb(statData, rollRestrictions, validCombos, logicGoal);
 
-					return [subStatProb * rollProb, avg];
+					return [subStatProb * statistics.probAbove, statistics.avgAbove];
 				},
 				([stats]) => stats
 			);
@@ -374,14 +379,14 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			optimize(
 				getSubStatCombinations(baseStatData, 2),
 				([stats]) => {
-					const [rollProb, avg] = computeRollProb(
+					const statistics = computeRollProb(
 						statData,
 						makeRollRestrictions(new Set(stats), dynamicMode.guaranteedRollsCount),
 						[[[...currentStats], 1]],
 						logicGoal
 					);
 
-					return [rollProb, avg];
+					return [statistics.probAbove, statistics.avgAbove];
 				},
 				([stats]) => stats
 			);
@@ -392,14 +397,14 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			optimize(
 				currentStats,
 				stat => {
-					const [rollProb, avg] = computeRollProb(
+					const statistics = computeRollProb(
 						statData,
 						makeRollRestrictions(undefined, undefined, new Set([stat])),
 						[[[...currentStats], 1]],
 						logicGoal
 					);
 
-					return [rollProb, avg];
+					return [statistics.probAbove, statistics.avgAbove];
 				},
 				stat => [stat]
 			);
@@ -461,15 +466,19 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 				{ statData, rollRestrictions, validCombos, logicGoal }
 			);
 
-			const [newRollProb, avg, buckets, totPerCombo] = computeRollProb(statData, rollRestrictions, validCombos, logicGoal);
-			setRollProb(newRollProb);
-			setAvgRV(avg);
-			setMaxRV(maxAttainable);
-			total *= totPerCombo;
+			const statistics = computeRollProb(statData, rollRestrictions, validCombos, logicGoal);
+			setRollProb(statistics.probAbove);
+			setBarStats({
+				avgRV: statistics.avg / 10000,
+				avgAboveRV: statistics.avgAbove / 10000,
+				maxRV: maxAttainable ?? 0,
+				goalRV: logicBaseGoal / 10000
+			});
+			total *= statistics.permutationCount;
 
-			const maxBar = Math.max(...buckets);
-			const relativeBars = buckets.map(b => [b / maxBar, false] as [number, boolean]);
-			const goalBucket = Math.min(buckets.length - 1, toBucket(logicBaseGoal, statData.maxWeight));
+			const maxBar = Math.max(...statistics.buckets);
+			const relativeBars = statistics.buckets.map(b => [b / maxBar, false] as [number, boolean]);
+			const goalBucket = Math.min(statistics.buckets.length - 1, toBucket(logicBaseGoal, statData.maxWeight));
 			relativeBars[goalBucket] = relativeBars[goalBucket] ?? [0, false];
 			relativeBars[goalBucket][1] = true;
 
@@ -480,9 +489,9 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			setBars(relativeBars);
 		} else {
 			setRollProb(undefined);
-			setAvgRV(undefined);
-			setMaxRV(undefined);
+			setBarStats(undefined);
 			setBars([]);
+			setBarStats(undefined);
 		}
 
 		setTotal(total);
@@ -872,8 +881,16 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 					</div>}
 				</VisualSection>
 				{bars.length > 0 && <VisualSection>
-					{avgRV !== undefined && <div>Average weighted RV of rolled artifacts: <Percentage highlight value={avgRV / 10000} /></div>}
-					<RVGraph bars={bars} max={maxRV} />
+					{barStats !== undefined && <div>Average rolled weighted RV:{' '}
+						<Percentage highlight value={barStats.avgRV} />{' '}
+						<Percentage isChange value={barStats.avgRV - barStats.goalRV} />
+						{barStats.avgAboveRV !== undefined && <>
+							<span class="opacity-40"> | </span>
+							Above goal only: <Percentage highlight value={barStats.avgAboveRV} />{' '}
+							<Percentage isChange value={barStats.avgAboveRV - barStats.goalRV} />
+						</>}
+					</div>}
+					<RVGraph bars={bars} max={barStats?.maxRV} />
 				</VisualSection>}
 				<LogicSection />
 			</section>
