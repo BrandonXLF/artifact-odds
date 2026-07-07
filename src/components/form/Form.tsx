@@ -472,6 +472,11 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			const goalBucket = Math.min(buckets.length - 1, toBucket(logicBaseGoal, statData.maxWeight));
 			relativeBars[goalBucket] = relativeBars[goalBucket] ?? [0, false];
 			relativeBars[goalBucket][1] = true;
+
+			const maxBucketIndex = toBucket((maxAttainable ?? 0) * 100, statData.maxWeight);
+			for (let i = 0; i <= maxBucketIndex; i++) {
+				relativeBars[i] = relativeBars[i] ?? [0, false];
+			}
 			setBars(relativeBars);
 		} else {
 			setRollProb(undefined);
