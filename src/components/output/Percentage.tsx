@@ -4,7 +4,7 @@ export const Percentage = (props: {
 	value?: number,
 	showQuality?: number,
 	highlight?: boolean,
-	isChange?: boolean
+	isPPChange?: boolean
 }) => {
 	const valid = props.value !== undefined && !Number.isNaN(props.value);
 
@@ -20,12 +20,12 @@ export const Percentage = (props: {
 			className += " px-1 py-px bg-[#1a1a1a]";
 		}
 
-		if (props.isChange) {
+		if (props.isPPChange) {
 			className = props.value! < 0 ? "text-red-300" : "text-green-300";
 		}
 	}
 
 	return <span class={className} style={style}>
-		{props.isChange && props.value! >= 0 ? '+' : ''}{valid ? (props.value! * 100).toPrecision(Math.max(4, Math.floor(Math.log10(Math.abs(props.value!) * 100)) + 3)) : "??"}%
+		{props.isPPChange && props.value! >= 0 ? '+' : ''}{valid ? (props.value! * 100).toPrecision(Math.max(4, Math.floor(Math.log10(Math.abs(props.value!) * 100)) + 3)) : "??"}{props.isPPChange ? " %pts" : "%"}
 	</span>;
 }

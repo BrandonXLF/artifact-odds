@@ -883,11 +883,11 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 				{bars.length > 0 && <VisualSection>
 					{barStats !== undefined && <div>Average rolled weighted RV:{' '}
 						<Percentage highlight value={barStats.avgRV} />{' '}
-						<Percentage isChange value={barStats.avgRV - barStats.goalRV} />
+						<Percentage isPPChange value={barStats.avgRV - barStats.goalRV} />
 						{barStats.avgAboveRV !== undefined && <>
 							<span class="opacity-40"> | </span>
 							Above goal only: <Percentage highlight value={barStats.avgAboveRV} />{' '}
-							<Percentage isChange value={barStats.avgAboveRV - barStats.goalRV} />
+							<Percentage isPPChange value={barStats.avgAboveRV - barStats.goalRV} />
 						</>}
 					</div>}
 					<RVGraph bars={bars} max={barStats?.maxRV} />
