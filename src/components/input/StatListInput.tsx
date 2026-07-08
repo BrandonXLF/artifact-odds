@@ -58,7 +58,7 @@ export function StatListInput(props: Readonly<{
 								value={value ?? ""}
 								disabled={props.disabled || selectableStats.length === 0}
 								onChange={(e) => change(index, (e.target as HTMLSelectElement).value)}
-								class={`min-w-20 ${error ? "border-red-500" : ""}`}
+								class={`w-30 ${error ? "border-red-500" : ""}`}
 							>
 								{props.clearable && <option value="">--</option>}
 								{options.map(stat => (
@@ -86,7 +86,11 @@ export function StatListInput(props: Readonly<{
 							</span>}
 							<div class="inline-flex items-center gap-0.5">
 								<span>(</span>
-								<span class="mr-1">Initial:</span>
+								<span class="mr-1">
+									<abbr title="Initial rolls remain the same. If not provided, assumed to be unknown, which may give a significantly inaccurate probability. Imported artifacts will populate these fields.">
+										Initial
+									</abbr>:
+								</span>
 								<StatValueInput
 									disabled={props.disabled || !value}
 									useRV={props.useRV ?? false}
