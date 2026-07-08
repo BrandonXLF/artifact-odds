@@ -3,19 +3,22 @@ import { StatData } from "../data/StatData.js";
 import { toBucket } from "../utils/barChart.js";
 import { Statistics } from "./Statistics.js";
 
+const roundKey = (sum: number) => Math.round(sum * 1_000_000_000) / 1_000_000_000;
+
 /**
- * Compute distribution of roll value sums for a given number of rolls (0 to 5)
+ * Compute distribution of roll value sums for a given number of rolls
  */
-export const computeRollValueDistribution = memoize((count: number, rollValues: readonly number[]): Map<number, number> => {
-	let statStates = new Map<number, number>([[0, 1]]);
+export const computeRollValueDistribution = memoize((count: number, rollValues: readonly number[]) => {
+	let statStates = new Map<number, [number, number]>([[0, [0, 1]]]);
 
 	for (let r = 0; r < count; r++) {
-		const next = new Map<number, number>();
+		const next = new Map<number, [number, number]>();
 
-		for (const [statSum, ways] of statStates) {
+		for (const [statSum, ways] of statStates.values()) {
 			for (const rollValue of rollValues) {
-				const ns = statSum + rollValue;
-				next.set(ns, (next.get(ns) || 0) + ways);
+				const newSum = statSum + rollValue;
+				const key = roundKey(newSum);
+				next.set(key, [newSum, (next.get(key)?.[1] || 0) + ways]);
 			}
 		}
 
@@ -29,7 +32,7 @@ export const computeRollValueDistribution = memoize((count: number, rollValues: 
  * Compute the number of ways to achieve the stat sum goal with the given rolls, accounting for roll values
  */
 export const computeWaysAboveGoal = (statData: StatData, subStats: string[], rolls: number[], goal: number): Statistics => {
-	let states = new Map<number, number>([[0, 1]]);
+	let states = new Map<number, [number, number]>([[0, [0, 1]]]);
 
 	// Iteratively move through all roll value combinations stat by stat
 	for (let statIndex = 0; statIndex < rolls.length; statIndex++) {
@@ -39,10 +42,10 @@ export const computeWaysAboveGoal = (statData: StatData, subStats: string[], rol
 
 		let statRollSums = computeRollValueDistribution(count + (initial ? 0 : 1), statData.getRollValues(stat)); // +1 - Account for initial roll
 
-		const next = new Map<number, number>();
+		const next = new Map<number, [number, number]>();
 
-		for (const [sum, ways] of states) {
-			for (const [statSum, statWays] of statRollSums) {
+		for (const [sum, ways] of states.values()) {
+			for (const [statSum, statWays] of statRollSums.values()) {
 				// Apply each possible stat roll sum to each current path
 				let newSum = statSum + initial;
 
@@ -50,10 +53,11 @@ export const computeWaysAboveGoal = (statData: StatData, subStats: string[], rol
 					const capped = Math.min(newSum, statData.getLimit(stat));
 					newSum = sum + capped * statData.getUsefulness(stat);
 				} else {
-					newSum = -Infinity; // Invalid
+					newSum = -Infinity; // Invalid1
 				}
 
-				next.set(newSum, (next.get(newSum) || 0) + ways * statWays);
+				const key = roundKey(newSum);
+				next.set(key, [newSum, (next.get(key)?.[1] || 0) + ways * statWays]);
 			}
 		}
 
@@ -66,7 +70,7 @@ export const computeWaysAboveGoal = (statData: StatData, subStats: string[], rol
 	let totalWays = 0;
 	const buckets: number[] = [];
 
-	for (const [sum, ways] of states) {
+	for (const [sum, ways] of states.values()) {
 		if (goal === -Infinity || sum > goal) {
 			num += ways;
 			aboveSum += Math.max(0, sum) * ways;

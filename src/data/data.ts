@@ -120,7 +120,7 @@ export const data: Record<Game, GameData> = {
 		rollValues: [80, 90, 100] as const,
 		rollValueOverrides: {
 			SPD: {
-				rollValues: [76.9230769231, 88.4615384615, 100] as const,
+				rollValues: [(100 / 2.6) * 2, (100 / 2.6) * 2.3, 100] as const,
 				fixedRounded: 1
 			}
 		},
