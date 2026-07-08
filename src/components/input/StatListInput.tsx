@@ -52,7 +52,7 @@ export function StatListInput(props: Readonly<{
 				anyError = anyError || error;
 
 				return (
-					<div class="inline-flex items-center gap-2" key={index}>
+					<div class="inline-flex items-center gap-2 flex-wrap" key={index}>
 						<div class="inline-flex items-center gap-0.5">
 							<select
 								value={value ?? ""}
