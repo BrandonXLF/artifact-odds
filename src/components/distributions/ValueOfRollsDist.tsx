@@ -3,35 +3,62 @@ import { computeRollValueDistribution } from "../../../logic/subStatDistribution
 import { DistributionView } from "./DistributionView";
 import { GameContext } from "../../contexts/GameContext";
 import { data } from "../../data/data";
-import { LabelGrid } from "../structure/LabelGrid";
+import { round2 } from "../../utils/round";
 
 export const RollValueDist = () => {
 	const { game } = useContext(GameContext);
 	const [rolls, setRolls] = useState(2);
+	const [rvIndex, setRvIndex] = useState(0);
+	const [includeBase, setIncludeBase] = useState(true);
+	const choices = useMemo(() => [
+		{
+			name: "Default",
+			rollValues: data[game].rollValues
+		},
+		...Object.entries(data[game].rollValueOverrides ?? {}).map(([stat, { rollValues }]) => ({
+			name: stat,
+			rollValues
+		}))
+	], [data, game]);
 
 	const distribution = useMemo(() => {
-		return [...computeRollValueDistribution(rolls + 1, data[game].rollValues).entries()]
-			.map(([statRolls, prob]) => {
-				return [statRolls.toString() + "%", prob] as const;
-			})
+		const i = Math.min(rvIndex, choices.length - 1);
+
+		return [...computeRollValueDistribution(rolls + (includeBase ? 1 : 0), choices[i].rollValues).values()]
+			.sort(([a], [b]) => a - b)
+			.map(([statRolls, prob]) => [round2(statRolls).toString() + "%", prob] as const)
 			.reverse();
-	}, [game, rolls]);
+	}, [rolls, choices, rvIndex, includeBase]);
 
 	return (
 		<div>
-			<LabelGrid>
+			<div class="flex gap-4 flex-wrap mb-4 items-center">
 				<label>
-					<div>Rolls count:</div>
-					<div>
-						<input
-							class="w-20"
-							type="number"
-							value={rolls}
-							onInput={e => setRolls(+e.currentTarget.value)}
-						/> + 1 (base)
-					</div>
+					Rolls count: <input
+						class="w-20"
+						type="number"
+						value={rolls}
+						onInput={e => setRolls(+e.currentTarget.value)}
+					/>
 				</label>
-			</LabelGrid>
+				<span class="-ml-3">+</span>
+				<label class="-ml-3 flex items-center gap-2"><input
+						type="checkbox"
+						checked={includeBase}
+						onInput={e => setIncludeBase(e.currentTarget.checked)}
+					/> include base
+				</label>
+				{choices.length > 1 && <label>
+					Roll values: <select
+						value={rvIndex}
+						onChange={e => setRvIndex(+e.currentTarget.value)}
+					>
+						{choices.map((choice, index) => (
+							<option value={index} key={index}>{choice.name}</option>
+						))}
+					</select>
+				</label>}
+			</div>
 			<div class="mt-4">
 				<DistributionView entries={distribution} />
 			</div>
