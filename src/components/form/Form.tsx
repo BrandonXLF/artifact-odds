@@ -629,18 +629,24 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 				import={art => {
 					setArtifactType(art.artifactType);
 					setMainStat(art.mainStat);
-					setCurrentStats(art.subStats.map(([stat]) => stat));
+					setCurrentStats(Object.keys(art.subStats));
 					setStatParams(prev => {
 						const newParams = { ...prev };
 
-						for (const [stat, value] of art.subStats) {
-							newParams[stat] = {
-								...newParams[stat],
-								currentRV: Math.round((value / gameData.statValues[stat]) / 10) * 10
-							};
+						for (const [stat, value] of Object.entries(art.subStats)) {
+							newParams[stat] = { ...newParams[stat], currentRV: value };
 						}
 
 						return newParams;
+					});
+					setInitialValues(prev => {
+						const newValues = { ...prev };
+
+						for (const [stat, value] of Object.entries(art.initial ?? [])) {
+							newValues[stat] = { ...newValues[stat], currentRV: value };
+						}
+
+						return newValues;
 					});
 					setIsFiveRoller(art.totalCount >= 9);
 				}}

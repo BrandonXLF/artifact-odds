@@ -1,20 +1,22 @@
 import { useContext, useEffect, useRef, useState } from "preact/hooks";
-import { hsrImportMap, importMap, typeMap } from "../../data/importMap";
+import { genshinTypeMap, genshinMainStats, genshinSubstats, hsrMainStats, hsrSubstats } from "../../data/importMap";
 import { ToggleButtons } from "../input/ToggleButtons";
 import { VisualSection } from "../structure/VisualSection";
 import { Button } from "../input/Button";
 import { useStoredState } from "../../utils/resettableState";
 import { ImportedCharacter } from "./ImportedCharacter";
 import { GameContext } from "../../contexts/GameContext";
-import { round2 } from "../../utils/round";
 import { Game } from "../../data/game";
+import { round2 } from "../../utils/round";
+import { data as allGameData } from "../../data/data";
 
 interface ImportedArtifact {
 	totalCount: number;
 	icon: string;
 	artifactType: number;
 	mainStat: string;
-	subStats: [string, number][];
+	subStats: Record<string, number>;
+	initial?: Record<string, number>;
 }
 
 interface EquippedCharacter {
@@ -36,18 +38,12 @@ type ProfileDataGenshin = {
 		avatarId: number;
 		equipList: {
 			reliquary?: {
+				mainPropId: number;
 				appendPropIdList: number[];
 			};
 			flat: {
 				equipType: number;
 				icon: string;
-				reliquaryMainstat: {
-					mainPropId: string;
-				};
-				reliquarySubstats: {
-					appendPropId: string;
-					statValue: number;
-				}[];
 			}
 		}[];
 	}[];
@@ -61,15 +57,12 @@ type ProfileDataHSR = {
 			relicList: {
 				type: number;
 				tid: string;
+				mainAffixId: number;
 				subAffixList: {
+					affixId: number;
 					cnt: number;
-				}[],
-				_flat: {
-					props: {
-						type: string;
-						value: number;
-					}[]
-				}
+					step?: number;
+				}[]
 			}[]
 		}[];
 	}
@@ -101,16 +94,30 @@ const importers: {
 			id: avatar.avatarId,
 			artifacts: avatar.equipList
 				.filter(equipment => equipment.reliquary)
-				.map(artifact => ({
-					totalCount: artifact.reliquary!.appendPropIdList.length,
-					icon: `https://enka.network/ui/${artifact.flat.icon}.png`,
-					artifactType: typeMap[artifact.flat.equipType] as number,
-					mainStat: importMap[artifact.flat.reliquaryMainstat.mainPropId],
-					subStats: artifact.flat.reliquarySubstats.map(subStat => [
-						importMap[subStat.appendPropId],
-						subStat.statValue
-					] as [string, number])
-				}))
+				.map(artifact => {
+					const subStats: Record<string, number> = {};
+					const initial: Record<string, number> = {};
+					let initialCount = 0;
+
+					for (const subPropId of artifact.reliquary!.appendPropIdList) {
+						const [stat, value] = genshinSubstats.get(subPropId)!;
+						subStats[stat] = (subStats[stat] ?? 0) + value;
+
+						if (initialCount < 4) {
+							initial[stat] = value;
+							initialCount++;
+						}
+					}
+
+					return {
+						totalCount: artifact.reliquary!.appendPropIdList.length,
+						icon: `https://enka.network/ui/${artifact.flat.icon}.png`,
+						artifactType: genshinTypeMap[artifact.flat.equipType] as number,
+						mainStat: genshinMainStats.get(artifact.reliquary!.mainPropId)!,
+						subStats,
+						initial
+					};
+				})
 		})),
 		avatarResourceUrl: 'https://raw.githubusercontent.com/EnkaNetwork/API-docs/master/store/gi/avatars.json',
 		locResourceUrl: 'https://raw.githubusercontent.com/EnkaNetwork/API-docs/master/store/gi/locs.json',
@@ -130,16 +137,24 @@ const importers: {
 		getArtifacts: (data: ProfileDataHSR, iconResource: { Items: Record<string, { Icon: string }> }) =>
 			data.detailInfo.avatarDetailList.map(avatar => ({
 				id: avatar.avatarId,
-				artifacts: avatar.relicList.map(artifact => ({
-					totalCount: artifact.subAffixList.reduce((sum, affix) => sum + affix.cnt, 0),
-					icon: `https://enka.network/${iconResource.Items[artifact.tid]?.Icon}`,
-					artifactType: artifact.type - 1,
-					mainStat: hsrImportMap[artifact._flat.props[0].type],
-					subStats: artifact._flat.props.slice(1).map(subStat => [
-						hsrImportMap[subStat.type],
-						round2(subStat.value * (hsrImportMap[subStat.type]?.endsWith("%") ? 100 : 1))
-					] as [string, number])
-				}))
+				artifacts: avatar.relicList.map(artifact => {
+					return {
+						totalCount: artifact.subAffixList.reduce((sum, affix) => sum + affix.cnt, 0),
+						icon: `https://enka.network/${iconResource.Items[artifact.tid]?.Icon}`,
+						artifactType: artifact.type - 1,
+						mainStat: hsrMainStats.get(`${artifact.type - 1}_${artifact.mainAffixId}`)!,
+						subStats: Object.fromEntries(artifact.subAffixList.map(subStat => {
+							const rollValues = allGameData.hsr.rollValues;
+							const cntVal = rollValues[0];
+							const stepVal = (rollValues[1] - rollValues[0]);
+
+							return [
+								hsrSubstats.get(subStat.affixId)!,
+								subStat.cnt * cntVal + (subStat.step ?? 0) * stepVal
+							];
+						}))
+					};
+				})
 			})),
 		avatarResourceUrl: 'https://raw.githubusercontent.com/EnkaNetwork/API-docs/master/store/hsr/avatars.json',
 		locResourceUrl: 'https://raw.githubusercontent.com/EnkaNetwork/API-docs/master/store/hsr/hsr.json',
@@ -153,7 +168,7 @@ const importers: {
 };
 
 export const Import = (props: { import: (art: ImportedArtifact) => void, close: () => void }) => {
-	const { game } = useContext(GameContext);
+	const { game, gameData } = useContext(GameContext);
 	const abort = useRef<AbortController | null>(null);
 	const [characterIndex, setCharacterIndex] = useState(0);
 	const [uid, setUid] = useStoredState<string>("importUid", "");
@@ -237,7 +252,9 @@ export const Import = (props: { import: (art: ImportedArtifact) => void, close: 
 						<img src={a.icon} alt="" class="absolute right-0 top-0 w-12 mask-b-from-0" />
 						<p class="font-bold z-2 text-shadow-(color:--bg) text-shadow-lg">{a.mainStat}</p>
 						<ul class="z-2 text-shadow-(color:--bg) text-shadow-lg">
-							{a.subStats.map(s => <li key={s[0]}>{s[0]}: {s[1]}</li>)}
+							{Object.entries(a.subStats).map(([stat, value]) => (
+								<li key={stat}>{stat}: {round2(value * gameData.statValues[stat])}</li>
+							))}
 						</ul>
 					</Button>
 				))}
