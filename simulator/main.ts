@@ -65,7 +65,7 @@ const rollArtifact = (rollRecord: RollRecord, rollsLeft: number, stats: string[]
 		stat = stats[randomInt(stats.length)];
 	}
 
-	addRoll(rollRecord, stat, statData.rollValues);
+	addRoll(rollRecord, stat, statData.getRollValues(stat));
 
 	rollArtifact(rollRecord, rollsLeft - 1, stats, statData, guaranteedRollsStats, guaranteedRollsCount - (guaranteedRollsStats.has(stat) ? 1 : 0));
 };
@@ -80,7 +80,7 @@ const populateArtifact = (rolls: number, stats: string[], statData: StatData, ro
 		if (initial > 0) {
 			rollRecord[stat] = initial;
 		} else {
-			addRoll(rollRecord, stat, statData.rollValues);
+			addRoll(rollRecord, stat, statData.getRollValues(stat));
 		}
 	}
 

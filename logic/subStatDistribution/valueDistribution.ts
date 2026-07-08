@@ -37,7 +37,7 @@ export const computeWaysAboveGoal = (statData: StatData, subStats: string[], rol
 		const count = rolls[statIndex];
 		const initial = statData.getInitial(stat);
 
-		let statRollSums = computeRollValueDistribution(count + (initial ? 0 : 1), statData.rollValues); // +1 - Account for initial roll
+		let statRollSums = computeRollValueDistribution(count + (initial ? 0 : 1), statData.getRollValues(stat)); // +1 - Account for initial roll
 
 		const next = new Map<number, number>();
 

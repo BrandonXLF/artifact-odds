@@ -13,7 +13,8 @@ export class StatData {
 		private readonly required: string[],
 		private readonly requiredCount: number,
 		private readonly _requiredAllLinesProb: number | undefined,
-		private readonly _rollValues: readonly number[]
+		private readonly _rollValues: readonly number[],
+		private readonly rollValueOverrides: Partial<Record<string, { rollValues: readonly number[] }>> = {}
 	) {
 		for (const [stat, min] of Object.entries(mins)) {
 			if (min !== undefined && min > 0) this.requiredByMin.push(stat);
@@ -34,10 +35,6 @@ export class StatData {
 		return this._maxWeight;
 	}
 
-	get rollValues(): readonly number[] {
-		return this._rollValues;
-	}
-
 	get requiredAllLinesProb(): number | undefined {
 		return this._requiredAllLinesProb;
 	}
@@ -51,6 +48,10 @@ export class StatData {
 
 		const count = combo.filter(stat => this.required.includes(stat)).length;
 		return count >= this.requiredCount;
+	}
+
+	getRollValues(stat: string): readonly number[] {
+		return this.rollValueOverrides[stat]?.rollValues ?? this._rollValues;
 	}
 
 	getRollWeight(stat: string): number {
@@ -80,7 +81,8 @@ export class StatDataConfig {
 	constructor(
 		allSubStats: readonly string[],
 		private readonly statWeights: Partial<Record<string, number>>,
-		private readonly rollValues: readonly number[]
+		private readonly rollValues: readonly number[],
+		private readonly rollValueOverrides: Partial<Record<string, { rollValues: readonly number[] }>> = {}
 	) {
 		this.random = [...allSubStats];
 	}
@@ -170,7 +172,8 @@ export class StatDataConfig {
 			this.required,
 			this.requiredCount,
 			this.requiredAllLinesProb,
-			this.rollValues
+			this.rollValues,
+			this.rollValueOverrides
 		);
 	}
 }

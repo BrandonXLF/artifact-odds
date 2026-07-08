@@ -11,6 +11,7 @@ export const StatValueInput = (props: Readonly<{
 	onChange: (value: number | undefined) => void;
 }>) => {
 	const { gameData } = useContext(GameContext);
+	const roundStat = gameData.rollValueOverrides?.[props.stat ?? '']?.fixedRounded;
 	let value = props.value;
 
 	if (value !== undefined && !props.useRV && props.stat !== undefined) {
@@ -23,14 +24,21 @@ export const StatValueInput = (props: Readonly<{
 
 	const onChange = (newVal: number | undefined) => {
 		if (newVal !== undefined && !props.useRV && props.stat !== undefined) {
+			if (roundStat !== undefined) {
+				const roundFactor = Math.pow(10, roundStat);
+				newVal = Math.round(newVal * roundFactor) / roundFactor;
+			}
+
 			newVal /= gameData.statValues[props.stat];
 		}
 
 		if (newVal !== undefined) {
-			newVal = roundMaxPrecision(newVal);
+			newVal = roundStat !== undefined
+				? roundMaxPrecision(newVal)
+				: Math.round(newVal / 10) * 10;
 		}
 
-		props.onChange(newVal === undefined ? undefined : Math.round(newVal / 10) * 10);
+		props.onChange(newVal);
 	}
 
 	return (

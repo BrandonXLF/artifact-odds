@@ -144,14 +144,13 @@ const importers: {
 						artifactType: artifact.type - 1,
 						mainStat: hsrMainStats.get(`${artifact.type - 1}_${artifact.mainAffixId}`)!,
 						subStats: Object.fromEntries(artifact.subAffixList.map(subStat => {
-							const rollValues = allGameData.hsr.rollValues;
+							const stat = hsrSubstats.get(subStat.affixId)!;
+							const rollValues = allGameData.hsr.rollValueOverrides?.[stat]?.rollValues ?? allGameData.hsr.rollValues;
 							const cntVal = rollValues[0];
 							const stepVal = (rollValues[1] - rollValues[0]);
+							const val = subStat.cnt * cntVal + (subStat.step ?? 0) * stepVal;
 
-							return [
-								hsrSubstats.get(subStat.affixId)!,
-								subStat.cnt * cntVal + (subStat.step ?? 0) * stepVal
-							];
+							return [stat, val];
 						}))
 					};
 				})

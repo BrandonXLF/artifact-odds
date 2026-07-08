@@ -65,7 +65,7 @@ export const computePermutationCount = (statData: StatData, rollRestrictions: Ro
 	);
 
 	// TODO: Consider if initial values are provided and used
-	const valueOutcomesPer = (statData.rollValues.length ** (rollRestrictions.subStatCount + rollCount));
+	const valueOutcomesPer = (statData.getRollValues('').length ** (rollRestrictions.subStatCount + rollCount));
 	return dist.permCount * valueOutcomesPer;
 }
 
@@ -131,7 +131,7 @@ export const computeRollProb = (
 	goal: number
 ): Statistics & { permutationCount: number } => {
 	const allLinesProb = rollRestrictions.upperProb;
-	const scaleDown = computeScaleDownRatio(rollRestrictions, statData.rollValues.length);
+	const scaleDown = computeScaleDownRatio(rollRestrictions, statData.getRollValues('').length);
 	
 	let prob = 0;
 	let avgAboveSum = 0;

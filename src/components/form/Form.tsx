@@ -126,7 +126,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		),
 		[currentStats, statParams]
 	);
-	const goalValue = useAutoGoal ? currentValue : customGoal;
+	const goalValue = useAutoGoal ? round2(currentValue) : customGoal;
 
 	const requiredByMins = useMemo(() => {
 		return validStats
@@ -249,7 +249,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 
 	useEffect(() => {
 		if (useAutoGoal) {
-			setCustomGoal(currentValue);
+			setCustomGoal(round2(currentValue));
 		}
 	}, [currentValue, useAutoGoal]);
 
