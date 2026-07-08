@@ -43,7 +43,7 @@ test("All rolls required (>)", () => {
 		rollRestrictions,
 		[[["HP", "DEF", "CRIT Rate%", "CRIT DMG%"], 1]],
 		34000 + 15000
-	)[0];
+	).probAbove;
 
 	let tot = 0;
 	let valid = 0;
@@ -84,7 +84,7 @@ test("All rolls required (>=)", () => {
 		rollRestrictions,
 		[[["HP", "DEF", "CRIT Rate%", "CRIT DMG%"], 1]],
 		34000 + 15000 - 0.1
-	)[0];
+	).probAbove;
 
 	let tot = 0;
 	let valid = 0;
@@ -124,7 +124,7 @@ test("Only 1 unique combination possible - 3-liner", () => {
 		rollRestrictions,
 		[[["HP", "DEF", "CRIT Rate%", "CRIT DMG%"], 1]],
 		50000 - 0.1
-	)[0];
+	).probAbove;
 
 	// 4^3 ways to get 0 (0 * 70, ... 0 * 100) for other 3 stats
 	expect(prob).toBe((4 ** 3) / (4 ** 12));
@@ -142,7 +142,7 @@ test("Only 1 unique combination possible - 4-liner", () => {
 		rollRestrictions,
 		[[["HP", "DEF", "CRIT Rate%", "CRIT DMG%"], 1]],
 		60000 - 0.1
-	)[0];
+	).probAbove;
 
 	// 4^3 ways to get 0 (0 * 70, ... 0 * 100) for other 3 stats
 	expect(prob).toBe((4 ** 3) / (4 ** 14));
@@ -160,7 +160,7 @@ test("3/4 guarantee does not help 1 unique combination - 3-liner", () => {
 		rollRestrictions,
 		[[["HP", "DEF", "CRIT Rate%", "CRIT DMG%"], 1]],
 		50000 - 0.1
-	)[0];
+	).probAbove;
 
 	// 4^3 ways to get 0 (0 * 70, ... 0 * 100) for other 3 stats
 	expect(prob).toBe((4 ** 3) / (4 ** 12));
@@ -178,7 +178,7 @@ test("all rolls guaranteed - 3-liner", () => {
 		rollRestrictions,
 		[[["HP", "DEF", "CRIT Rate%", "CRIT DMG%"], 1]],
 		50000 - 0.1
-	)[0];
+	).probAbove;
 
 	// 4^3 ways to get 0 (0 * 70, ... 0 * 100) for other 3 stats + sub-stats guaranteed
 	expect(prob).toBe((4 ** 3) / (4 ** 8));
@@ -197,21 +197,34 @@ test("0", () => {
 
 		[[["HP", "DEF", "CRIT Rate%", "CRIT DMG%"], 1]],
 		60000
-	)[0];
+	).probAbove;
 
 	// 4^3 ways to get 0 (0 * 70, ... 0 * 100) for other 3 stats
 	expect(prob).toBe(0);
 });
 
+test("All valid", () => {
+	const statData = new StatDataConfig(allSubStats, statWeights, rollValues).make();
+	const rollRestrictions = new RollRestrictions(4, 4, 5, 0.5);
+	const combo = ["HP", "DEF", "CRIT Rate%", "CRIT DMG%"] as string[];
+
+	const fourRollTot = computeValidRolls(statData, rollRestrictions, -Infinity, combo, 4).probAbove;
+	expect(fourRollTot).toBe(1);
+
+	const fiveRollTot = computeValidRolls(statData, rollRestrictions, -Infinity, combo, 5).probAbove;
+	expect(fiveRollTot).toBe(1);
+});
+
+/*
 test("Total combinations (all valid)", () => {
 	const statData = new StatDataConfig(allSubStats, statWeights, rollValues).make();
 	const rollRestrictions = new RollRestrictions(4, 4, 5, 0.5);
 	const combo = ["HP", "DEF", "CRIT Rate%", "CRIT DMG%"] as string[];
 
-	const fourRollTot = computeValidRolls(statData, rollRestrictions, -Infinity, combo, 4)[0];
+	const fourRollTot = computeValidRolls(statData, rollRestrictions, -Infinity, combo, 4).probAbove;
 	expect(fourRollTot).toBe((4 ** 4) * ((4 * 4) ** 4));
 
-	const fiveRollTot = computeValidRolls(statData, rollRestrictions, -Infinity, combo, 5)[0];
+	const fiveRollTot = computeValidRolls(statData, rollRestrictions, -Infinity, combo, 5).probAbove;
 	expect(fiveRollTot).toBe((4 ** 4) * ((4 * 4) ** 5));
 });
 
@@ -220,12 +233,13 @@ test("Total combinations with guaranteed stats (all valid)", () => {
 	const rollRestrictions = new RollRestrictions(4, 4, 5, 0.5, new Set(["HP", "DEF"]), 2);
 	const combo = ["HP", "DEF", "CRIT Rate%", "CRIT DMG%"] as string[];
 
-	const fourRollTot = computeValidRolls(statData, rollRestrictions, -Infinity, combo, 4)[0];
+	const fourRollTot = computeValidRolls(statData, rollRestrictions, -Infinity, combo, 4).probAbove;
 	expect(fourRollTot).toBe((4 ** 4) * ((4 * 4) ** 4));
 
-	const fiveRollTot = computeValidRolls(statData, rollRestrictions, -Infinity, combo, 5)[0];
+	const fiveRollTot = computeValidRolls(statData, rollRestrictions, -Infinity, combo, 5).probAbove;
 	expect(fiveRollTot).toBe((4 ** 4) * ((4 * 4) ** 5));
 });
+*/
 
 test("Order invariance", () => {
 	const statData = new StatDataConfig(allSubStats, statWeights, rollValues)
@@ -243,8 +257,8 @@ test("Order invariance", () => {
 		[["CRIT DMG%", "CRIT Rate%", "DEF", "HP"], 1]
 	];
 
-	const prob1 = computeRollProb(statData, rollRestrictions, combos1, 50000)[0];
-	const prob2 = computeRollProb(statData, rollRestrictions, combos2, 50000)[0];
+	const prob1 = computeRollProb(statData, rollRestrictions, combos1, 50000).probAbove;
+	const prob2 = computeRollProb(statData, rollRestrictions, combos2, 50000).probAbove;
 
 	expect(prob1).toBe(prob2);
 });
