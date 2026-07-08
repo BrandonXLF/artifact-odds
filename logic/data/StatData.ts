@@ -9,6 +9,7 @@ export class StatData {
 		private readonly weights: Partial<Record<string, number>>,
 		private readonly mins: Partial<Record<string, number>>,
 		private readonly limits: Partial<Record<string, number>>,
+		private readonly initial: Partial<Record<string, number>>,
 		private readonly required: string[],
 		private readonly requiredCount: number,
 		private readonly _requiredAllLinesProb: number | undefined,
@@ -67,6 +68,10 @@ export class StatData {
 	getLimit(stat: string): number {
 		return this.limits[stat] ?? Infinity;
 	}
+
+	getInitial(stat: string): number {
+		return this.initial[stat] ?? 0;
+	}
 }
 
 export class StatDataConfig {
@@ -83,6 +88,7 @@ export class StatDataConfig {
 	weights: Partial<Record<string, number>> = {};
 	mins: Partial<Record<string, number>> = {};
 	limits: Partial<Record<string, number>> = {};
+	initial: Partial<Record<string, number>> = {};
 
 	guaranteed: string[] = [];
 	requiredCount: number = 0;
@@ -135,15 +141,22 @@ export class StatDataConfig {
 		return this;
 	}
 
+	setInitial(stat: string, initial: number): this {
+		this.initial[stat] = initial;
+		return this;
+	}
+
 	make(): StatData {
 		const weights: Partial<Record<string, number>> = {};
 		const mins: Partial<Record<string, number>> = {};
 		const limits: Partial<Record<string, number>> = {};
+		const initial: Partial<Record<string, number>> = {};
 
 		for (const stat of [...this.random, ...this.guaranteed]) {
 			weights[stat] = this.weights[stat];
 			mins[stat] = this.mins[stat];
 			limits[stat] = this.limits[stat];
+			initial[stat] = this.initial[stat];
 		}
 
 		return new StatData(
@@ -153,6 +166,7 @@ export class StatDataConfig {
 			weights,
 			mins,
 			limits,
+			initial,
 			this.required,
 			this.requiredCount,
 			this.requiredAllLinesProb,

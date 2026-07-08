@@ -53,8 +53,12 @@ type UnfixedMode = BaseMode & UnfixedMainFeatures & {
 	allLinesProb: number;
 };
 
-type FixedModeGuarantee = BaseMode & {
+type FixedModeBase = {
 	fixedArtifact: true;
+	fixedInitial: boolean;
+}
+
+type FixedModeGuarantee = BaseMode & FixedModeBase & {
 	selectToIgnore: false;
 	/**
 	 * @note Must be in increasing order.
@@ -62,8 +66,7 @@ type FixedModeGuarantee = BaseMode & {
 	guaranteedCount: number | number[];
 };
 
-type FixedModeIgnore = BaseMode & {
-	fixedArtifact: true;
+type FixedModeIgnore = BaseMode & FixedModeBase & {
 	selectToIgnore: true;
 }
 
@@ -153,6 +156,7 @@ export const modes: Record<Game, Record<string, Mode>> = {
 		reroll: {
 			name: "Artifact Reroll",
 			fixedArtifact: true,
+			fixedInitial: true,
 			selectToIgnore: false,
 			guaranteedCount: [2, 3, 4],
 			selectedStatCount: 2,
@@ -261,6 +265,7 @@ export const modes: Record<Game, Record<string, Mode>> = {
 		reroll: {
 			name: "Reroll",
 			fixedArtifact: true,
+			fixedInitial: false,
 			selectToIgnore: true,
 			selectedStatCount: [0, 1],
 			selectedStatOptimizer: "bestToIgnore",

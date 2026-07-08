@@ -75,7 +75,13 @@ const populateArtifact = (rolls: number, stats: string[], statData: StatData, ro
 	
 	// Add initial rolls
 	for (const stat of stats) {
-		addRoll(rollRecord, stat, statData.rollValues);
+		const initial = statData.getInitial(stat);
+
+		if (initial > 0) {
+			rollRecord[stat] = initial;
+		} else {
+			addRoll(rollRecord, stat, statData.rollValues);
+		}
 	}
 
 	// Do artifact upgrades

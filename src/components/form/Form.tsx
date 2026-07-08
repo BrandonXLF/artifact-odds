@@ -31,6 +31,7 @@ import { factorial } from '../../utils/factorial';
 import { NumberDisplay } from '../output/NumberDisplay';
 import { QuantileOutput } from '../output/QuantileOutput';
 import { computeTypeProb } from '../../../logic/typeProb';
+import { StatValueInput } from '../input/StatValueInput';
 
 type StatParams = StatParamInputEntry & StatListInputEntry;
 
@@ -76,6 +77,12 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const [statParams, setStatParams] = useStoredState(
 		"statWeights",
 		() => Object.fromEntries(gameData.stats.map(stat => [stat, {}])) as Record<string, StatParams>,
+		resetTrigger,
+		true
+	);
+	const [initialValues, setInitialValues] = useStoredState(
+		"initialValues",
+		() => Object.fromEntries(gameData.stats.map(stat => [stat, {}])) as Record<string, StatListInputEntry>,
 		resetTrigger,
 		true
 	);
@@ -279,6 +286,12 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 
 		if (mode.fixedArtifact) {
 			statDataConfig.onlyInclude(currentStats);
+		}
+
+		if (mode.fixedArtifact && mode.fixedInitial) {
+			for (const [stat, data] of Object.entries(initialValues) as [string, StatListInputEntry][]) {
+				statDataConfig.setInitial(stat, data.currentRV ?? 0);
+			}
 		}
 
 		for (const [stat, data] of Object.entries(statParams) as [string, StatParamInputEntry][]) {
@@ -604,7 +617,9 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 								onChange={setCurrentStats}
 								validStats={gameData.stats.filter(stat => stat !== mainStat)}
 								statValues={mode.fixedArtifact && useAutoGoal ? statParams : undefined}
+								initialValues={mode.fixedArtifact && mode.fixedInitial ? initialValues : undefined}
 								onValueChange={(stat, value) => setStatParams(prev => ({ ...prev, [stat]: { ...prev[stat], currentRV: value } }))}
+								onInitialChange={(stat, value) => setInitialValues(prev => ({ ...prev, [stat]: { ...prev[stat], currentRV: value } }))}
 							/>
 						</div>
 					</div>}

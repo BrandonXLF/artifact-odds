@@ -1,4 +1,4 @@
-import { useContext } from "preact/hooks";
+import { useContext, useMemo } from "preact/hooks";
 import { StatValueInput } from "./StatValueInput";
 import { GameContext } from "../../contexts/GameContext";
 
@@ -10,11 +10,13 @@ export function StatListInput(props: Readonly<{
 	stats: string[];
 	count: number;
 	validStats?: string[];
-	statValues?: Record<string, { currentRV?: number }>;
+	statValues?: Record<string, StatListInputEntry>;
+	initialValues?: Record<string, StatListInputEntry>;
 	useRV?: boolean;
 	disabled?: boolean;
 	onChange: (stats: string[]) => void;
 	onValueChange?: (stat: string, value: number | undefined) => void;
+	onInitialChange?: (stat: string, value: number | undefined) => void;
 	clearable?: boolean;
 	hasKnownError?: boolean;
 	onErrorChange?: (hasError: boolean) => void;
@@ -32,7 +34,7 @@ export function StatListInput(props: Readonly<{
 	let anyError = false;
 
 	const out = (
-		<div class={`inline-flex ${props.statValues ? 'gap-4' : 'gap-2'} flex-wrap`}>
+		<div class={`inline-flex ${props.statValues || props.initialValues ? 'gap-4' : 'gap-2'} flex-wrap`}>
 			{new Array(props.count).fill(0).map((_, index) => {
 				let value = props.stats[index];
 				let options = selectableStats;
@@ -50,20 +52,23 @@ export function StatListInput(props: Readonly<{
 				anyError = anyError || error;
 
 				return (
-					<div class="inline-flex gap-2" key={index}>
-						<select
-							value={value ?? ""}
-							disabled={props.disabled || selectableStats.length === 0}
-							onChange={(e) => change(index, (e.target as HTMLSelectElement).value)}
-							class={`min-w-20 ${error ? "border-red-500" : ""}`}
-						>
-							{props.clearable && <option value="">--</option>}
-							{options.map(stat => (
-								<option key={stat} value={stat}>
-									{stat}
-								</option>
-							))}
-						</select>
+					<div class="inline-flex items-center gap-2" key={index}>
+						<div class="inline-flex items-center gap-0.5">
+							<select
+								value={value ?? ""}
+								disabled={props.disabled || selectableStats.length === 0}
+								onChange={(e) => change(index, (e.target as HTMLSelectElement).value)}
+								class={`min-w-20 ${error ? "border-red-500" : ""}`}
+							>
+								{props.clearable && <option value="">--</option>}
+								{options.map(stat => (
+									<option key={stat} value={stat}>
+										{stat}
+									</option>
+								))}
+							</select>
+							{props.statValues || props.initialValues ? <span>:</span> : null}
+						</div>
 						{props.statValues && (
 							<StatValueInput
 								disabled={props.disabled || !value}
@@ -74,6 +79,25 @@ export function StatListInput(props: Readonly<{
 								onChange={(statValue) => props.onValueChange?.(value, statValue)}
 							/>
 						)}
+						{props.initialValues && <>
+							{!props.statValues && <span>
+								Current:{' '}
+								<abbr title="Since goal is being manually inputted, the current rolls are not needed for comparison.">n/a</abbr>
+							</span>}
+							<div class="inline-flex items-center gap-0.5">
+								<span>(</span>
+								<span class="mr-1">Initial:</span>
+								<StatValueInput
+									disabled={props.disabled || !value}
+									useRV={props.useRV ?? false}
+									stat={value}
+									value={props.initialValues[value]?.currentRV}
+									placeholder="Unknown"
+									onChange={(initialValue) => props.onInitialChange?.(value, initialValue)}
+								/>
+								<span>)</span>
+							</div>
+						</>}
 					</div>
 				);
 			})}

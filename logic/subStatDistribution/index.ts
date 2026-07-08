@@ -64,6 +64,7 @@ export const computePermutationCount = (statData: StatData, rollRestrictions: Ro
 		rollRestrictions.unrollableStats.size
 	);
 
+	// TODO: Consider if initial values are provided and used
 	const valueOutcomesPer = (statData.rollValues.length ** (rollRestrictions.subStatCount + rollCount));
 	return dist.permCount * valueOutcomesPer;
 }
@@ -86,7 +87,7 @@ const computeRollCountProb = (
 
 		probSum += statistics.probAbove * weightProb;
 		avgAboveSum += statistics.avgAbove * statistics.probAbove * weightProb;
-		avgSum += statistics.avg* weightProb;
+		avgSum += statistics.avg * weightProb;
 		totalWeights += weightProb;
 
 		for (let i = 0; i < statistics.buckets.length; i++) {
