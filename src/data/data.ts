@@ -119,7 +119,10 @@ export const data: Record<Game, GameData> = {
 	hsr: {
 		rollValues: [80, 90, 100] as const,
 		rollValueOverrides: {
-			SPD: { rollValues: [76.9230769231, 88.4615384615, 100] as const, fixedRounded: 1 }
+			SPD: {
+				rollValues: [76.9230769231, 88.4615384615, 100] as const,
+				fixedRounded: 1
+			}
 		},
 		allLinesDomainProb: 0.2,
 		allLinesCraftedProb: 1/3,
