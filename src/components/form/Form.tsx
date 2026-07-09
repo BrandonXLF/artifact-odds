@@ -698,7 +698,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 									stats={selectedStats}
 									count={dynamicMode.selectedStatCount}
 									onChange={setSelectedStats}
-									validStats={allowedStats}
+									validStats={activeStats}
 									hasKnownError={selectedStatsInvalid}
 									onErrorChange={setSelectedStatsInvalid}
 								/>
