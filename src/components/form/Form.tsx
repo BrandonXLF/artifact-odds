@@ -31,7 +31,6 @@ import { factorial } from '../../utils/factorial';
 import { NumberDisplay } from '../output/NumberDisplay';
 import { QuantileOutput } from '../output/QuantileOutput';
 import { computeTypeProb } from '../../../logic/typeProb';
-import { StatValueInput } from '../input/StatValueInput';
 
 type StatParams = StatParamInputEntry & StatListInputEntry;
 
@@ -88,7 +87,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	);
 	const [acceptEither, setAcceptEither] = useStoredState<boolean>("acceptEither", false, resetTrigger);
 	const [isFiveRoller, setIsFiveRoller] = useStoredState<boolean>("isFiveRoller", false, resetTrigger);
-	const [useAutoGoal, setUseAutoGoal] = useStoredState<boolean>("useAutoGoal", true, resetTrigger);
+	const [useAutoGoal, setUseAutoGoal, useAutoGoalLoaded] = useStoredState<boolean>("useAutoGoal", true, resetTrigger);
 	const [includeEqual, setIncludeEqual] = useStoredState<boolean>("includeEqual", false, resetTrigger);
 	const [doSimulate, setDoSimulate] = useStoredState<boolean>("runMonteCarlo", false, resetTrigger);
 	const [useRV, setUseRV] = useStoredState<boolean>("useRV", false, resetTrigger);
@@ -248,10 +247,10 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	}, [mode]);
 
 	useEffect(() => {
-		if (useAutoGoal) {
+		if (useAutoGoalLoaded && useAutoGoal) {
 			setCustomGoal(round2(currentValue));
 		}
-	}, [currentValue, useAutoGoal]);
+	}, [currentValue, useAutoGoalLoaded, useAutoGoal]);
 
 	useEffect(
 		() => setAllOptimalPairs([]),

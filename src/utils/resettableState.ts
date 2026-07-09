@@ -39,8 +39,11 @@ export const useStoredState = <T extends DefaultType>(name: string, defaultValue
 		return typeof defaultValue === "function" ? defaultValue() : defaultValue;
 	}, resetTrigger);
 
+	const [loaded, setLoaded] = useState(false);
+
 	useEffect(() => {
 		setValue(load());
+		setLoaded(true);
 	}, [name]);
 
 	useEffect(() => {
@@ -53,5 +56,5 @@ export const useStoredState = <T extends DefaultType>(name: string, defaultValue
 		}
 	}, [name, value]);
 
-	return [value, setValue] as const;
+	return [value, setValue, loaded] as const;
 };
