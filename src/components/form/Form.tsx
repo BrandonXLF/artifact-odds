@@ -51,7 +51,7 @@ const probDelta = 1 / 10_000_000_000_000;
 export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const resetTrigger = useRef(new ResetTrigger()).current;
 	const { gameData } = useContext(GameContext);
-	const { mode } = useContext(FormContext)!;
+	const { mode, modeId } = useContext(FormContext)!;
 
 	useImperativeHandle(props.formRef, () => {
 		return {
@@ -91,7 +91,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const [includeEqual, setIncludeEqual] = useStoredState<boolean>("includeEqual", false, resetTrigger);
 	const [doSimulate, setDoSimulate] = useStoredState<boolean>("runMonteCarlo", false, resetTrigger);
 	const [useRV, setUseRV] = useStoredState<boolean>("useRV", false, resetTrigger);
-	const [outputNum, setOutputNum] = useStoredState<number>("outputNum", 0, resetTrigger);
+	const [outputNum, setOutputNum] = useStoredState<Record<string, number>>("outputNum", {}, resetTrigger);
 
 	// Input feedback
 	const [selectedStatsInvalid, setSelectedStatsInvalid] = useResettableState<boolean | undefined>(undefined, resetTrigger);
@@ -190,7 +190,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			: prop;
 	}, [artifactType, dynamicMode.selectedStatCount]);
 
-	const outputMode = Array.isArray(mode.output) ? mode.output[outputNum] : mode.output;
+	const outputMode = Array.isArray(mode.output) ? mode.output[outputNum[modeId] ?? 0] : mode.output;
 	const expectedTimes = useMemo(() => {
 		if (totalProb === undefined) return undefined;
 		return Math.round(1 / totalProb);
@@ -569,16 +569,6 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		}
 	}, [mode, nonDefaultSubProb, calcBasicRollProb]);
 
-	useEffect(() => {
-		setOutputNum(0);
-	}, [mode]);
-
-	useEffect(() => {
-		if (useAutoGoalLoaded && useAutoGoal) {
-			setCustomGoal(round2(currentValue));
-		}
-	}, [currentValue, useAutoGoalLoaded, useAutoGoal]);
-
 	useEffect(
 		() => setAllOptimalPairs([]),
 		// All dependencies of calculate() besides selectedStats
@@ -597,6 +587,12 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			logicGoal
 		]
 	);
+
+	useEffect(() => {
+		if (useAutoGoalLoaded && useAutoGoal) {
+			setCustomGoal(round2(currentValue));
+		}
+	}, [currentValue, useAutoGoalLoaded, useAutoGoal]);
 
 	return (
 		<div>
@@ -875,8 +871,11 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 								/>{expectedTimes !== undefined && outputMode !== undefined &&
 									<span> &#8776; <NumberDisplay highlight value={expectedCost} /> {Array.isArray(mode.output)
 										? <select
-											value={outputNum}
-											onChange={(e) => setOutputNum(Number((e.target as HTMLSelectElement).value))}
+											value={outputNum[modeId] ?? 0}
+											onChange={e => setOutputNum(prev => ({
+												...prev,
+												[modeId]: Number((e.target as HTMLSelectElement).value)
+											}))}
 										>
 											{mode.output?.map((out, i) => <option key={i} value={i}>{getModeProb(out.unit).label}</option>)}
 										</select>

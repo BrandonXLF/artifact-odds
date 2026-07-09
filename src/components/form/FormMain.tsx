@@ -19,6 +19,7 @@ export const FormMain = (props: { modeKey?: string }) => {
 
 	const contextData = useMemo(() => ({
 		mode: gameModes[modeKey],
+		modeId: modeKey
 	}), [gameModes, modeKey]);
 
 	const loadMode = () => {
