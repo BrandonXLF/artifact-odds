@@ -75,7 +75,7 @@ const computeRollCountProb = (
 	combos: [string[], number][],
 	goal: number,
 	rollCount: number
-): Statistics & { permutationCount: number } => {
+): Statistics & { permCount: number } => {
 	let probSum = 0;
 	let avgAboveSum = 0;
 	let avgSum = 0;
@@ -100,7 +100,7 @@ const computeRollCountProb = (
 		avgAbove: probSum === 0 ? 0 : avgAboveSum / probSum,
 		avg: avgSum / totalWeights,
 		buckets,
-		permutationCount: computePermutationCount(statData, rollRestrictions, rollCount)
+		permCount: computePermutationCount(statData, rollRestrictions, rollCount)
 	};
 }
 
@@ -129,7 +129,7 @@ export const computeRollProb = (
 	rollRestrictions: RollRestrictions,
 	combos: [string[], number][],
 	goal: number
-): Statistics & { permutationCount: number } => {
+): Statistics & { permCount: number } => {
 	const allLinesProb = rollRestrictions.upperProb;
 	const scaleDown = computeScaleDownRatio(rollRestrictions, statData.getRollValues('').length);
 	
@@ -144,9 +144,9 @@ export const computeRollProb = (
 		const statistics = computeRollCountProb(statData, rollRestrictions, combos, goal, rollRestrictions.lowerRollCount);
 
 		prob += statistics.probAbove * (1 - allLinesProb);
-		avg += statistics.avg * (1 - allLinesProb);
 		avgAboveSum += statistics.avgAbove * statistics.probAbove * (1 - allLinesProb);
-		totalPerCombo += statistics.permutationCount;
+		avg += statistics.avg * (1 - allLinesProb);
+		totalPerCombo += statistics.permCount;
 
 		for (let i = 0; i < statistics.buckets.length; i++) {
 			buckets[i] = (buckets[i] ?? 0) + (1 - allLinesProb) * (statistics.buckets[i] ?? 0);
@@ -157,9 +157,9 @@ export const computeRollProb = (
 		const statistics = computeRollCountProb(statData, rollRestrictions, combos, goal, rollRestrictions.upperRollCount);
 
 		prob += statistics.probAbove * allLinesProb;
-		avg += statistics.avg * allLinesProb;
 		avgAboveSum += statistics.avgAbove * statistics.probAbove * allLinesProb;
-		totalPerCombo += statistics.permutationCount;
+		avg += statistics.avg * allLinesProb;
+		totalPerCombo += statistics.permCount;
 
 		for (let i = 0; i < statistics.buckets.length; i++) {
 			buckets[i] = (buckets[i] ?? 0) + allLinesProb * scaleDown * (statistics.buckets[i] ?? 0);
@@ -171,6 +171,6 @@ export const computeRollProb = (
 		avgAbove: prob === 0 ? 0 : avgAboveSum / prob,
 		avg,
 		buckets,
-		permutationCount: totalPerCombo
+		permCount: totalPerCombo
 	};
 };

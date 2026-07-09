@@ -486,7 +486,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 				maxRV: maxAttainable ?? 0,
 				goalRV: logicBaseGoal / 10000
 			});
-			total *= statistics.permutationCount;
+			total *= statistics.permCount;
 
 			const maxBar = Math.max(...statistics.buckets);
 			const relativeBars = statistics.buckets.map(b => [b / maxBar, false] as [number, boolean]);
