@@ -473,15 +473,17 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			total.roll = statistics.allCount * comboPermMult;
 
 			const maxBar = Math.max(...statistics.buckets);
-			const relativeBars = statistics.buckets.map(b => [b / maxBar, false] as [number, boolean]);
-			const goalBucket = Math.min(statistics.buckets.length - 1, toBucket(logicBaseGoal, statData.maxWeight));
-			relativeBars[goalBucket] = relativeBars[goalBucket] ?? [0, false];
-			relativeBars[goalBucket][1] = true;
+			const relativeBars: [number, boolean][] = statistics.buckets.map(b => [b / maxBar, false]);
 
 			const maxBucketIndex = toBucket((maxAttainable ?? 0) * 100, statData.maxWeight);
 			for (let i = 0; i <= maxBucketIndex; i++) {
 				relativeBars[i] = relativeBars[i] ?? [0, false];
 			}
+
+			const goalBucket = Math.min(relativeBars.length - 1, toBucket(logicBaseGoal, statData.maxWeight));
+			relativeBars[goalBucket] = relativeBars[goalBucket] ?? [0, false];
+			relativeBars[goalBucket][1] = true;
+
 			setBars(relativeBars);
 		} else {
 			setRollProb(undefined);
