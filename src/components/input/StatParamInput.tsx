@@ -54,16 +54,16 @@ const WeightButton = (props: Readonly<{
 	>{props.attrs.short}</Button>
 );
 
-export function StatParamInput(props: Readonly<{
-	entries: Record<string, StatParamInputEntry>;
+export function StatParamInput<T extends StatParamInputEntry>(props: Readonly<{
+	entries: Record<string, T>;
 	validStats: string[];
-	onChange: (stat: string, entry: StatParamInputEntry) => void;
+	onChange: (stat: string, entry: T) => void;
 	useRV?: boolean;
 }>) {
-	const entries = (Object.entries(props.entries) as [string, StatParamInputEntry][]).filter(([stat]) => props.validStats.includes(stat));
+	const entries = (Object.entries(props.entries) as [string, T][]).filter(([stat]) => props.validStats.includes(stat));
 	const { gameMeta } = useContext(GameContext);
 
-	const setRelWeight = (stat: string, entry: StatParamInputEntry, scale: number) => {
+	const setRelWeight = (stat: string, entry: T, scale: number) => {
 		const newWeight = scale === 0 ? 0 : Math.max(...Object.values(props.entries).map(e => e.weight || 0), 1) * scale;
 		props.onChange(stat, { ...entry, weight: round2(newWeight) });
 	};

@@ -10,7 +10,7 @@ import { Game } from "../../data/game";
 import { round2 } from "../../utils/round";
 import { data as allGameData } from "../../data/data";
 
-interface ImportedArtifact {
+export interface ImportedArtifact {
 	totalCount: number;
 	icon: string;
 	artifactType: number;

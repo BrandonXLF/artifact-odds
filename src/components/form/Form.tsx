@@ -21,7 +21,7 @@ import { LabelGrid } from '../structure/LabelGrid';
 import { LogicSection } from './LogicSection';
 import { RVGraph } from '../output/RVGraph';
 import { StatOptimizers } from '../../data/modes';
-import { Import } from './Import';
+import { Import, ImportedArtifact } from './Import';
 import { LOWER_ROLL_COUNT, SUB_STAT_COUNT, UPPER_ROLL_COUNT } from '../../data/consts';
 import RollRestrictions from '../../../logic/data/RollRestrictions';
 import { Ref } from 'preact';
@@ -113,9 +113,8 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const [, setCustomGoalVer] = useState(0);
 
 	const allLinesProb = mode.fixedArtifact ? Number(isFiveRoller) : mode.allLinesProb;
-	const validStats = mode.fixedArtifact
-		? currentStats
-		: gameData.stats.filter(stat => stat !== mainStat);
+	const allowedStats = useMemo(() => gameData.stats.filter(stat => stat !== mainStat), [gameData.stats, mainStat]);
+	const activeStats = mode.fixedArtifact ? currentStats : allowedStats
 
 	const currentValue = useMemo(
 		() => roundMaxPrecision(
@@ -128,7 +127,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const goalValue = useAutoGoal ? round2(currentValue) : customGoal;
 
 	const requiredByMins = useMemo(() => {
-		return validStats
+		return activeStats
 			.map(stat => [stat, statParams[stat]] as const)
 			.filter(([_, data]) => data?.minRV !== undefined && data.minRV > 0)
 			.map(([stat]) => stat);
@@ -150,12 +149,12 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		[showSubProb, requireCount, requiredByMins, requireAllLines]
 	);
 	const calcGoalRollProb = useMemo(
-		() => mode.fixedArtifact || validStats.some(stat => statParams[stat].weight),
-		[mode.fixedArtifact, validStats, statParams]
+		() => mode.fixedArtifact || activeStats.some(stat => statParams[stat].weight),
+		[mode.fixedArtifact, activeStats, statParams]
 	);
 	const calcBasicRollProb = useMemo(
-		() => mode.fixedArtifact || calcGoalRollProb || validStats.some(stat => statParams[stat].weight || statParams[stat].minRV),
-		[mode.fixedArtifact, calcGoalRollProb, validStats, statParams]
+		() => mode.fixedArtifact || calcGoalRollProb || activeStats.some(stat => statParams[stat].weight || statParams[stat].minRV),
+		[mode.fixedArtifact, calcGoalRollProb, activeStats, statParams]
 	);
 
 	const totalProb = typeProb !== undefined || mainProb !== undefined || subProb !== undefined || rollProb !== undefined
@@ -166,10 +165,10 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const logicGoal = calcGoalRollProb ? logicBaseGoal - (Number(includeEqual) / 10) : -9999;
 
 	const sortedValidWeights = useMemo(
-		() => validStats
+		() => activeStats
 			.map(stat => [stat, statParams[stat]?.weight ?? 0] as [string, number])
 			.sort((a, b) => (b[1] - a[1])),
-		[validStats, statParams]
+		[activeStats, statParams]
 	);
 
 	const dynamicMode = useMemo(() => ({
@@ -216,6 +215,39 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 
 		return [max, max];
 	}, [sortedValidWeights, isFiveRoller, mode.fixedArtifact]);
+
+	const stat = useMemo(() => ({
+		setEntry: (stat: string, entry: StatParams) => setStatParams(prev => ({ ...prev, [stat]: entry })),
+		setCurrentRV: (stat: string, value: number | undefined) => setStatParams(prev => ({ ...prev, [stat]: { ...prev[stat], currentRV: value } })),
+		setInitialRV: (stat: string, value: number | undefined) => setInitialValues(prev => ({ ...prev, [stat]: { ...prev[stat], currentRV: value } }))
+	}), []);
+
+	const importArtifact = useCallback((art: ImportedArtifact) => {
+		setArtifactType(art.artifactType);
+		setMainStat(art.mainStat);
+		setCurrentStats(Object.keys(art.subStats));
+		setStatParams(prev => {
+			const newParams = { ...prev };
+
+			for (const [stat, value] of Object.entries(art.subStats)) {
+				newParams[stat] = { ...newParams[stat], currentRV: value };
+			}
+
+			return newParams;
+		});
+		setInitialValues(prev => {
+			const newValues = { ...prev };
+
+			for (const [stat, value] of Object.entries(art.initial ?? [])) {
+				newValues[stat] = { ...newValues[stat], currentRV: value };
+			}
+
+			return newValues;
+		});
+		setIsFiveRoller(art.totalCount >= 9);
+	}, []);
+
+	const closeImport = useCallback(() => setShowImport(false), []);
 
 	useEffect(() => {
 		setTypeProb(undefined);
@@ -553,7 +585,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			if (
 				secondBest * 100 <= logicGoal &&
 				sortedValidWeights.slice(0, SUB_STAT_COUNT).reduce((acc, [_, w]) => acc + w, 0) <=
-					validStats.map(s => gameData.statWeights[s]).sort((a, b) => b - a).slice(0, SUB_STAT_COUNT).reduce((acc, w) => acc + w, 0)
+					activeStats.map(s => gameData.statWeights[s]).sort((a, b) => b - a).slice(0, SUB_STAT_COUNT).reduce((acc, w) => acc + w, 0)
 			) {
 				setOverwhelminglyLikely(true);
 				return;
@@ -618,43 +650,17 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 								stats={currentStats}
 								count={SUB_STAT_COUNT}
 								onChange={setCurrentStats}
-								validStats={gameData.stats.filter(stat => stat !== mainStat)}
+								validStats={allowedStats}
 								statValues={mode.fixedArtifact && useAutoGoal ? statParams : undefined}
 								initialValues={mode.fixedArtifact && mode.fixedInitial ? initialValues : undefined}
-								onValueChange={(stat, value) => setStatParams(prev => ({ ...prev, [stat]: { ...prev[stat], currentRV: value } }))}
-								onInitialChange={(stat, value) => setInitialValues(prev => ({ ...prev, [stat]: { ...prev[stat], currentRV: value } }))}
+								onValueChange={stat.setCurrentRV}
+								onInitialChange={stat.setInitialRV}
 							/>
 						</div>
 					</div>}
 				</LabelGrid>
 			</VisualSection>
-			{showImport && <Import
-				import={art => {
-					setArtifactType(art.artifactType);
-					setMainStat(art.mainStat);
-					setCurrentStats(Object.keys(art.subStats));
-					setStatParams(prev => {
-						const newParams = { ...prev };
-
-						for (const [stat, value] of Object.entries(art.subStats)) {
-							newParams[stat] = { ...newParams[stat], currentRV: value };
-						}
-
-						return newParams;
-					});
-					setInitialValues(prev => {
-						const newValues = { ...prev };
-
-						for (const [stat, value] of Object.entries(art.initial ?? [])) {
-							newValues[stat] = { ...newValues[stat], currentRV: value };
-						}
-
-						return newValues;
-					});
-					setIsFiveRoller(art.totalCount >= 9);
-				}}
-				close={() => setShowImport(false)}
-			/>}
+			{showImport && <Import import={importArtifact} close={closeImport} />}
 			{(dynamicMode.selectedStatCount > 0 || Array.isArray(mode.selectedStatCount)) && <VisualSection>
 				<LabelGrid>
 					{Array.isArray(mode.selectedStatCount) && <div>
@@ -665,7 +671,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 							<ToggleButtons
 								options={mode.selectedStatCount}
 								value={rawSelectedStatCount}
-								onChange={(value) => setRawSelectedStatCount(value)}
+								onChange={setRawSelectedStatCount}
 							/>
 						</div>
 					</div>}
@@ -678,7 +684,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 								<ToggleButtons
 									options={mode.guaranteedCount}
 									value={rawGuaranteedRollsCount}
-									onChange={(value) => setRawGuaranteedRollsCount(value)}
+									onChange={setRawGuaranteedRollsCount}
 								/>
 							</div>
 						</div>}
@@ -691,9 +697,9 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 									stats={selectedStats}
 									count={dynamicMode.selectedStatCount}
 									onChange={setSelectedStats}
-									validStats={validStats}
+									validStats={allowedStats}
 									hasKnownError={selectedStatsInvalid}
-									onErrorChange={(hasError) => setSelectedStatsInvalid(hasError)}
+									onErrorChange={setSelectedStatsInvalid}
 								/>
 								{mode.selectedStatOptimizer && (
 									<Button
@@ -745,7 +751,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 							stats={required}
 							count={SUB_STAT_COUNT}
 							onChange={setRequired}
-							validStats={validStats}
+							validStats={activeStats}
 						/>
 					</div>
 					{requiredByMins.length > 0 && <div class="mt-2">
@@ -767,8 +773,8 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 				<VisualSection>
 					<StatParamInput
 						entries={statParams}
-						validStats={validStats}
-						onChange={(stat, entry) => setStatParams(prev => ({ ...prev, [stat]: entry }))}
+						validStats={activeStats}
+						onChange={stat.setEntry}
 						useRV={useRV}
 					/>
 				</VisualSection>
@@ -786,10 +792,10 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 									stats={currentStats}
 									count={SUB_STAT_COUNT}
 									onChange={setCurrentStats}
-									validStats={gameData.stats.filter(stat => stat !== mainStat)}
+									validStats={allowedStats}
 									useRV={useRV}
 									statValues={mode.fixedArtifact ? undefined : statParams}
-									onValueChange={(stat, value) => setStatParams(prev => ({ ...prev, [stat]: { ...prev[stat], currentRV: value } }))}
+									onValueChange={stat.setCurrentRV}
 									disabled={!calcGoalRollProb}
 								/>
 							</div>}
