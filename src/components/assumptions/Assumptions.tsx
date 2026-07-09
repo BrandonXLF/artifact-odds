@@ -1,23 +1,10 @@
 import { useContext, useMemo } from "preact/hooks";
-import { Percentage } from "./output/Percentage";
-import { GameContext } from "../contexts/GameContext";
-import { InfoMain } from "./misc/InfoMain";
-import { BasicUnitOutput, modes } from "../data/modes";
+import { BasicUnitOutput, modes } from "../../data/modes";
+import { ProbTable } from "./ProbTable";
+import { Percentage } from "../output/Percentage";
+import { GameContext } from "../../contexts/GameContext";
 
-const ProbTable = ({ children }: { children: preact.ComponentChildren }) => {
-	return <div>
-		<div
-			className="border border-primary p-2 w-max rounded-lg"
-			style="background: linear-gradient(315deg, color-mix(in lab, #383838, var(--color-primary-dark) 25%), #383838);"
-		>
-			<table class="leading-6 w-full [&_th]:text-left [&_td,&_th]:px-2 [&_td,&_th]:first:pl-0 [&_td,&_th]:last:pr-0">
-				{children}
-			</table>
-		</div>
-	</div>;
-}
-
-const Assumptions = () => {
+export const Assumptions = () => {
 	const { game, gameData } = useContext(GameContext);
 
 	const sortedStatWeights = useMemo(() => {
@@ -90,8 +77,4 @@ const Assumptions = () => {
 			</div>
 		</section>
 	</div>;
-}
-
-export const AssumptionsMain = () => {
-	return <InfoMain path="assumptions" title="Assumed Probabilities" content={<Assumptions />} />;
 }

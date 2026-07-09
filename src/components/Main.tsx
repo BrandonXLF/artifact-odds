@@ -6,7 +6,7 @@ import { meta } from '../data/meta';
 import { Game } from '../data/game';
 import { ensureTitle } from '..';
 import { data } from '../data/data';
-import { AssumptionsMain } from './AssumptionsMain';
+import { AssumptionsMain } from './assumptions/AssumptionsMain';
 import { ToggleButtons } from './input/ToggleButtons';
 import { RouteHook, Router, useRoute } from 'preact-iso';
 
