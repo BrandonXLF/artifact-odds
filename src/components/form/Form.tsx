@@ -112,6 +112,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	// Non-resettable
 	const [, setCustomGoalVer] = useState(0);
 
+	// Variables
 	const allLinesProb = mode.fixedArtifact ? Number(isFiveRoller) : mode.allLinesProb;
 	const allowedStats = useMemo(() => gameData.stats.filter(stat => stat !== mainStat), [gameData.stats, mainStat]);
 	const activeStats = mode.fixedArtifact ? currentStats : allowedStats
@@ -216,6 +217,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		return [max, max];
 	}, [sortedValidWeights, isFiveRoller, mode.fixedArtifact]);
 
+	// Callbacks
 	const stat = useMemo(() => ({
 		setEntry: (stat: string, entry: StatParams) => setStatParams(prev => ({ ...prev, [stat]: entry })),
 		setCurrentRV: (stat: string, value: number | undefined) => setStatParams(prev => ({ ...prev, [stat]: { ...prev[stat], currentRV: value } })),
@@ -248,60 +250,6 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	}, []);
 
 	const closeImport = useCallback(() => setShowImport(false), []);
-
-	useEffect(() => {
-		setTypeProb(undefined);
-		setMainProb(undefined);
-		setSubProb(undefined);
-		setRollProb(undefined);
-		setOverwhelminglyLikely(false);
-		setBarStats(undefined);
-		setBars([]);
-		setSimulationWorker(undefined);
-		setSimulationVer(undefined);
-		setTotal(undefined);
-
-		if (Array.isArray(mode.selectedStatCount) && !mode.selectedStatCount.includes(rawSelectedStatCount)) {
-			setRawSelectedStatCount(mode.selectedStatCount[0]);
-		}
-
-		if (mode.fixedArtifact &&
-			!mode.selectToIgnore &&
-			Array.isArray(mode.guaranteedCount) &&
-			!mode.guaranteedCount.includes(rawGuaranteedRollsCount)
-		) {
-			setRawGuaranteedRollsCount(mode.guaranteedCount[0]);
-		}
-	}, [mode, nonDefaultSubProb, calcBasicRollProb]);
-
-	useEffect(() => {
-		setOutputNum(0);
-	}, [mode]);
-
-	useEffect(() => {
-		if (useAutoGoalLoaded && useAutoGoal) {
-			setCustomGoal(round2(currentValue));
-		}
-	}, [currentValue, useAutoGoalLoaded, useAutoGoal]);
-
-	useEffect(
-		() => setAllOptimalPairs([]),
-		// All dependencies of calculate() besides selectedStats
-		[
-			mainStat,
-			mode,
-			dynamicMode,
-			required,
-			requireCount,
-			requireAllLines,
-			currentStats,
-			statParams,
-			artifactType,
-			acceptEither,
-			allLinesProb,
-			logicGoal
-		]
-	);
 
 	const getBaseConfig = () => {
 		const statDataConfig = new StatDataConfig(gameData.stats, gameData.statWeights, gameData.rollValues);
@@ -594,6 +542,61 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 
 		setOverwhelminglyLikely(false);
 	};
+
+	// Effects
+	useEffect(() => {
+		setTypeProb(undefined);
+		setMainProb(undefined);
+		setSubProb(undefined);
+		setRollProb(undefined);
+		setOverwhelminglyLikely(false);
+		setBarStats(undefined);
+		setBars([]);
+		setSimulationWorker(undefined);
+		setSimulationVer(undefined);
+		setTotal(undefined);
+
+		if (Array.isArray(mode.selectedStatCount) && !mode.selectedStatCount.includes(rawSelectedStatCount)) {
+			setRawSelectedStatCount(mode.selectedStatCount[0]);
+		}
+
+		if (mode.fixedArtifact &&
+			!mode.selectToIgnore &&
+			Array.isArray(mode.guaranteedCount) &&
+			!mode.guaranteedCount.includes(rawGuaranteedRollsCount)
+		) {
+			setRawGuaranteedRollsCount(mode.guaranteedCount[0]);
+		}
+	}, [mode, nonDefaultSubProb, calcBasicRollProb]);
+
+	useEffect(() => {
+		setOutputNum(0);
+	}, [mode]);
+
+	useEffect(() => {
+		if (useAutoGoalLoaded && useAutoGoal) {
+			setCustomGoal(round2(currentValue));
+		}
+	}, [currentValue, useAutoGoalLoaded, useAutoGoal]);
+
+	useEffect(
+		() => setAllOptimalPairs([]),
+		// All dependencies of calculate() besides selectedStats
+		[
+			mainStat,
+			mode,
+			dynamicMode,
+			required,
+			requireCount,
+			requireAllLines,
+			currentStats,
+			statParams,
+			artifactType,
+			acceptEither,
+			allLinesProb,
+			logicGoal
+		]
+	);
 
 	return (
 		<div>
