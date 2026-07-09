@@ -2,7 +2,7 @@ import { twMerge } from "tailwind-merge";
 import { round2 } from "../../utils/round";
 import { Button } from "../input/Button";
 import { OptionalNumberInput, StatValueInput } from "./StatValueInput";
-import { useContext } from "preact/hooks";
+import { useContext, useMemo } from "preact/hooks";
 import { GameContext } from "../../contexts/GameContext";
 
 export interface StatParamInputEntry {
@@ -63,10 +63,22 @@ export function StatParamInput<T extends StatParamInputEntry>(props: Readonly<{
 	const entries = (Object.entries(props.entries) as [string, T][]).filter(([stat]) => props.validStats.includes(stat));
 	const { gameMeta } = useContext(GameContext);
 
+	const allEntriesMaxWeight = useMemo(() => Math.max(...Object.values(props.entries).map(e => e.weight || 0), 0), [props.entries]);
+	const canNormalize = allEntriesMaxWeight !== 1 && allEntriesMaxWeight !== 0;
+
 	const setRelWeight = (stat: string, entry: T, scale: number) => {
 		const newWeight = scale === 0 ? 0 : Math.max(...Object.values(props.entries).map(e => e.weight || 0), 1) * scale;
 		props.onChange(stat, { ...entry, weight: round2(newWeight) });
 	};
+
+	const normalize = () => Object.keys(props.entries)
+		.filter(stat => props.entries[stat].weight !== undefined)
+		.forEach(stat => {
+			props.onChange(stat, {
+				...props.entries[stat],
+				weight: props.entries[stat].weight! / allEntriesMaxWeight
+			});
+		});
 
 	return (
 		<div>
@@ -88,23 +100,12 @@ export function StatParamInput<T extends StatParamInputEntry>(props: Readonly<{
 						<tr>
 							<th className="pr-3 pb-0.5!">Name</th>
 							<th className="border-l border-neutral-400 px-3 pb-0.5!">
-								<abbr title="Relative worth of each stat.">Relative Weight</abbr>{' '}
-								<button
-									class="link font-normal"
-									title="Normalize highest weight to 1"
-									onClick={() => {
-										const maxWeight = Math.max(...Object.values(props.entries).map(e => e.weight || 0), 0);
-	
-										Object.keys(props.entries)
-											.filter(stat => props.entries[stat].weight !== undefined)
-											.forEach(stat => {
-												props.onChange(stat, {
-													...props.entries[stat],
-													weight: props.entries[stat].weight! / maxWeight
-												});
-											});
-									}}
-								>[norm]</button>
+								<abbr title="Relative worth of each stat.">Relative Weight</abbr>{canNormalize && <>
+									{' '}
+									<button class="link font-normal" title="Normalize highest weight to 1." onClick={normalize}>
+										[norm]
+									</button>
+								</>}
 							</th>
 							<th className="pr-3 pb-0.5!">
 								<abbr title="Only count up to this much of the stat.">Max Counted</abbr>
