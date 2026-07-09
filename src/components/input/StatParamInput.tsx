@@ -93,7 +93,7 @@ export function StatParamInput(props: Readonly<{
 									class="link font-normal"
 									title="Normalize highest weight to 1"
 									onClick={() => {
-										const maxWeight = Math.max(...Object.values(props.entries).map(e => e.weight || 0), 1);
+										const maxWeight = Math.max(...Object.values(props.entries).map(e => e.weight || 0), 0);
 	
 										Object.keys(props.entries)
 											.filter(stat => props.entries[stat].weight !== undefined)
