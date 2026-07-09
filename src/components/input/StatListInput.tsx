@@ -34,7 +34,7 @@ export function StatListInput(props: Readonly<{
 	let anyError = false;
 
 	const out = (
-		<div class={`inline-flex ${props.statValues || props.initialValues ? 'gap-4' : 'gap-2'} flex-wrap`}>
+		<div class={`inline-flex ${props.statValues || props.initialValues ? 'gap-x-4' : 'gap-x-2'} gap-y-3 flex-wrap`}>
 			{new Array(props.count).fill(0).map((_, index) => {
 				let value = props.stats[index];
 				let options = selectableStats;
@@ -67,7 +67,6 @@ export function StatListInput(props: Readonly<{
 									</option>
 								))}
 							</select>
-							{props.statValues || props.initialValues ? <span>:</span> : null}
 						</div>
 						{props.statValues && (
 							<StatValueInput
@@ -82,7 +81,7 @@ export function StatListInput(props: Readonly<{
 						{props.initialValues && <>
 							{!props.statValues && <span>
 								Current:{' '}
-								<abbr title="Since goal is being manually inputted, the current rolls are not needed for comparison.">n/a</abbr>
+								[<abbr title="Since goal is being manually inputted, the current rolls are not needed for comparison.">n/a</abbr>]
 							</span>}
 							<div class="inline-flex items-center gap-0.5">
 								<span>(</span>
