@@ -1,4 +1,4 @@
-import { useContext, useMemo } from "preact/hooks";
+import { useContext } from "preact/hooks";
 import { StatValueInput } from "./StatValueInput";
 import { GameContext } from "../../contexts/GameContext";
 
