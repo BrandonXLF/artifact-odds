@@ -45,15 +45,16 @@ export const computeWaysAboveGoal = (statData: StatData, subStats: string[], rol
 		const next = new Map<number, [number, number]>();
 
 		for (const [sum, ways] of states.values()) {
-			for (const [statSum, statWays] of statRollSums.values()) {
+			for (const [rolledStatSum, statWays] of statRollSums.values()) {
 				// Apply each possible stat roll sum to each current path
-				let newSum = statSum + initial;
+				const statSum = rolledStatSum + initial;
+				let newSum: number;
 
-				if (newSum >= statData.getMin(stat)) {
-					const capped = Math.min(newSum, statData.getLimit(stat));
+				if (statSum >= statData.getMin(stat)) {
+					const capped = Math.min(statSum, statData.getLimit(stat));
 					newSum = sum + capped * statData.getUsefulness(stat);
 				} else {
-					newSum = -Infinity; // Invalid1
+					newSum = -Infinity; // Invalid
 				}
 
 				const key = roundKey(newSum);
