@@ -88,7 +88,23 @@ export function StatParamInput(props: Readonly<{
 						<tr>
 							<th className="pr-3 pb-0.5!">Name</th>
 							<th className="border-l border-neutral-400 px-3 pb-0.5!">
-								<abbr title="Relative worth of each stat.">Relative Weight</abbr>
+								<abbr title="Relative worth of each stat.">Relative Weight</abbr>{' '}
+								<button
+									class="link font-normal"
+									title="Normalize highest weight to 1"
+									onClick={() => {
+										const maxWeight = Math.max(...Object.values(props.entries).map(e => e.weight || 0), 1);
+	
+										Object.keys(props.entries)
+											.filter(stat => props.entries[stat].weight !== undefined)
+											.forEach(stat => {
+												props.onChange(stat, {
+													...props.entries[stat],
+													weight: props.entries[stat].weight! / maxWeight
+												});
+											});
+									}}
+								>[norm]</button>
 							</th>
 							<th className="pr-3 pb-0.5!">
 								<abbr title="Only count up to this much of the stat.">Max Counted</abbr>
