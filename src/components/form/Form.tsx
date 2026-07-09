@@ -9,7 +9,7 @@ import { computeSubProb } from '../../../logic/subStatProb';
 import { VisualSection } from '../structure/VisualSection';
 import { ToggleButtons } from '../input/ToggleButtons';
 import { Checkbox } from '../input/Checkbox';
-import { toBucket } from '../../../logic/utils/barChart';
+import { toBucket, toRange } from '../../../logic/utils/barChart';
 import { DocumentLink } from '../misc/DocumentLink';
 import { round2, roundMaxPrecision } from '../../utils/round';
 import { Percentage } from '../output/Percentage';
@@ -103,7 +103,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const [subProb, setSubProb] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [rollProb, setRollProb] = useResettableState<number | undefined>(undefined, resetTrigger);
 	const [overwhelminglyLikely, setOverwhelminglyLikely] = useResettableState<boolean>(false, resetTrigger);
-	const [bars, setBars] = useResettableState<[number, boolean][]>([], resetTrigger);
+	const [bars, setBars] = useResettableState<[number, boolean, readonly [number, number]][]>([], resetTrigger);
 	const [barStats, setBarStats] = useResettableState<BarStats | undefined>(undefined, resetTrigger);
 	const [simulationWorker, setSimulationWorker] = useResettableState<Worker | undefined>(undefined, resetTrigger);
 	const [simulationVer, setSimulationVer] = useResettableState<number | undefined>(undefined, resetTrigger);
@@ -484,7 +484,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			relativeBars[goalBucket] = relativeBars[goalBucket] ?? [0, false];
 			relativeBars[goalBucket][1] = true;
 
-			setBars(relativeBars);
+			setBars(relativeBars.map((b, i) => [b[0], b[1], toRange(i, statData.maxWeight)]));
 		} else {
 			setRollProb(undefined);
 			setBarStats(undefined);
