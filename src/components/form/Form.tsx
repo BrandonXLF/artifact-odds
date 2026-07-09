@@ -107,7 +107,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const [barStats, setBarStats] = useResettableState<BarStats | undefined>(undefined, resetTrigger);
 	const [simulationWorker, setSimulationWorker] = useResettableState<Worker | undefined>(undefined, resetTrigger);
 	const [simulationVer, setSimulationVer] = useResettableState<number | undefined>(undefined, resetTrigger);
-	const [total, setTotal] = useResettableState<number | undefined>(undefined, resetTrigger);
+	const [total, setTotal] = useResettableState<{stat: number, roll?: number} | undefined>(undefined, resetTrigger);
 
 	// Non-resettable
 	const [, setCustomGoalVer] = useState(0);
@@ -463,8 +463,12 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		const [newSubProb, validCombos, totalComboCount] = computeSubProb(statData, SUB_STAT_COUNT);
 		setSubProb(showSubProb ? newSubProb : undefined);
 
-		// Every combination corresponds to SUB_STAT_COUNT! permutations unless fixed
-		let total = totalComboCount * (mode.fixedArtifact ? 1 : factorial(SUB_STAT_COUNT));
+		const comboPermMult = mode.fixedArtifact ? 1 : factorial(SUB_STAT_COUNT);
+		const total = {
+			// Every combination corresponds to SUB_STAT_COUNT! permutations unless fixed
+			stat: totalComboCount * comboPermMult,
+			roll: undefined as number | undefined
+		};
 
 		const rollRestrictions = makeRollRestrictions(
 			guaranteedRollsStats,
@@ -486,7 +490,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 				maxRV: maxAttainable ?? 0,
 				goalRV: logicBaseGoal / 10000
 			});
-			total *= statistics.permCount;
+			total.roll = statistics.allCount * comboPermMult;
 
 			const maxBar = Math.max(...statistics.buckets);
 			const relativeBars = statistics.buckets.map(b => [b / maxBar, false] as [number, boolean]);
@@ -897,7 +901,9 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 						</div>}
 					</LabelGrid>
 					{total !== undefined && <div class="mt-2">
-						Considered <NumberDisplay highlight value={total} /> {rollProb === undefined ? "artifact" : (mode.fixedArtifact ? "roll" : "artifact + roll")} outcomes
+						Considered {mode.fixedArtifact
+							? <><NumberDisplay highlight value={total.roll} /> roll outcomes</>
+							: <><NumberDisplay highlight value={total.stat} /> artifact{total.roll && <> and <NumberDisplay highlight value={total.roll} /> rolled artifact</>} outcomes</>}
 					</div>}
 				</VisualSection>
 				{bars.length > 0 && <VisualSection>

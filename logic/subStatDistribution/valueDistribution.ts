@@ -86,6 +86,7 @@ export const computeWaysAboveGoal = (statData: StatData, subStats: string[], rol
 	return {
 		probAbove: num / totalWays,
 		avgAbove: num === 0 ? 0 : aboveSum / num,
+		allCount: totalWays,
 		avg: avgSum / totalWays,
 		buckets
 	};
