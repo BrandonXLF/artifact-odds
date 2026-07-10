@@ -30,7 +30,7 @@
 	
 \maketitle
 
-This document provides an overview of the approach taken to calculate all possible outcomes for an artifact in Genshin Impact.
+This document provides an overview of the approach taken to calculate all possible outcomes for an artifact in Genshin Impact as used by \href{https://www.brandonfowler.me/artifact-odds/}{Artifact Odds}.
 
 \tableofcontents
 \pagebreak
@@ -61,22 +61,23 @@ The probability for a given sub-stat outcome is:
 Where:
 \begin{itemize}[]
 	\item $p$ is the probability of the stat combination.
-	\item $InitialValueOutcomes$ the number of value outcomes for the initial states.
 	\item $RollOutcomes$ is the number of possible roll outcomes.
+	\item $InitialValueOutcomes$ the number of value outcomes for the initial states.
 	\item $RollValueOutcomes$ the number of value outcomes for the rolled stats.
 \end{itemize}
 
 Since the sub-stat probability is separately defined above, we have:
 \begin{align*}
 	&\begin{aligned}[t]Roll&Probability \times SubstatProbability = \\
-	&p\left(\frac{1}{InitialValueOutcomes}\right)\left(\frac{1}{RollOutcomes}\right)\left(\frac{1}{RollValueOutcomes}\right)\end{aligned} \\[12pt]
+	&p\left(\frac{1}{RollOutcomes}\right)\left(\frac{1}{InitialValueOutcomes}\right)\left(\frac{1}{RollValueOutcomes}\right)\end{aligned} \\[12pt]
 	&\begin{aligned}[t]Roll&Probability \times \sum_{valid} p = \\
-	&p\left(\frac{1}{InitialValueOutcomes}\right)\left(\frac{1}{RollOutcomes}\right)\left(\frac{1}{RollValueOutcomes}\right)\end{aligned} \\[12pt]
+	&p\left(\frac{1}{RollOutcomes}\right)\left(\frac{1}{InitialValueOutcomes}\right)\left(\frac{1}{RollValueOutcomes}\right)\end{aligned} \\[12pt]
 	&\begin{aligned}[t]Roll&Probability = \\
-	&\left(\frac{p}{\sum_{valid} p}\right)\left(\frac{1}{InitialValueOutcomes}\right)\left(\frac{1}{RollOutcomes}\right)\left(\frac{1}{RollValueOutcomes}\right)\end{aligned}
+	&\left(\frac{p}{\sum_{valid} p}\right)\left(\frac{1}{RollOutcomes}\right)\left(\frac{1}{InitialValueOutcomes}\right)\left(\frac{1}{RollValueOutcomes}\right)\end{aligned}
 \end{align*}
 
-\pagebreak
+\subsection{Total Number of Roll Possibilities}
+
 Let:
 \begin{itemize}[]
 	\item $a$ - The number of sub-stats
@@ -92,10 +93,7 @@ Then, there are $a = 4$ sub-stats to roll initially, $a^* = 4$ sub-stats choose 
 	\item $RollValueOutcomes = b^n = 4^n$ - The $n$ sub-stats rolls needs value assigned
 \end{itemize}
 
-Thus, the total number of possibilities is:
-\begin{align*}
-	(b^{a+n})(a_r^n) = (4^{4+n})(4^n)
-\end{align*}
+Thus, the total number of possibilities is: $(b^{a+n})(a_r^n) = (4^{4+n})(4^n)$
 
 \subsection{Roll Permutations}
 
@@ -103,11 +101,11 @@ To preserve the base of 4, each guaranteed roll is counted as $\frac{4}{\# of gu
 
 To reduce computation, the computed $4^n$ roll permutations are combined into combinations, giving each effective outcome a value $RollPermutations$.
 
-\subsection{Roll Values}
+\subsection{Initial and Roll Values}
 
-For each of these, the number of good outcomes is found based on the possible roll values.
+For each of these, the number of good outcomes is found based on the possible initial and roll values.
 
-For $n$ rolls, there are $4^{a+1}4^{b+1}4^{c+1}4^{d+1}$ possible roll value combinations where $a + b + c + d = n$.
+For $n$ rolls, there are $4^{a+1}4^{b+1}4^{c+1}4^{d+1}$ possible initial and roll value combinations where $a + b + c + d = n$.
 
 A method computes the roll value distribution of $x = a+1, \dots, d+1$. It iterates $x$ times, considering the 4 possible roll values that can extend the current computed values each time. To avoid computing a full $4^x$ outcomes, after each stage, paths with the same value are combined.
 
@@ -143,23 +141,25 @@ But instead, they can be grouped as so: 2 (1x), 1.5 (2x), 1 (3x), 0.5 (2x), 0 (1
 
 The general method to compute the number of outcomes above the goal also uses this method, but for the $4$ stat iterations.
 
-This gives each outcome $RollValuePossibilities_i$ for $i = 1, \dots, 4$.
+This gives each outcome $InitialAndRollValuePossibilities_i$ for $i = 1, \dots, 4$.
 
 \subsection{Total Probability}
 
 The probability associated with a single outcome is now:
 \begin{align*}
-	\frac{p \times RollPermutations \times \prod_{j = 1}^{4} RollValuePossibilities_j}{\sum_{valid} p \times RollOutcomes \times InitialValueOutcomes \times RollValueOutcomes}
+	\frac{p \times RollPermutations \times \prod_{i = 1}^{4} InitialAndRollValuePossibilities_i}{\sum_{valid} p \times RollOutcomes \times InitialValueOutcomes \times RollValueOutcomes}
 \end{align*}
 
 So, the total probability is:
+\small
 \begin{align*}
-	Tot&alProbability \\[8pt]
-	&= \sum_{i = 1}^{|combos|}\left(\frac{p \times RollPermutations \times \prod_{j = 1}^{4} RollValuePossibilities_j}{\sum_{valid} p \times RollOutcomes \times InitialValueOutcomes \times RollValueOutcomes}\right) \\[12pt]
-	&= \frac{\sum_{i = 1}^{|combos|} p_i \times RollPermutations_i \times \prod_{j = 1}^{4} RollValuePossibilities_{i,j}}{\sum_{valid} p \times RollOutcomes \times InitialValueOutcomes \times RollValueOutcomes} \\[12pt]
-	&= \frac{\sum_{i = 1}^{|combos|} p_i \times RollPermutations_i \times \prod_{j = 1}^{4} RollValuePossibilities_{i,j}}{\sum_{valid} p \times (4^n)^2(4^4)}
+	&TotalProbability \\[8pt]
+	&= \sum^{|\substack{stat \\ combos}|} \sum^{|\substack{roll \\ combos}|} \sum^{|\substack{value \\ combos}|} \frac{p \times RollPermutations \times \prod_{i = 1}^{4} InitialAndRollValuePossibilities_j}{\sum_{valid} p \times RollOutcomes \times InitialValueOutcomes \times RollValueOutcomes} \\[12pt]
+	&= \sum^{|\substack{stat \\ combos}|} \sum^{|\substack{roll \\ combos}|} \sum^{|\substack{value \\ combos}|} \frac{p}{\sum_{valid} p}\times\frac{RollPermutations}{RollOutcomes}\times\frac{\prod_{i = 1}^{4} InitialAndRollValuePossibilities_j}{InitialValueOutcomes \times RollValueOutcomes}
 \end{align*}
+\normalsize
 
+\pagebreak
 \subsection{Generating Outcomes}
 
 An overview of the code used to generate all outcomes is thus:
@@ -167,7 +167,7 @@ An overview of the code used to generate all outcomes is thus:
 \begin{algorithm}[H]
 	\SetInd{0.4em}{0.4em}
 
-	Sum = 0 \\
+	TotProb = 0 \\
 	
 	\ForEach{$(s_1, s_2, s_3, s_4 \rightarrow p)$ of GenerateCombos}{
 		\ForEach{$(r_1, r_2, r_3, r_4 \rightarrow RollPermutations)$ of RollCountsDist}{
@@ -187,17 +187,21 @@ An overview of the code used to generate all outcomes is thus:
 			}
 			
 			\ForEach{$(State \rightarrow Ways)$ of States}{
-				\If{$State$ is within goal}{
-					Sum += $p \times RollPermutations \times Ways$
+				\lIf{$State$ is within goal}{
+					GoalWays += $Ways$
 				}
+				TotWays += $Ways$
 			}
+			TotProb += $(GoalWays \div TotWays) \times (RollPermutations \div RollOutcomes) \times (p \div \sum_{valid} p)$ \\
 		}
 	}
 	
-	\Return $Sum \div (\sum_{valid} p \times (4^4)(4^n)^2))$
+	\Return TotProb
 \end{algorithm}
 
-Note that at the end, $Ways$ is just the product of the $RollValuePossibilities_i$, $i = 1, \dots, 4$, for the outcome.
+Note that $Ways$ is just the product of the $RollValuePossibilities_i$, $i = 1, \dots, 4$, for the outcome.
+
+\subsubsection{Distributions}
 
 The distribution viewer provides a way to visualize $RollCountsDist$ and $ValueOfRollsDist$.
 
@@ -207,7 +211,6 @@ Since artifacts have a chance to have 4 or 5 rolls (corresponding to 3 or 4 init
 \begin{align*}
 	TotalProbability_{n=4} \times (1 - P(n = 5)) + TotalProbability_{n=5} \times P(n = 5)
 \end{align*}
-
 So, the above pseudo-code is called twice for each calculation.
 
 \end{document}
