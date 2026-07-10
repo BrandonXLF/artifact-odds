@@ -525,10 +525,9 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			sortedValidWeights[0][1] > sortedValidWeights[1][1] &&
 			(sortedValidWeights.length <= SUB_STAT_COUNT || sortedValidWeights[SUB_STAT_COUNT - 1][1] > sortedValidWeights[SUB_STAT_COUNT][1])
 		) {
-			const secondBest = maxAttainable - (
-				sortedValidWeights[SUB_STAT_COUNT - 1][1] *
-					(gameData.rollValues[gameData.rollValues.length - 1] - gameData.rollValues[gameData.rollValues.length - 2])
-			);
+			const lowestIncludedWeight = [...sortedValidWeights].reverse().find(([_, w]) => w > 0)?.[1] ?? 0;
+			const oneLessRV = gameData.rollValues[gameData.rollValues.length - 1] - gameData.rollValues[gameData.rollValues.length - 2];
+			const secondBest = maxAttainable - (lowestIncludedWeight * oneLessRV);
 
 			// - Goal is better than the second best possibility
 			// - Weights are as small as possible
