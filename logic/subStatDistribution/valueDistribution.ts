@@ -81,7 +81,7 @@ export const computeWaysAboveGoal = (statData: StatData, subStats: string[], rol
 		totalWays += ways;
 
 		const bucket = toBucket(sum, statData.maxWeight);
-		buckets[bucket] = (buckets[bucket] ?? 0) + (ways ? 1 : 0);
+		buckets[bucket] = (buckets[bucket] ?? 0) + ways;
 	}
 
 	return {
