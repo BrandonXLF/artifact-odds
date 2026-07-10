@@ -111,6 +111,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 
 	// Non-resettable
 	const [, setCustomGoalVer] = useState(0);
+	const [importClicked, setImportClicked] = useState(false);
 
 	// Variables
 	const allLinesProb = mode.fixedArtifact ? Number(isFiveRoller) : mode.allLinesProb;
@@ -216,6 +217,8 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 
 		return [max, max];
 	}, [sortedValidWeights, isFiveRoller, mode.fixedArtifact]);
+
+	const importElRef = useRef<HTMLDivElement | null>(null);
 
 	// Callbacks
 	const stat = useMemo(() => ({
@@ -595,6 +598,15 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		}
 	}, [currentValue, useAutoGoalLoaded, useAutoGoal]);
 
+	useEffect(() => {
+		if (showImport && importClicked) {
+			importElRef.current?.scrollIntoView({
+				block: 'start',
+				behavior: 'smooth'
+			});
+		}
+	}, [showImport, importClicked]);
+
 	return (
 		<div>
 			<VisualSection>
@@ -633,7 +645,10 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 								<Checkbox label="Accept either set from the domain" checked={acceptEither} onChange={setAcceptEither} />}
 							{mode.fixedArtifact && <Checkbox label="Started with 4 lines" checked={isFiveRoller} onChange={setIsFiveRoller} />}
 							<div class="flex-1 text-right">
-								<Button onClick={() => setShowImport(!showImport)}>
+								<Button onClick={() => {
+									setImportClicked(true);
+									setShowImport(!showImport);
+								}}>
 									{showImport ? "Cancel" : "Import"}
 								</Button>
 							</div>
@@ -660,7 +675,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 					</div>}
 				</LabelGrid>
 			</VisualSection>
-			{showImport && <Import import={importArtifact} close={closeImport} />}
+			{showImport && <Import import={importArtifact} close={closeImport} elementRef={importElRef} />}
 			{(dynamicMode.selectedStatCount > 0 || Array.isArray(mode.selectedStatCount)) && <VisualSection>
 				<LabelGrid>
 					{Array.isArray(mode.selectedStatCount) && <div>

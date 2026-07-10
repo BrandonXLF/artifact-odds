@@ -9,6 +9,7 @@ import { GameContext } from "../../contexts/GameContext";
 import { Game } from "../../data/game";
 import { round2 } from "../../utils/round";
 import { data as allGameData } from "../../data/data";
+import { RefObject } from "preact";
 
 export interface ImportedArtifact {
 	totalCount: number;
@@ -166,7 +167,11 @@ const importers: {
 	}
 };
 
-export const Import = (props: { import: (art: ImportedArtifact) => void, close: () => void }) => {
+export const Import = (props: {
+	import: (art: ImportedArtifact) => void,
+	close: () => void,
+	elementRef?: RefObject<HTMLDivElement>
+}) => {
 	const { game, gameData } = useContext(GameContext);
 	const abort = useRef<AbortController | null>(null);
 	const [characterIndex, setCharacterIndex] = useState(0);
@@ -176,22 +181,6 @@ export const Import = (props: { import: (art: ImportedArtifact) => void, close: 
 	const [loaded, setLoaded] = useState<EquippedCharacter[]>([]);
 	const importer = importers[game];
 	const [nameResources, setNameResources] = useState<[any, LocResource]>([{}, {en: {}}]);
-
-	if (loadedGame !== null && loadedGame !== game) {
-		setLoadedGame(null);
-		setProfileName("");
-		setLoaded([]);
-		setCharacterIndex(0);
-	}
-
-	useEffect(() => {
-		(async () => {
-			setNameResources(await Promise.all([
-				getResource<Parameters<typeof importer["getAvatar"]>[0]>(importer.avatarResourceUrl),
-				getResource<LocResource>(importer.locResourceUrl)
-			]));
-		})();
-	}, [game]);
 
 	const loadProfile = async () => {
 		abort.current?.abort();
@@ -211,7 +200,23 @@ export const Import = (props: { import: (art: ImportedArtifact) => void, close: 
 		setLoaded(importer.getArtifacts(data, ...resources as any[]));
 	}
 
-	return <VisualSection>
+	if (loadedGame !== null && loadedGame !== game) {
+		setLoadedGame(null);
+		setProfileName("");
+		setLoaded([]);
+		setCharacterIndex(0);
+	}
+
+	useEffect(() => {
+		(async () => {
+			setNameResources(await Promise.all([
+				getResource<Parameters<typeof importer["getAvatar"]>[0]>(importer.avatarResourceUrl),
+				getResource<LocResource>(importer.locResourceUrl)
+			]));
+		})();
+	}, [game]);
+
+	return <VisualSection elementRef={props.elementRef}>
 		<div class="flex gap-x-2 gap-y-4 flex-wrap-reverse">
 			<div class="flex items-center gap-2 flex-wrap">
 				<label class="contents">
