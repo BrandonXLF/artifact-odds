@@ -38,12 +38,11 @@ export const computeValidRolls = (
 		avgAboveSum += m * statistics.probAbove * statistics.avgAbove;
 		allCount += m * statistics.allCount;
 		avgSum += m * statistics.avg;
-
 		totalRelProbs += m;
 
-		for (let i = 0; i < statistics.buckets.length; i++) {
-			buckets[i] = (buckets[i] ?? 0) + m * (statistics.buckets[i] ?? 0);
-		}
+		statistics.buckets.forEach((count, i) => {
+			buckets[i] = (buckets[i] ?? 0) + m * count;
+		});
 	}
 
 	return {
@@ -78,9 +77,9 @@ const computeRollCountProb = (
 		avgSum += statistics.avg * weightProb;
 		totalWeights += weightProb;
 
-		for (let i = 0; i < statistics.buckets.length; i++) {
-			buckets[i] = (buckets[i] ?? 0) + weightProb * (statistics.buckets[i] ?? 0);
-		}
+		statistics.buckets.forEach((count, i) => {
+			buckets[i] = (buckets[i] ?? 0) + weightProb * count;
+		});
 	}
 
 	return {
@@ -121,9 +120,9 @@ export const computeRollProb = (
 
 		fourCount = statistics.allCount;
 
-		for (let i = 0; i < statistics.buckets.length; i++) {
-			buckets[i] = (buckets[i] ?? 0) + (1 - allLinesProb) * (statistics.buckets[i] ?? 0);
-		}
+		statistics.buckets.forEach((count, i) => {
+			buckets[i] = (buckets[i] ?? 0) + (1 - allLinesProb) * count;
+		});
 	}
 
 	if (allLinesProb > 0) {
@@ -138,9 +137,9 @@ export const computeRollProb = (
 			? (fourCount * (1 - allLinesProb)) / (statistics.allCount * allLinesProb)
 			: 1;
 
-		for (let i = 0; i < statistics.buckets.length; i++) {
-			buckets[i] = (buckets[i] ?? 0) + allLinesProb * scaleDown * (statistics.buckets[i] ?? 0);
-		}
+		statistics.buckets.forEach((count, i) => {
+			buckets[i] = (buckets[i] ?? 0) + allLinesProb * scaleDown * count;
+		});
 	}
 
 	return {

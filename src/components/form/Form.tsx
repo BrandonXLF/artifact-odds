@@ -464,27 +464,27 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 
 			const statistics = computeRollProb(statData, rollRestrictions, validCombos, logicGoal);
 			setRollProb(statistics.probAbove);
+			total.roll = statistics.allCount * comboPermMult;
+
 			setBarStats({
 				avgRV: statistics.avg / 10000,
 				avgAboveRV: statistics.avgAbove / 10000,
 				maxRV: maxAttainable ?? 0,
 				goalRV: logicBaseGoal / 10000
 			});
-			total.roll = statistics.allCount * comboPermMult;
 
-			const maxBar = Math.max(...statistics.buckets);
-			const relativeBars: [number, boolean][] = statistics.buckets.map(b => [b / maxBar, false]);
-
+			const maxBar = statistics.buckets.reduce((a, b) => Math.max(a, b), -Infinity);
 			const maxBucketIndex = toBucket((maxAttainable ?? 0) * 100, statData.maxWeight);
+			const relativeBars: [number, boolean, readonly [number, number]][] = [];
+
 			for (let i = 0; i <= maxBucketIndex; i++) {
-				relativeBars[i] = relativeBars[i] ?? [0, false];
+				relativeBars[i] = [(statistics.buckets[i] ?? 0) / maxBar, false, toRange(i, statData.maxWeight)];
 			}
 
 			const goalBucket = Math.min(relativeBars.length - 1, toBucket(logicBaseGoal, statData.maxWeight));
-			relativeBars[goalBucket] = relativeBars[goalBucket] ?? [0, false];
 			relativeBars[goalBucket][1] = true;
 
-			setBars(relativeBars.map((b, i) => [b[0], b[1], toRange(i, statData.maxWeight)]));
+			setBars(relativeBars);
 		} else {
 			setRollProb(undefined);
 			setBarStats(undefined);
