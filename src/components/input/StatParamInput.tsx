@@ -2,7 +2,7 @@ import { twMerge } from "tailwind-merge";
 import { round2 } from "../../utils/round";
 import { Button } from "../input/Button";
 import { OptionalNumberInput, StatValueInput } from "./StatValueInput";
-import { useContext, useMemo } from "preact/hooks";
+import { useContext, useMemo, useState } from "preact/hooks";
 import { GameContext } from "../../contexts/GameContext";
 
 export interface StatParamInputEntry {
@@ -57,26 +57,49 @@ const WeightButton = (props: Readonly<{
 export function StatParamInput<T extends StatParamInputEntry>(props: Readonly<{
 	entries: Record<string, T>;
 	validStats: string[];
+	invalidStats?: string[];
 	onChange: (stat: string, entry: T) => void;
 	useRV?: boolean;
 }>) {
-	const entries = (Object.entries(props.entries) as [string, T][]).filter(([stat]) => props.validStats.includes(stat));
 	const { gameMeta } = useContext(GameContext);
+	const [showExtra, setShowExtra] = useState(false);
 
-	const allEntriesMaxWeight = useMemo(() => Math.max(...Object.values(props.entries).map(e => e.weight || 0), 0), [props.entries]);
-	const canNormalize = allEntriesMaxWeight !== 1 && allEntriesMaxWeight !== 0;
+	const [entries, hasExtra] = useMemo(() => {
+		const allEntries = Object.entries(props.entries) as [string, T][];
+
+		let entries: [string, T, boolean][] = allEntries
+			.filter(([stat]) => props.validStats.includes(stat))
+			.map(x => [...x, false]);
+		let hasExtra = false;
+
+		if (showExtra) {
+			const extraEntries: [string, T, boolean][]  = allEntries
+				.filter(([stat]) => props.invalidStats?.includes(stat))
+				.map(x => [...x, true]);
+			entries.push(...extraEntries);
+			hasExtra = extraEntries.length > 0;
+		} else {
+			hasExtra = allEntries.some(([stat]) => props.invalidStats?.includes(stat));
+		}
+
+		return [entries, hasExtra];
+	}, [props.entries, props.validStats, props.invalidStats, showExtra]);
+
+	const entriesMaxWeight = useMemo(() => Math.max(...entries.map(([, entry]) => entry.weight || 0), 0), [entries]);
+	const canNormalize = entriesMaxWeight !== 1 && entriesMaxWeight !== 0;
 
 	const setRelWeight = (stat: string, entry: T, scale: number) => {
-		const newWeight = scale === 0 ? 0 : Math.max(...Object.values(props.entries).map(e => e.weight || 0), 1) * scale;
+		const newWeight = scale === 0 ? 0 : (entriesMaxWeight || 1) * scale;
 		props.onChange(stat, { ...entry, weight: round2(newWeight) });
 	};
 
+	// Normalize ALL stats, not just the visible ones, so relative weights are preserved
 	const normalize = () => Object.keys(props.entries)
 		.filter(stat => props.entries[stat].weight !== undefined)
 		.forEach(stat => {
 			props.onChange(stat, {
 				...props.entries[stat],
-				weight: props.entries[stat].weight! / allEntriesMaxWeight
+				weight: props.entries[stat].weight! / entriesMaxWeight
 			});
 		});
 
@@ -121,8 +144,8 @@ export function StatParamInput<T extends StatParamInputEntry>(props: Readonly<{
 								<td colSpan={4} class="text-neutral-400">Input sub-stats above first.</td>
 							</tr>
 						)}
-						{entries.map(([stat, entry]) => (
-							<tr key={stat}>
+						{entries.map(([stat, entry, isExtra]) => (
+							<tr key={stat} class={isExtra ? "bg-red-500/10" : ""}>
 								<td className="border-r border-neutral-400 pr-3">{stat}</td>
 								<td class="flex gap-2 items-center px-3">
 									<OptionalNumberInput
@@ -161,6 +184,11 @@ export function StatParamInput<T extends StatParamInputEntry>(props: Readonly<{
 					</tbody>
 				</table>
 			</div>
+			{hasExtra && <div>
+				<button class="link font-normal" onClick={() => setShowExtra(!showExtra)}>
+					{showExtra ? "▲ Hide" : "▼ Show"} unobtainable stats
+				</button>
+			</div>}
 		</div>
 	);
 }

@@ -116,7 +116,8 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	// Variables
 	const allLinesProb = mode.fixedArtifact ? Number(isFiveRoller) : mode.allLinesProb;
 	const allowedStats = useMemo(() => gameData.stats.filter(stat => stat !== mainStat), [gameData.stats, mainStat]);
-	const activeStats = mode.fixedArtifact ? currentStats : allowedStats
+	const activeStats = mode.fixedArtifact ? currentStats : allowedStats;
+	const inactiveStats = useMemo(() => gameData.stats.filter(stat => !activeStats.includes(stat)), [gameData.stats, activeStats]);
 
 	const currentValue = useMemo(
 		() => roundMaxPrecision(
@@ -789,6 +790,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 					<StatParamInput
 						entries={statParams}
 						validStats={activeStats}
+						invalidStats={inactiveStats}
 						onChange={stat.setEntry}
 						useRV={useRV}
 					/>
