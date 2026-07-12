@@ -105,7 +105,7 @@ To reduce computation, the computed $4^n$ roll permutations are combined into co
 
 For each of these, the number of good outcomes is found based on the possible initial and roll values.
 
-For $n$ rolls, there are $4^{a+1}4^{b+1}4^{c+1}4^{d+1}$ possible initial and roll value combinations where $a + b + c + d = n$.
+For $n$ rolls, there are $4^{a+1}4^{b+1}4^{c+1}4^{d+1}$ possible initial and roll value combinations (or just $4^{a}4^{b}4^{c}4^{d}$ in the case of artifact re-rolling when the initial stats are preserved) where $a + b + c + d = n$.
 
 A method computes the roll value distribution of $x = a+1, \dots, d+1$. It iterates $x$ times, considering the 4 possible roll values that can extend the current computed values each time. To avoid computing a full $4^x$ outcomes, after each stage, paths with the same value are combined.
 
