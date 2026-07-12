@@ -94,6 +94,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const [outputNum, setOutputNum] = useStoredState<Record<string, number>>("outputNum", {}, resetTrigger);
 
 	// Input feedback
+	const [fixedStatsInvalid, setFixedStatsInvalid] = useResettableState<boolean | undefined>(undefined, resetTrigger);
 	const [selectedStatsInvalid, setSelectedStatsInvalid] = useResettableState<boolean | undefined>(undefined, resetTrigger);
 	const [allOptimalPairs, setAllOptimalPairs] = useResettableState<string[][]>(() => [], resetTrigger);
 
@@ -218,6 +219,10 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 
 		return [max, max];
 	}, [sortedValidWeights, isFiveRoller, mode.fixedArtifact]);
+
+	const calculateDisabled =
+		(dynamicMode.selectedStatCount > 0 && selectedStatsInvalid) ||
+		(mode.fixedArtifact && fixedStatsInvalid);
 
 	const importElRef = useRef<HTMLDivElement | null>(null);
 
@@ -671,6 +676,8 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 								initialValues={mode.fixedArtifact && mode.fixedInitial ? initialValues : undefined}
 								onValueChange={stat.setCurrentRV}
 								onInitialChange={stat.setInitialRV}
+								hasKnownError={fixedStatsInvalid}
+								onErrorChange={setFixedStatsInvalid}
 							/>
 						</div>
 					</div>}
@@ -846,7 +853,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 				<h3 class="text-xl font-bold my-5">Probability Results</h3>
 				<VisualSection>
 					<div class="flex gap-4 items-center flex-wrap">
-						<Button primary onClick={() => calculate()} disabled={dynamicMode.selectedStatCount > 0 && selectedStatsInvalid}>Calculate</Button>
+						<Button primary onClick={() => calculate()} disabled={calculateDisabled}>Calculate</Button>
 						<div class="flex gap-2 items-center flex-wrap">
 							<strong>Advanced:</strong>
 							<label>
