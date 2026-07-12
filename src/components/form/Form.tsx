@@ -486,7 +486,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			}
 
 			const goalBucket = Math.min(relativeBars.length - 1, toBucket(logicBaseGoal, statData.maxWeight));
-			relativeBars[goalBucket][1] = true;
+			if (goalBucket !== -1) relativeBars[goalBucket][1] = true;
 
 			setBars(relativeBars);
 		} else {
