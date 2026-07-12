@@ -56,7 +56,7 @@ export function StatListInput(props: Readonly<{
 				anyError ||= error;
 
 				return (
-					<div class="inline-flex items-center gap-2 flex-wrap" key={index}>
+					<div class="inline-grid grid-cols-2 gap-2 min-[500px]:inline-flex min-[500px]:items-center min-[500px]:flex-wrap" key={index}>
 						<div class="inline-flex items-center gap-0.5">
 							<select
 								value={value ?? ""}
@@ -87,23 +87,25 @@ export function StatListInput(props: Readonly<{
 								Current:{' '}
 								[<abbr title="Since goal is being manually inputted, the current rolls are not needed for comparison.">n/a</abbr>]
 							</span>}
-							<div class="inline-flex items-center gap-0.5">
-								<span>(</span>
-								<span class="mr-1">
+							<label class="contents min-[500px]:inline-flex items-center gap-1">
+								<div class="inline-flex items-center gap-0.5 justify-end">
+									<span>(</span>
 									<abbr title="Initial rolls remain the same. If not provided, assumed to be unknown, which may give a significantly inaccurate probability. Imported artifacts will populate these fields.">
 										Initial
 									</abbr>:
-								</span>
-								<StatValueInput
-									disabled={props.disabled || !value}
-									useRV={props.useRV ?? false}
-									stat={value}
-									value={props.initialValues[value]?.currentRV}
-									placeholder="Unknown"
-									onChange={(initialValue) => props.onInitialChange?.(value, initialValue)}
-								/>
-								<span>)</span>
-							</div>
+								</div>
+								<div class="inline-flex items-center gap-0.5">
+									<StatValueInput
+										disabled={props.disabled || !value}
+										useRV={props.useRV ?? false}
+										stat={value}
+										value={props.initialValues[value]?.currentRV}
+										placeholder="Unknown"
+										onChange={(initialValue) => props.onInitialChange?.(value, initialValue)}
+									/>
+									<span>)</span>
+								</div>
+							</label>
 						</>}
 					</div>
 				);
