@@ -23,10 +23,16 @@ export function StatListInput(props: Readonly<{
 }>) {
 	const { gameData } = useContext(GameContext);
 	const validStats = props.validStats ?? gameData.stats;
-	const selectableStats = validStats.filter(stat => !props.stats.includes(stat));
 
 	const change = (i: number, stat: string) => {
 		const newStats = [...props.stats];
+
+		if (stat !== '') {
+			// Swap with existing input for stat
+			const existingWithValue = props.stats.findIndex((s, index) => s === stat && index !== i);
+			if (existingWithValue !== -1) newStats[existingWithValue] = props.stats[i];
+		}
+
 		newStats[i] = stat;
 		props.onChange(newStats);
 	};
@@ -37,26 +43,24 @@ export function StatListInput(props: Readonly<{
 		<div class={`inline-flex ${props.statValues || props.initialValues ? 'gap-x-4' : 'gap-x-2'} gap-y-3 flex-wrap`}>
 			{new Array(props.count).fill(0).map((_, index) => {
 				let value = props.stats[index];
-				let options = selectableStats;
+				let options = validStats;
 				let error = false;
 
 				if (value && !options.includes(value)) {
-					options = [value, ...options];
-					error = !validStats.includes(value);
-				}
-
-				if (!value && !props.clearable) {
+					options = [value, ...options]
+					error = true;
+				} else if (!value && !props.clearable) {
 					error = true;
 				}
 
-				anyError = anyError || error;
+				anyError ||= error;
 
 				return (
 					<div class="inline-flex items-center gap-2 flex-wrap" key={index}>
 						<div class="inline-flex items-center gap-0.5">
 							<select
 								value={value ?? ""}
-								disabled={props.disabled || selectableStats.length === 0}
+								disabled={props.disabled || validStats.length === 0}
 								onChange={(e) => change(index, (e.target as HTMLSelectElement).value)}
 								class={`w-30 ${error ? "border-red-500" : ""}`}
 							>
@@ -107,7 +111,8 @@ export function StatListInput(props: Readonly<{
 		</div>
 	);
 
-	if (anyError !== props.hasKnownError) props.onErrorChange?.(anyError);
+	if (anyError !== props.hasKnownError)
+		props.onErrorChange?.(anyError);
 
 	return out;
 }
