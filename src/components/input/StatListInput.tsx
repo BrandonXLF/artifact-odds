@@ -1,4 +1,4 @@
-import { useContext } from "preact/hooks";
+import { useContext, useEffect } from "preact/hooks";
 import { StatValueInput } from "./StatValueInput";
 import { GameContext } from "../../contexts/GameContext";
 
@@ -9,20 +9,25 @@ export interface StatListInputEntry {
 export function StatListInput(props: Readonly<{
 	stats: string[];
 	count: number;
+	minCount?: number;
+	require?: number;
 	validStats?: string[];
 	statValues?: Record<string, StatListInputEntry>;
 	initialValues?: Record<string, StatListInputEntry>;
 	useRV?: boolean;
 	disabled?: boolean;
+	clearable?: boolean;
 	onChange: (stats: string[]) => void;
 	onValueChange?: (stat: string, value: number | undefined) => void;
 	onInitialChange?: (stat: string, value: number | undefined) => void;
-	clearable?: boolean;
+	onCountChange?: (count: number) => void;
 	hasKnownError?: boolean;
 	onErrorChange?: (hasError: boolean) => void;
 }>) {
 	const { gameData } = useContext(GameContext);
 	const validStats = props.validStats ?? gameData.stats;
+	const hasStatInput = props.statValues || props.initialValues;
+	const autoCount = !!props.onCountChange;
 
 	const change = (i: number, stat: string) => {
 		const newStats = [...props.stats];
@@ -37,10 +42,27 @@ export function StatListInput(props: Readonly<{
 		props.onChange(newStats);
 	};
 
+	useEffect(() => {
+		if (!autoCount) return;
+		let newCount = props.stats.length + 1;
+
+		const nonEmptyStats = props.stats.filter(Boolean);
+		if (nonEmptyStats.length !== props.stats.length) {
+			props.onChange(nonEmptyStats);
+			newCount = nonEmptyStats.length + 1;
+		}
+
+		if (props.minCount !== undefined && newCount < props.minCount)
+			newCount = props.minCount;
+
+		if (props.count !== newCount)
+			props.onCountChange?.(newCount);
+	}, [autoCount, props.stats, props.count, props.minCount]);
+
 	let anyError = false;
 
 	const out = (
-		<div class={`inline-flex ${props.statValues || props.initialValues ? 'gap-x-4' : 'gap-x-2'} gap-y-3 flex-wrap`}>
+		<div class={`inline-flex ${hasStatInput ? 'gap-x-4' : 'gap-x-2'} gap-y-3 flex-wrap`}>
 			{new Array(props.count).fill(0).map((_, index) => {
 				let value = props.stats[index];
 				let options = validStats;
@@ -49,14 +71,14 @@ export function StatListInput(props: Readonly<{
 				if (value && !options.includes(value)) {
 					options = [value, ...options]
 					error = true;
-				} else if (!value && !props.clearable) {
+				} else if (!value && (!props.clearable || (props.require !== undefined && index < props.require))) {
 					error = true;
 				}
 
 				anyError ||= error;
 
 				return (
-					<div class="inline-grid grid-cols-2 gap-2 min-[500px]:inline-flex min-[500px]:items-center min-[500px]:flex-wrap" key={index}>
+					<div class={`inline-grid ${hasStatInput ? 'grid-cols-2' : 'grid-cols-1'} gap-2 min-[500px]:inline-flex min-[500px]:items-center min-[500px]:flex-wrap`} key={index}>
 						<div class="inline-flex items-center gap-0.5">
 							<select
 								value={value ?? ""}
@@ -110,6 +132,7 @@ export function StatListInput(props: Readonly<{
 					</div>
 				);
 			})}
+			{autoCount && <span>...</span>}
 		</div>
 	);
 

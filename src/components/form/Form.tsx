@@ -31,6 +31,7 @@ import { factorial } from '../../utils/factorial';
 import { NumberDisplay } from '../output/NumberDisplay';
 import { QuantileOutput } from '../output/QuantileOutput';
 import { computeTypeProb } from '../../../logic/typeProb';
+import { RequireStatsOfInput } from '../input/RequireStatsOfInput';
 
 type StatParams = StatParamInputEntry & StatListInputEntry;
 
@@ -150,8 +151,8 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const showSubProb = !mode.fixedArtifact;
 
 	const nonDefaultSubProb = useMemo(
-		() => showSubProb && (requireCount > 0 || requiredByMins.length > 0 || requireAllLines),
-		[showSubProb, requireCount, requiredByMins, requireAllLines]
+		() => showSubProb && (allRequired.some(Boolean) || requiredByMins.length > 0 || requireCount > 0 || requireAllLines),
+		[allRequired, showSubProb, requireCount, requiredByMins.length, requireAllLines]
 	);
 	const calcGoalRollProb = useMemo(
 		() => mode.fixedArtifact || activeStats.some(stat => statParams[stat].weight),
@@ -266,11 +267,11 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		statDataConfig.exclude(mainStat);
 
 		if (!mode.fixedArtifact) {
-			statDataConfig.requireAll(allRequired);
+			statDataConfig.requireAll(allRequired.filter(Boolean));
 		}
 
 		if (!mode.fixedArtifact && requireCount > 0) {
-			statDataConfig.requireSome(someRequired, requireCount);
+			statDataConfig.requireSome(someRequired.filter(Boolean), requireCount);
 		}
 
 		if (!mode.fixedArtifact && requireAllLines) {
@@ -769,39 +770,25 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 							<div>
 								<strong>Required</strong>:
 							</div>
-							<div class="flex gap-2 items-center">
-								<span>Require all of</span>
-								<StatListInput
-									clearable
-									stats={allRequired}
-									count={SUB_STAT_COUNT}
-									onChange={setAllRequired}
-									validStats={activeStats}
-								/>
-							</div>
+							<StatListInput
+								clearable
+								stats={allRequired}
+								count={SUB_STAT_COUNT}
+								onChange={setAllRequired}
+								validStats={activeStats}
+							/>
 						</div>
 						<div>
 							<div>
 								<strong>Optional</strong>:
 							</div>
-							<div class="flex gap-2 items-center">
-								<span>Require</span>
-								<input
-									type="number"
-									value={requireCount}
-									onChange={(e) => setRequireCount(Number((e.target as HTMLInputElement).value))}
-									class="w-20"
-									min={0}
-								/>
-								<span>of</span>
-								<StatListInput
-									clearable
-									stats={someRequired}
-									count={SUB_STAT_COUNT}
-									onChange={setSomeRequired}
-									validStats={activeStats}
-								/>
-							</div>
+							<RequireStatsOfInput
+								count={requireCount}
+								setCount={setRequireCount}
+								stats={someRequired}
+								setStats={setSomeRequired}
+								validStats={activeStats}
+							/>
 						</div>
 					</LabelGrid>
 					{requiredByMins.length > 0 && <div class="mt-2">
