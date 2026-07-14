@@ -10,7 +10,8 @@ export class StatData {
 		private readonly mins: Partial<Record<string, number>>,
 		private readonly limits: Partial<Record<string, number>>,
 		private readonly initial: Partial<Record<string, number>>,
-		private readonly required: string[],
+		private readonly allRequired: string[],
+		private readonly someRequired: string[],
 		private readonly requiredCount: number,
 		private readonly _requiredAllLinesProb: number | undefined,
 		private readonly _rollValues: readonly number[],
@@ -44,10 +45,21 @@ export class StatData {
 			if (!combo.includes(stat)) return false;
 		}
 
-		if (this.requiredCount <= 0) return true;
+		for (const stat of this.allRequired) {
+			if (!combo.includes(stat)) return false;
+		}
 
-		const count = combo.filter(stat => this.required.includes(stat)).length;
-		return count >= this.requiredCount;
+		if (this.requiredCount > 0) {
+			let count = 0;
+
+			for (const stat of this.someRequired) {
+				if (combo.includes(stat)) count++;
+			}
+
+			if (count < this.requiredCount) return false;
+		}
+
+		return true;
 	}
 
 	getRollValues(stat: string): readonly number[] {
@@ -93,8 +105,9 @@ export class StatDataConfig {
 	initial: Partial<Record<string, number>> = {};
 
 	guaranteed: string[] = [];
+	allRequired: string[] = [];
+	someRequired: string[] = [];
 	requiredCount: number = 0;
-	required: string[] = [];
 	requiredAllLinesProb: number | undefined;
 
 	onlyInclude(stats: string[]): this {
@@ -113,14 +126,15 @@ export class StatDataConfig {
 		return this;
 	}
 
-	require(count: number) {
-		return {
-			of: (...stats: string[]): this => {
-				this.requiredCount = count;
-				this.required = stats;
-				return this;
-			}
-		}
+	requireAll(stats: string[]): this {
+		this.allRequired = stats;
+		return this;
+	}
+
+	requireSome(stats: string[], count: number): this {
+		this.someRequired = stats;
+		this.requiredCount = count;
+		return this;
 	}
 
 	requireAllLines(prob: number): this {
@@ -169,7 +183,8 @@ export class StatDataConfig {
 			mins,
 			limits,
 			initial,
-			this.required,
+			this.allRequired,
+			this.someRequired,
 			this.requiredCount,
 			this.requiredAllLinesProb,
 			this.rollValues,

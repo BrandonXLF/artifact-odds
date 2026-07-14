@@ -70,9 +70,10 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const [rawSelectedStatCount, setRawSelectedStatCount] = useStoredState<number>("selectedStatCount", 0, resetTrigger);
 	const [rawGuaranteedRollsCount, setRawGuaranteedRollsCount] = useStoredState<number>("guaranteedRollsCount", 2, resetTrigger);
 	const [customGoal, setCustomGoal] = useStoredState<number>("customGoal", 0, resetTrigger);
+	const [allRequired, setAllRequired] = useStoredState<string[]>("allRequired", () => [], resetTrigger);
+	const [someRequired, setSomeRequired] = useStoredState<string[]>("required", () => [], resetTrigger);
 	const [requireCount, setRequireCount] = useStoredState<number>("requireCount", 0, resetTrigger);
 	const [requireAllLines, setRequireAllLines] = useStoredState<boolean>("requireAllLines", false, resetTrigger);
-	const [required, setRequired] = useStoredState<string[]>("required", () => [], resetTrigger);
 	const [statParams, setStatParams] = useStoredState(
 		"statWeights",
 		() => Object.fromEntries(gameData.stats.map(stat => [stat, {}])) as Record<string, StatParams>,
@@ -264,8 +265,12 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		const statDataConfig = new StatDataConfig(gameData.stats, gameData.statWeights, gameData.rollValues);
 		statDataConfig.exclude(mainStat);
 
+		if (!mode.fixedArtifact) {
+			statDataConfig.requireAll(allRequired);
+		}
+
 		if (!mode.fixedArtifact && requireCount > 0) {
-			statDataConfig.require(requireCount).of(...required);
+			statDataConfig.requireSome(someRequired, requireCount);
 		}
 
 		if (!mode.fixedArtifact && requireAllLines) {
@@ -586,7 +591,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			mainStat,
 			mode,
 			dynamicMode,
-			required,
+			someRequired,
 			requireCount,
 			requireAllLines,
 			currentStats,
@@ -759,24 +764,46 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 					Only consider artifacts with these stats.
 				</div>
 				<VisualSection>
-					<div class="flex gap-2 items-center">
-						<span>Require</span>
-						<input
-							type="number"
-							value={requireCount}
-							onChange={(e) => setRequireCount(Number((e.target as HTMLInputElement).value))}
-							class="w-20"
-							min={0}
-						/>
-						<span>of</span>
-						<StatListInput
-							clearable
-							stats={required}
-							count={SUB_STAT_COUNT}
-							onChange={setRequired}
-							validStats={activeStats}
-						/>
-					</div>
+					<LabelGrid>
+						<div>
+							<div>
+								<strong>Required</strong>:
+							</div>
+							<div class="flex gap-2 items-center">
+								<span>Require all of</span>
+								<StatListInput
+									clearable
+									stats={allRequired}
+									count={SUB_STAT_COUNT}
+									onChange={setAllRequired}
+									validStats={activeStats}
+								/>
+							</div>
+						</div>
+						<div>
+							<div>
+								<strong>Optional</strong>:
+							</div>
+							<div class="flex gap-2 items-center">
+								<span>Require</span>
+								<input
+									type="number"
+									value={requireCount}
+									onChange={(e) => setRequireCount(Number((e.target as HTMLInputElement).value))}
+									class="w-20"
+									min={0}
+								/>
+								<span>of</span>
+								<StatListInput
+									clearable
+									stats={someRequired}
+									count={SUB_STAT_COUNT}
+									onChange={setSomeRequired}
+									validStats={activeStats}
+								/>
+							</div>
+						</div>
+					</LabelGrid>
 					{requiredByMins.length > 0 && <div class="mt-2">
 						Implicitly required by roll minimums: {requiredByMins.join(', ')}
 					</div>}
