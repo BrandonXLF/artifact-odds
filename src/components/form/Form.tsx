@@ -762,7 +762,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			{!mode.fixedArtifact && <section>
 				<h3 class="text-xl font-bold mt-5">Stat Requirements</h3>
 				<div class="mt-1">
-					Only consider artifacts with these stats.
+					Only consider artifacts with these substats.
 				</div>
 				<VisualSection>
 					<LabelGrid>
