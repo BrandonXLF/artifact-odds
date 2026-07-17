@@ -4,6 +4,7 @@ import { GameContext } from "../../contexts/GameContext";
 
 export const StatValueInput = (props: Readonly<{
 	disabled?: boolean;
+	small?: boolean;
 	value: number | undefined;
 	useRV: boolean;
 	stat?: string;
@@ -44,6 +45,7 @@ export const StatValueInput = (props: Readonly<{
 	return (
 		<OptionalNumberInput
 			disabled={props.disabled}
+			small={props.small}
 			value={value}
 			placeholder={props.placeholder + (props.useRV ? " RV%" : "")}
 			onChange={onChange}

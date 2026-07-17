@@ -8,7 +8,9 @@ import { GameContext } from "../../contexts/GameContext";
 export interface StatParamInputEntry {
 	weight?: number;
 	minRV?: number;
+	minRVRel?: boolean;
 	maxRV?: number;
+	maxRVRel?: boolean;
 }
 
 interface WeightButtonAttrs {
@@ -52,6 +54,16 @@ const WeightButton = (props: Readonly<{
 		class={twMerge(`min-w-auto w-6 h-6 flex items-center justify-center`, props.attrs.class, props.attrs.hoverClass)}
 		onClick={() => props.onClick()}
 	>{props.attrs.short}</Button>
+);
+
+const RelSwitch = (props: Readonly<{
+	value: boolean | undefined;
+	onChange: (value: boolean | undefined) => void;
+}>) => (
+	<select class="max-w-12 mr-2" onChange={(e) => props.onChange((e.target as HTMLSelectElement).value === "+" ? true : undefined)} value={props.value ? "+" : ""}>
+		<option value="" title="In total">=</option>
+		<option value="+" title="Add to current">+</option>
+	</select>
 );
 
 export function StatParamInput<T extends StatParamInputEntry>(props: Readonly<{
@@ -162,7 +174,9 @@ export function StatParamInput<T extends StatParamInputEntry>(props: Readonly<{
 									))}
 								</td>
 								<td className="pr-3">
+									<RelSwitch value={entry.maxRVRel} onChange={(value) => props.onChange(stat, { ...entry, maxRVRel: value })} />
 									<StatValueInput
+										small
 										useRV={props.useRV ?? false}
 										stat={stat}
 										value={entry.maxRV}
@@ -171,7 +185,9 @@ export function StatParamInput<T extends StatParamInputEntry>(props: Readonly<{
 									/>
 								</td>
 								<td className="border-l border-neutral-400 pl-3">
+									<RelSwitch value={entry.minRVRel} onChange={(value) => props.onChange(stat, { ...entry, minRVRel: value })} />
 									<StatValueInput
+										small
 										useRV={props.useRV ?? false}
 										stat={stat}
 										value={entry.minRV}

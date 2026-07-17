@@ -177,6 +177,11 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		[activeStats, statParams]
 	);
 
+	const anyRel = useMemo(
+		() => activeStats.some(stat => statParams[stat]?.minRVRel || statParams[stat]?.maxRVRel),
+		[activeStats, statParams]
+	);
+
 	const dynamicMode = useMemo(() => ({
 		selectedStatCount: typeof mode.selectedStatCount === "number"
 			? mode.selectedStatCount
@@ -288,17 +293,17 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			}
 		}
 
-		for (const [stat, data] of Object.entries(statParams) as [string, StatParamInputEntry][]) {
+		for (const [stat, data] of Object.entries(statParams) as [string, StatParams][]) {
 			if (data.weight !== undefined) {
 				statDataConfig.setWeight(stat, Math.round(data.weight * 100));
 			}
 
 			if (data.minRV !== undefined) {
-				statDataConfig.setMin(stat, data.minRV);
+				statDataConfig.setMin(stat, data.minRV + (data.minRVRel ? (data.currentRV ?? 0) : 0));
 			}
 
 			if (data.maxRV !== undefined) {
-				statDataConfig.setLimit(stat, data.maxRV);
+				statDataConfig.setLimit(stat, data.maxRV + (data.maxRVRel ? (data.currentRV ?? 0) : 0));
 			}
 		}
 
@@ -817,49 +822,47 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 					/>
 				</VisualSection>
 				<VisualSection>
-					<div class={calcGoalRollProb ? "" : "text-neutral-400"}>
-						<div class="flex gap-x-5 gap-y-2 flex-wrap mb-2">
-							<Checkbox disabled={!calcGoalRollProb} label="Use current sub-stats for goal" checked={useAutoGoal} onChange={setUseAutoGoal} />
-							<Checkbox disabled={!calcGoalRollProb} label="Include artifacts equal to goal" checked={includeEqual} onChange={setIncludeEqual} />
-						</div>
-						<LabelGrid>
-							{useAutoGoal && !mode.fixedArtifact && <div>
-								<div>Current sub-stats:</div>
-								<StatListInput
-									clearable={!mode.fixedArtifact}
-									stats={currentStats}
-									count={SUB_STAT_COUNT}
-									onChange={setCurrentStats}
-									validStats={allowedStats}
-									useRV={useRV}
-									statValues={mode.fixedArtifact ? undefined : statParams}
-									onValueChange={stat.setCurrentRV}
-									disabled={!calcGoalRollProb}
-								/>
-							</div>}
-							<div>
-								<div>Goal:</div>
-								<div>
-									<input
-										type="number"
-										class="w-25"
-										value={customGoal}
-										onChange={(e) => {
-											setCustomGoal(round2(+(e.target as HTMLInputElement).value));
-											// Update input if value was rounded back to the current value
-											setCustomGoalVer(v => v + 1);
-										}}
-										disabled={!calcGoalRollProb || useAutoGoal}
-										step="any"
-									/> % weighted RV (Max: {maxAttainable === undefined ? "?" : <Percentage value={maxAttainable / 100} />})
-								</div>
-							</div>
-						</LabelGrid>
-						{maxTheoretical === undefined ? null : <div class="mt-2">
-							{useAutoGoal ? "Currently at" : "Goal is"} <Percentage highlight value={goalValue / maxTheoretical} /> of maximum reachable sub-stat value
-							{maxAttainable < maxTheoretical && <> (Max: <Percentage value={maxAttainable / maxTheoretical} />, started with 3 lines)</>}
+					<LabelGrid>
+						{(useAutoGoal || anyRel) && !mode.fixedArtifact && <div class={calcGoalRollProb || anyRel ? "" : "text-neutral-400"}>
+							<div>Current sub-stats:</div>
+							<StatListInput
+								clearable={!mode.fixedArtifact}
+								stats={currentStats}
+								count={SUB_STAT_COUNT}
+								onChange={setCurrentStats}
+								validStats={allowedStats}
+								useRV={useRV}
+								statValues={mode.fixedArtifact ? undefined : statParams}
+								onValueChange={stat.setCurrentRV}
+								disabled={!calcGoalRollProb && !anyRel}
+							/>
 						</div>}
+						<div class={calcGoalRollProb ? "" : "text-neutral-400"}>
+							<div>Goal:</div>
+							<div>
+								<input
+									type="number"
+									class="w-25"
+									value={customGoal}
+									onChange={(e) => {
+										setCustomGoal(round2(+(e.target as HTMLInputElement).value));
+										// Update input if value was rounded back to the current value
+										setCustomGoalVer(v => v + 1);
+									}}
+									disabled={!calcGoalRollProb || useAutoGoal}
+									step="any"
+								/> % weighted RV (Max: {maxAttainable === undefined ? "?" : <Percentage value={maxAttainable / 100} />})
+							</div>
+						</div>
+					</LabelGrid>
+					<div class={`flex gap-x-5 gap-y-2 flex-wrap mt-2 ${calcGoalRollProb ? "" : "text-neutral-400"}`}>
+						<Checkbox disabled={!calcGoalRollProb} label="Use current sub-stats for goal" checked={useAutoGoal} onChange={setUseAutoGoal} />
+						<Checkbox disabled={!calcGoalRollProb} label="Include artifacts equal to goal" checked={includeEqual} onChange={setIncludeEqual} />
 					</div>
+					{maxTheoretical === undefined ? null : <div class="mt-2">
+						{useAutoGoal ? "Currently at" : "Goal is"} <Percentage highlight value={goalValue / maxTheoretical} /> of maximum reachable sub-stat value
+						{maxAttainable < maxTheoretical && <> (Max: <Percentage value={maxAttainable / maxTheoretical} />, started with 3 lines)</>}
+					</div>}
 					{!calcGoalRollProb && <div class="mt-2">&#x2139;&#xfe0f; Add stat weights above to set artifact goals.</div>}
 				</VisualSection>
 			</section>
