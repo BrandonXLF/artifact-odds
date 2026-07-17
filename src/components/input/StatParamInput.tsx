@@ -57,10 +57,11 @@ const WeightButton = (props: Readonly<{
 );
 
 const RelSwitch = (props: Readonly<{
+	disabled?: boolean;
 	value: boolean | undefined;
 	onChange: (value: boolean | undefined) => void;
 }>) => (
-	<select class="max-w-12 mr-2" onChange={(e) => props.onChange((e.target as HTMLSelectElement).value === "+" ? true : undefined)} value={props.value ? "+" : ""}>
+	<select disabled={props.disabled} class="max-w-12 mr-2" onChange={(e) => props.onChange((e.target as HTMLSelectElement).value === "+" ? true : undefined)} value={props.value ? "+" : ""}>
 		<option value="" title="In total">=</option>
 		<option value="+" title="Add to current">+</option>
 	</select>
@@ -174,9 +175,14 @@ export function StatParamInput<T extends StatParamInputEntry>(props: Readonly<{
 									))}
 								</td>
 								<td className="pr-3">
-									<RelSwitch value={entry.maxRVRel} onChange={(value) => props.onChange(stat, { ...entry, maxRVRel: value })} />
+									<RelSwitch
+										disabled={(entry.weight ?? 0) === 0}
+										value={entry.maxRVRel}
+										onChange={(value) => props.onChange(stat, { ...entry, maxRVRel: value })}
+									/>
 									<StatValueInput
 										small
+										disabled={(entry.weight ?? 0) === 0}
 										useRV={props.useRV ?? false}
 										stat={stat}
 										value={entry.maxRV}
@@ -185,7 +191,10 @@ export function StatParamInput<T extends StatParamInputEntry>(props: Readonly<{
 									/>
 								</td>
 								<td className="border-l border-neutral-400 pl-3">
-									<RelSwitch value={entry.minRVRel} onChange={(value) => props.onChange(stat, { ...entry, minRVRel: value })} />
+									<RelSwitch
+										value={entry.minRVRel}
+										onChange={(value) => props.onChange(stat, { ...entry, minRVRel: value })}
+									/>
 									<StatValueInput
 										small
 										useRV={props.useRV ?? false}
