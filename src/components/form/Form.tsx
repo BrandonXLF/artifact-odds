@@ -155,12 +155,12 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		[allRequired, showSubProb, requireCount, requiredByMins.length, requireAllLines]
 	);
 	const calcGoalRollProb = useMemo(
-		() => mode.fixedArtifact || activeStats.some(stat => statParams[stat].weight),
-		[mode.fixedArtifact, activeStats, statParams]
+		() => activeStats.some(stat => statParams[stat].weight),
+		[activeStats, statParams]
 	);
 	const calcBasicRollProb = useMemo(
-		() => mode.fixedArtifact || calcGoalRollProb || activeStats.some(stat => statParams[stat].weight || statParams[stat].minRV),
-		[mode.fixedArtifact, calcGoalRollProb, activeStats, statParams]
+		() => calcGoalRollProb || mode.fixedArtifact || activeStats.some(stat => statParams[stat].minRV),
+		[calcGoalRollProb, mode.fixedArtifact, activeStats, statParams]
 	);
 
 	const totalProb = typeProb !== undefined || mainProb !== undefined || subProb !== undefined || rollProb !== undefined
