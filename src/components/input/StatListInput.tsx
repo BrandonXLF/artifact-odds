@@ -4,6 +4,7 @@ import { GameContext } from "../../contexts/GameContext";
 
 export interface StatListInputEntry {
 	currentRV?: number;
+	initialRV?: number;
 }
 
 export function StatListInput(props: Readonly<{
@@ -13,20 +14,19 @@ export function StatListInput(props: Readonly<{
 	require?: number;
 	validStats?: string[];
 	statValues?: Record<string, StatListInputEntry>;
-	initialValues?: Record<string, StatListInputEntry>;
+	showInitial?: boolean;
 	useRV?: boolean;
 	disabled?: boolean;
 	clearable?: boolean;
-	onChange: (stats: string[]) => void;
-	onValueChange?: (stat: string, value: number | undefined) => void;
-	onInitialChange?: (stat: string, value: number | undefined) => void;
-	onCountChange?: (count: number) => void;
 	hasKnownError?: boolean;
+	onChange: (stats: string[]) => void;
+	onValueChange?: (stat: string, type: 'currentRV' | 'initialRV', value: number | undefined) => void;
+	onCountChange?: (count: number) => void;
 	onErrorChange?: (hasError: boolean) => void;
 }>) {
 	const { gameData } = useContext(GameContext);
 	const validStats = props.validStats ?? gameData.stats;
-	const hasStatInput = props.statValues || props.initialValues;
+	const hasStatInput = !!props.statValues;
 	const autoCount = !!props.onCountChange;
 
 	const change = (i: number, stat: string) => {
@@ -94,40 +94,36 @@ export function StatListInput(props: Readonly<{
 								))}
 							</select>
 						</div>
-						{props.statValues && (
+						{hasStatInput && <>
 							<StatValueInput
 								disabled={props.disabled || !value}
 								useRV={props.useRV ?? false}
 								stat={value}
 								value={props.statValues[value]?.currentRV}
 								placeholder="0"
-								onChange={(statValue) => props.onValueChange?.(value, statValue)}
+								onChange={(statValue) => props.onValueChange?.(value, 'currentRV', statValue)}
 							/>
-						)}
-						{props.initialValues && <>
-							{!props.statValues && <span>
-								Current:{' '}
-								[<abbr title="Since goal is being manually inputted, the current rolls are not needed for comparison.">n/a</abbr>]
-							</span>}
-							<label class="contents min-[500px]:inline-flex items-center gap-1">
-								<div class="inline-flex items-center gap-0.5 justify-end">
-									<span>(</span>
-									<abbr title="Initial rolls remain the same. If not provided, assumed to be unknown, which may give a significantly inaccurate probability. Imported artifacts will populate these fields.">
-										Initial
-									</abbr>:
-								</div>
-								<div class="inline-flex items-center gap-0.5">
-									<StatValueInput
-										disabled={props.disabled || !value}
-										useRV={props.useRV ?? false}
-										stat={value}
-										value={props.initialValues[value]?.currentRV}
-										placeholder="Unknown"
-										onChange={(initialValue) => props.onInitialChange?.(value, initialValue)}
-									/>
-									<span>)</span>
-								</div>
-							</label>
+							{props.showInitial && (
+								<label class="contents min-[500px]:inline-flex items-center gap-1">
+									<div class="inline-flex items-center gap-0.5 justify-end">
+										<span>(</span>
+										<abbr title="Initial rolls remain the same. If not provided, assumed to be unknown, which may give a significantly inaccurate probability. Imported artifacts will populate these fields.">
+											Initial
+										</abbr>:
+									</div>
+									<div class="inline-flex items-center gap-0.5">
+										<StatValueInput
+											disabled={props.disabled || !value}
+											useRV={props.useRV ?? false}
+											stat={value}
+											value={props.statValues[value]?.initialRV}
+											placeholder="Unknown"
+											onChange={(initialValue) => props.onValueChange?.(value, 'initialRV', initialValue)}
+										/>
+										<span>)</span>
+									</div>
+								</label>
+							)}
 						</>}
 					</div>
 				);

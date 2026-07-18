@@ -81,12 +81,6 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		resetTrigger,
 		true
 	);
-	const [initialValues, setInitialValues] = useStoredState(
-		"initialValues",
-		() => Object.fromEntries(gameData.stats.map(stat => [stat, {}])) as Record<string, StatListInputEntry>,
-		resetTrigger,
-		true
-	);
 	const [acceptEither, setAcceptEither] = useStoredState<boolean>("acceptEither", false, resetTrigger);
 	const [isFiveRoller, setIsFiveRoller] = useStoredState<boolean>("isFiveRoller", false, resetTrigger);
 	const [useAutoGoal, setUseAutoGoal, useAutoGoalLoaded] = useStoredState<boolean>("useAutoGoal", true, resetTrigger);
@@ -178,9 +172,11 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	);
 
 	const anyRel = useMemo(
-		() => activeStats.some(stat => statParams[stat]?.minRVRel || statParams[stat]?.maxRVRel),
+		() => activeStats.some(stat => (statParams[stat]?.weight && statParams[stat]?.maxRVRel) || statParams[stat]?.minRVRel),
 		[activeStats, statParams]
 	);
+	const showSubStats = useAutoGoal || anyRel;
+	const needSubStats = showSubStats && (calcGoalRollProb || anyRel);
 
 	const dynamicMode = useMemo(() => ({
 		selectedStatCount: typeof mode.selectedStatCount === "number"
@@ -236,8 +232,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	// Callbacks
 	const stat = useMemo(() => ({
 		setEntry: (stat: string, entry: StatParams) => setStatParams(prev => ({ ...prev, [stat]: entry })),
-		setCurrentRV: (stat: string, value: number | undefined) => setStatParams(prev => ({ ...prev, [stat]: { ...prev[stat], currentRV: value } })),
-		setInitialRV: (stat: string, value: number | undefined) => setInitialValues(prev => ({ ...prev, [stat]: { ...prev[stat], currentRV: value } }))
+		setRV: (stat: string, type: 'currentRV' | 'initialRV', value: number | undefined) => setStatParams(prev => ({ ...prev, [stat]: { ...prev[stat], [type]: value } }))
 	}), []);
 
 	const importArtifact = useCallback((art: ImportedArtifact) => {
@@ -251,16 +246,11 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 				newParams[stat] = { ...newParams[stat], currentRV: value };
 			}
 
-			return newParams;
-		});
-		setInitialValues(prev => {
-			const newValues = { ...prev };
-
 			for (const [stat, value] of Object.entries(art.initial ?? [])) {
-				newValues[stat] = { ...newValues[stat], currentRV: value };
+				newParams[stat] = { ...newParams[stat], initialRV: value };
 			}
 
-			return newValues;
+			return newParams;
 		});
 		setIsFiveRoller(art.totalCount >= 9);
 	}, []);
@@ -287,13 +277,11 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			statDataConfig.onlyInclude(currentStats);
 		}
 
-		if (mode.fixedArtifact && mode.fixedInitial) {
-			for (const [stat, data] of Object.entries(initialValues) as [string, StatListInputEntry][]) {
-				statDataConfig.setInitial(stat, data.currentRV ?? 0);
-			}
-		}
-
 		for (const [stat, data] of Object.entries(statParams) as [string, StatParams][]) {
+			if (mode.fixedArtifact && mode.fixedInitial) {
+				statDataConfig.setInitial(stat, data.initialRV ?? 0);
+			}
+
 			if (data.weight !== undefined) {
 				statDataConfig.setWeight(stat, Math.round(data.weight * 100));
 			}
@@ -678,15 +666,13 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 						<div class="flex flex-col gap-2">
 							<StatListInput
 								useRV={useRV}
-								clearable={!mode.fixedArtifact}
 								stats={currentStats}
 								count={SUB_STAT_COUNT}
 								onChange={setCurrentStats}
 								validStats={allowedStats}
-								statValues={mode.fixedArtifact && useAutoGoal ? statParams : undefined}
-								initialValues={mode.fixedArtifact && mode.fixedInitial ? initialValues : undefined}
-								onValueChange={stat.setCurrentRV}
-								onInitialChange={stat.setInitialRV}
+								statValues={statParams}
+								showInitial={mode.fixedArtifact && mode.fixedInitial}
+								onValueChange={stat.setRV}
 								hasKnownError={fixedStatsInvalid}
 								onErrorChange={setFixedStatsInvalid}
 							/>
@@ -823,18 +809,18 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 				</VisualSection>
 				<VisualSection>
 					<LabelGrid>
-						{(useAutoGoal || anyRel) && !mode.fixedArtifact && <div class={calcGoalRollProb || anyRel ? "" : "text-neutral-400"}>
+						{!mode.fixedArtifact && showSubStats && <div class={needSubStats ? "" : "text-neutral-400"}>
 							<div>Current sub-stats:</div>
 							<StatListInput
-								clearable={!mode.fixedArtifact}
+								clearable
 								stats={currentStats}
 								count={SUB_STAT_COUNT}
 								onChange={setCurrentStats}
 								validStats={allowedStats}
 								useRV={useRV}
-								statValues={mode.fixedArtifact ? undefined : statParams}
-								onValueChange={stat.setCurrentRV}
-								disabled={!calcGoalRollProb && !anyRel}
+								statValues={statParams}
+								onValueChange={stat.setRV}
+								disabled={!needSubStats}
 							/>
 						</div>}
 						<div class={calcGoalRollProb ? "" : "text-neutral-400"}>
