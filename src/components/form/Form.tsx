@@ -78,15 +78,10 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		"statWeights",
 		() => Object.fromEntries(gameData.stats.map(stat => [stat, new StatParams()])) as Record<string, StatParams>,
 		resetTrigger,
-		(val, getDefault) => {
-			const entries = getDefault();
-
-			for (const [stat, data] of Object.entries(val)) {
-				entries[stat] = new StatParams(data);
-			}
-
-			return entries;
-		}
+		(val, getDefault) => ({
+			...getDefault(),
+			...Object.fromEntries(Object.entries(val).map(([stat, data]) => [stat, new StatParams(data)]))
+		})
 	);
 	const [acceptEither, setAcceptEither] = useStoredState<boolean>("acceptEither", false, resetTrigger);
 	const [isFiveRoller, setIsFiveRoller] = useStoredState<boolean>("isFiveRoller", false, resetTrigger);
