@@ -956,7 +956,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 							: <><NumberDisplay highlight value={total.stat} /> artifact{total.roll && <> and <NumberDisplay highlight value={total.roll} /> rolled artifact</>} outcomes</>}
 					</div>}
 				</VisualSection>
-				{bars.length > 0 && <VisualSection>
+				{bars.length > 0 && (bars[0] === undefined || bars.length > 1) /* at least 1 non-zero */ && <VisualSection>
 					{barStats !== undefined && <div>Average rolled weighted RV:{' '}
 						<Percentage highlight value={barStats.avgRV} />{' '}
 						<Percentage isPPChange value={barStats.avgRV - barStats.goalRV} />
