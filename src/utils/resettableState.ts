@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState } from "preact/hooks";
+import { useContext, useEffect, useState } from "preact/hooks";
 import { GameContext } from "../contexts/GameContext";
 
 export const PREFIX_BASE = "-arti-prob-";
