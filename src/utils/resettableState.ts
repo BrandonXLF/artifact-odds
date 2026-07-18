@@ -23,15 +23,15 @@ export const useResettableState = <T extends DefaultType>(defaultValue: T | ((re
 	return [value, setValue] as const;
 }
 
-export const useStoredState = <T extends DefaultType>(name: string, defaultValue: T | (() => T), resetTrigger?: ResetTrigger, mergeDefault = false) => {
+export const useStoredState = <T extends DefaultType>(name: string, defaultValue: T | (() => T), resetTrigger?: ResetTrigger, init?: (val: T, getDefault: () => T) => T) => {
 	const { game } = useContext(GameContext);
 	const prefix = game + PREFIX_BASE;
 
 	const load = () => {
-		const getDefault = () => typeof defaultValue === "function" ? defaultValue() : defaultValue;
+		const getDefault = () => typeof defaultValue === "function" ? (defaultValue as () => T)() : defaultValue;
 		const stored = typeof window === "undefined" ? undefined : localStorage.getItem(prefix + name);
-		const val = stored ? JSON.parse(stored) : getDefault();
-		return mergeDefault ? { ...getDefault(), ...val } : val;
+		const val = stored ? JSON.parse(stored) as T : getDefault();
+		return init ? init(val, getDefault) : val;
 	};
 
 	const [value, setValue] = useResettableState<T>((reset) => {

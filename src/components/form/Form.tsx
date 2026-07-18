@@ -32,8 +32,9 @@ import { NumberDisplay } from '../output/NumberDisplay';
 import { QuantileOutput } from '../output/QuantileOutput';
 import { computeTypeProb } from '../../../logic/typeProb';
 import { RequireStatsOfInput } from '../input/RequireStatsOfInput';
+import { StatParams } from '../../data/StatParams';
 
-type StatParams = StatParamInputEntry & StatListInputEntry;
+type StatEntry = StatParamInputEntry & StatListInputEntry;
 
 export type FormHandle = {
 	reset: () => void;
@@ -77,9 +78,17 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const [requireAllLines, setRequireAllLines] = useStoredState<boolean>("requireAllLines", false, resetTrigger);
 	const [statParams, setStatParams] = useStoredState(
 		"statWeights",
-		() => Object.fromEntries(gameData.stats.map(stat => [stat, {}])) as Record<string, StatParams>,
+		() => Object.fromEntries(gameData.stats.map(stat => [stat, new StatParams()])) as Record<string, StatParams>,
 		resetTrigger,
-		true
+		(val, getDefault) => {
+			const entries = getDefault();
+
+			for (const [stat, data] of Object.entries(val)) {
+				entries[stat] = new StatParams(data);
+			}
+
+			return entries;
+		}
 	);
 	const [acceptEither, setAcceptEither] = useStoredState<boolean>("acceptEither", false, resetTrigger);
 	const [isFiveRoller, setIsFiveRoller] = useStoredState<boolean>("isFiveRoller", false, resetTrigger);
@@ -129,7 +138,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const requiredByMins = useMemo(() => {
 		return activeStats
 			.map(stat => [stat, statParams[stat]] as const)
-			.filter(([_, data]) => data?.minRV !== undefined && data.minRV + (data.minRVRel ? (data.currentRV ?? 0) : 0) > 0)
+			.filter(([_, data]) => data.minRVFinal !== undefined && data.minRVFinal > 0)
 			.map(([stat]) => stat);
 	}, [statParams, statParams]);
 
@@ -231,8 +240,8 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 
 	// Callbacks
 	const stat = useMemo(() => ({
-		setEntry: (stat: string, entry: StatParams) => setStatParams(prev => ({ ...prev, [stat]: entry })),
-		setRV: (stat: string, type: 'currentRV' | 'initialRV', value: number | undefined) => setStatParams(prev => ({ ...prev, [stat]: { ...prev[stat], [type]: value } }))
+		setEntry: (stat: string, entry: StatEntry) => setStatParams(prev => ({ ...prev, [stat]: new StatParams(entry) })),
+		setRV: (stat: string, type: 'currentRV' | 'initialRV', value: number | undefined) => setStatParams(prev => ({ ...prev, [stat]: new StatParams({ ...prev[stat], [type]: value }) }))
 	}), []);
 
 	const importArtifact = useCallback((art: ImportedArtifact) => {
@@ -243,11 +252,11 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 			const newParams = { ...prev };
 
 			for (const [stat, value] of Object.entries(art.subStats)) {
-				newParams[stat] = { ...newParams[stat], currentRV: value };
+				newParams[stat] = new StatParams({ ...newParams[stat], currentRV: value });
 			}
 
 			for (const [stat, value] of Object.entries(art.initial ?? [])) {
-				newParams[stat] = { ...newParams[stat], initialRV: value };
+				newParams[stat] = new StatParams({ ...newParams[stat], initialRV: value });
 			}
 
 			return newParams;
@@ -286,12 +295,12 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 				statDataConfig.setWeight(stat, Math.round(data.weight * 100));
 			}
 
-			if (data.minRV !== undefined) {
-				statDataConfig.setMin(stat, data.minRV + (data.minRVRel ? (data.currentRV ?? 0) : 0));
+			if (data.minRVFinal !== undefined) {
+				statDataConfig.setMin(stat, data.minRVFinal);
 			}
 
-			if (data.maxRV !== undefined) {
-				statDataConfig.setLimit(stat, data.maxRV + (data.maxRVRel ? (data.currentRV ?? 0) : 0));
+			if (data.maxRVFinal !== undefined) {
+				statDataConfig.setLimit(stat, data.maxRVFinal);
 			}
 		}
 
