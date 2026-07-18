@@ -135,7 +135,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const requiredByMins = useMemo(() => {
 		return activeStats
 			.map(stat => [stat, statParams[stat]] as const)
-			.filter(([_, data]) => data?.minRV !== undefined && data.minRV > 0)
+			.filter(([_, data]) => data?.minRV !== undefined && data.minRV + (data.minRVRel ? (data.currentRV ?? 0) : 0) > 0)
 			.map(([stat]) => stat);
 	}, [statParams, statParams]);
 
