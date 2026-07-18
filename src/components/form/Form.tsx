@@ -34,8 +34,6 @@ import { computeTypeProb } from '../../../logic/typeProb';
 import { RequireStatsOfInput } from '../input/RequireStatsOfInput';
 import { StatParams } from '../../data/StatParams';
 
-type StatEntry = StatParamInputEntry & StatListInputEntry;
-
 export type FormHandle = {
 	reset: () => void;
 }
@@ -240,7 +238,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 
 	// Callbacks
 	const stat = useMemo(() => ({
-		setEntry: (stat: string, entry: StatEntry) => setStatParams(prev => ({ ...prev, [stat]: new StatParams(entry) })),
+		setEntry: (stat: string, entry: StatParams) => setStatParams(prev => ({ ...prev, [stat]: new StatParams(entry) })),
 		setRV: (stat: string, type: 'currentRV' | 'initialRV', value: number | undefined) => setStatParams(prev => ({ ...prev, [stat]: new StatParams({ ...prev[stat], [type]: value }) }))
 	}), []);
 

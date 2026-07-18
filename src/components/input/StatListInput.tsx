@@ -3,8 +3,8 @@ import { StatValueInput } from "./StatValueInput";
 import { GameContext } from "../../contexts/GameContext";
 
 export interface StatListInputEntry {
-	currentRV?: number;
-	initialRV?: number;
+	currentRV: number | undefined;
+	initialRV: number | undefined;
 }
 
 export function StatListInput(props: Readonly<{

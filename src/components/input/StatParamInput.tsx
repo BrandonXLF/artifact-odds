@@ -6,11 +6,11 @@ import { useContext, useMemo, useState } from "preact/hooks";
 import { GameContext } from "../../contexts/GameContext";
 
 export interface StatParamInputEntry {
-	weight?: number;
-	minRV?: number;
-	minRVRel?: boolean;
-	maxRV?: number;
-	maxRVRel?: boolean;
+	weight: number | undefined;
+	minRV: number | undefined;
+	minRVRel: boolean | undefined;
+	maxRV: number | undefined;
+	maxRVRel: boolean | undefined;
 }
 
 interface WeightButtonAttrs {

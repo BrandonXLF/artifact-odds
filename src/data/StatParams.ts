@@ -1,14 +1,19 @@
-export class StatParams {
-	currentRV?: number;
-	initialRV?: number;
+import { StatListInputEntry } from "../components/input/StatListInput";
+import { StatParamInputEntry } from "../components/input/StatParamInput";
 
-	weight?: number;
-	minRV?: number;
-	minRVRel?: boolean;
-	maxRV?: number;
-	maxRVRel?: boolean;
+export type PlainStatParams =  StatListInputEntry & StatParamInputEntry;
 
-	constructor(init?: Partial<StatParams>) {
+export class StatParams implements PlainStatParams {
+	currentRV: number | undefined;
+	initialRV: number | undefined;
+
+	weight: number | undefined;
+	minRV: number | undefined;
+	minRVRel: boolean | undefined;
+	maxRV: number | undefined;
+	maxRVRel: boolean | undefined;;
+
+	constructor(init?: PlainStatParams) {
 		if (init) {
 			Object.assign(this, init);
 		}
