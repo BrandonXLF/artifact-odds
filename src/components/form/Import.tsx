@@ -3,7 +3,7 @@ import { genshinTypeMap, genshinMainStats, genshinSubstats, hsrMainStats, hsrSub
 import { ToggleButtons } from "../input/ToggleButtons";
 import { VisualSection } from "../structure/VisualSection";
 import { Button } from "../input/Button";
-import { useStoredState } from "../../utils/resettableState";
+import { useStoredState } from "../../hooks/resettableState";
 import { ImportedCharacter } from "./ImportedCharacter";
 import { GameContext } from "../../contexts/GameContext";
 import { Game } from "../../data/game";

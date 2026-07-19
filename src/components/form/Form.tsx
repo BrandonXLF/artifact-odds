@@ -15,7 +15,7 @@ import { round2, roundMaxPrecision } from '../../utils/round';
 import { Percentage } from '../output/Percentage';
 import { Button } from '../input/Button';
 import SimulationWorker from '../../../simulator/worker?worker';
-import { ResetTrigger, useResettableState, useStoredState } from '../../utils/resettableState';
+import { ResetTrigger, useResettableState, useStoredState } from '../../hooks/resettableState';
 import { SimulationOutput } from '../output/SimulationOutput';
 import { LabelGrid } from '../structure/LabelGrid';
 import { LogicSection } from './LogicSection';
@@ -33,6 +33,7 @@ import { QuantileOutput } from '../output/QuantileOutput';
 import { computeTypeProb } from '../../../logic/typeProb';
 import { RequireStatsOfInput } from '../input/RequireStatsOfInput';
 import { StatParams } from '../../data/StatParams';
+import { optimize } from '../../utils/optimize';
 
 export type FormHandle = {
 	reset: () => void;
@@ -44,9 +45,6 @@ interface BarStats {
 	maxRV: number;
 	goalRV: number;
 }
-
-// Note: This is far larger than the minimum difference between actual probabilities
-const probDelta = 1 / 10_000_000_000_000;
 
 export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 	const resetTrigger = useRef(new ResetTrigger()).current;
@@ -231,7 +229,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 
 	const importElRef = useRef<HTMLDivElement | null>(null);
 
-	// Callbacks
+	// Setter callbacks
 	const stat = useMemo(() => ({
 		setEntry: (stat: string, entry: StatParams) => setStatParams(prev => ({ ...prev, [stat]: new StatParams(entry) })),
 		setRV: (stat: string, type: 'currentRV' | 'initialRV', value: number | undefined) => setStatParams(prev => ({ ...prev, [stat]: new StatParams({ ...prev[stat], [type]: value }) }))
@@ -259,6 +257,14 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 
 	const closeImport = useCallback(() => setShowImport(false), []);
 
+	const updateOptimizerResult = (stats: string[][] ) => {
+		if (stats.length) {
+			setSelectedStats(stats[0]);
+			setAllOptimalPairs(stats);
+		}
+	};
+
+	// Computational callbacks and functions
 	const getBaseConfig = () => {
 		const statDataConfig = new StatDataConfig(gameData.stats, gameData.statWeights, gameData.rollValues);
 		statDataConfig.exclude(mainStat);
@@ -318,46 +324,13 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 		);
 	}
 
-	const optimize = <T,>(
-		statCombos: T[],
-		calculate: (statCombo: T) => [number, number],
-		normalize: (statCombo: T) => string[]
-	) => {
-		let maxStatsAndAvg: [T, number][] = [];
-		let maxProb = -1;
-
-		for (const statCombo of statCombos) {
-			const [prob, avg] = calculate(statCombo);
-
-			// Note: This is far larger than the minimum difference between actual probabilities
-			if (prob - maxProb > probDelta) {
-				maxStatsAndAvg = [[statCombo, avg] as [T, number]];
-				maxProb = prob;
-			} else if (Math.abs(prob - maxProb) <= probDelta) {
-				maxStatsAndAvg.push([statCombo, avg] as [T, number]);
-			}
-		}
-
-		maxStatsAndAvg.sort((a, b) => b[1] - a[1]); // Sort by average RV descending
-
-		const maxAvgValue = maxStatsAndAvg[0]?.[1];
-		const maxStats = maxStatsAndAvg
-			.filter(([_, avg]) => Math.abs(avg - maxAvgValue) <= probDelta)
-			.map(([statCombo]) => normalize(statCombo));
-
-		if (maxStats.length) {
-			setSelectedStats(maxStats[0]);
-			setAllOptimalPairs(maxStats);
-		}
-	};
-
 	const optimizers: Record<StatOptimizers, () => void> = {
 		// New artifact optimizations
 		bestStats: () => {
 			const statData = getBaseConfig().make();
 			const rollRestrictions = makeRollRestrictions();
 
-			optimize(
+			updateOptimizerResult(optimize(
 				getSubStatCombinations(statData, dynamicMode.selectedStatCount),
 				([stats]) => {
 					const statData = getBaseConfig()
@@ -371,14 +344,14 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 					return [subStatProb * statistics.probAbove, statistics.avgAbove];
 				},
 				([stats]) => stats
-			);
+			));
 		},
 		// Fixed artifact optimizations
 		bestRolls: () => {
 			const baseStatData = getBaseConfig().onlyInclude(currentStats).make();
 			const statData = getBaseConfig().make();
 
-			optimize(
+			updateOptimizerResult(optimize(
 				getSubStatCombinations(baseStatData, 2),
 				([stats]) => {
 					const statistics = computeRollProb(
@@ -391,12 +364,12 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 					return [statistics.probAbove, statistics.avgAbove];
 				},
 				([stats]) => stats
-			);
+			));
 		},
 		bestToIgnore: () => {
 			const statData = getBaseConfig().make();
 
-			optimize(
+			updateOptimizerResult(optimize(
 				currentStats,
 				stat => {
 					const statistics = computeRollProb(
@@ -409,7 +382,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 					return [statistics.probAbove, statistics.avgAbove];
 				},
 				stat => [stat]
-			);
+			));
 		}
 	};
 

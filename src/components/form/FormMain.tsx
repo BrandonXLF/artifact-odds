@@ -7,7 +7,7 @@ import { FormContext } from '../../contexts/FormContext';
 import { GameContext } from '../../contexts/GameContext';
 import { modes } from '../../data/modes';
 import { ensureTitle } from '../..';
-import { PREFIX_BASE } from '../../utils/resettableState';
+import { PREFIX_BASE } from '../../hooks/resettableState';
 
 export const FormMain = (props: { modeKey?: string }) => {
 	const formRef = useRef<FormHandle>(null);
