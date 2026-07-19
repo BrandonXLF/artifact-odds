@@ -734,7 +734,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 					<LabelGrid>
 						<div>
 							<div>
-								<strong>Required</strong>:
+								<strong>Required:</strong>
 							</div>
 							<StatListInput
 								clearable
@@ -746,7 +746,7 @@ export function Form(props: Readonly<{ formRef: Ref<FormHandle> }>) {
 						</div>
 						<div>
 							<div>
-								<strong>Optional</strong>:
+								<strong>Optional:</strong>
 							</div>
 							<RequireStatsOfInput
 								count={requireCount}
