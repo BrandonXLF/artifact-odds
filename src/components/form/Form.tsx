@@ -1,9 +1,9 @@
 import { computeMainStatProb } from '../../../logic/mainStatProb';
 import { StatDataConfig } from '../../../logic/data/StatData';
 import { computeRollProb } from '../../../logic/subStatDistribution';
-import { StatParamInputEntry, StatParamInput } from '../input/StatParamInput';
+import { StatParamInput } from '../input/StatParamInput';
 import { useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'preact/hooks';
-import { StatListInput, StatListInputEntry } from '../input/StatListInput';
+import { StatListInput } from '../input/StatListInput';
 import { getSubStatCombinations } from '../../../logic/combinations/subStatCombinations';
 import { computeSubProb } from '../../../logic/subStatProb';
 import { VisualSection } from '../structure/VisualSection';
